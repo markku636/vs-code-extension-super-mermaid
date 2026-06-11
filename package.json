@@ -5,6 +5,10 @@
   "version": "0.5.1",
   "publisher": "mark-ku",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markku636/vs-code-extension-super-mermaid.git"
+  },
   "private": true,
   "engines": {
     "vscode": "^1.85.0"
@@ -156,6 +160,7 @@
     "vscode:prepublish": "npm run build",
     "package": "vsce package --no-dependencies --allow-missing-repository",
     "gen:snippets": "node scripts/genSnippets.mjs",
+    "gen:demo-images": "node scripts/genDemoImages.mjs",
     "build": "tsc --noEmit && node scripts/genSnippets.mjs && node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "type:check": "tsc --noEmit"
@@ -165,6 +170,7 @@
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.25.0",
     "mermaid": "^11.15.0",
+    "puppeteer-core": "^25.1.0",
     "svg-pan-zoom": "^3.6.2",
     "typescript": "^5.6.0"
   }

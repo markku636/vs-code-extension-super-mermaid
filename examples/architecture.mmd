@@ -1,0 +1,30 @@
+---
+title: 系統部署架構
+---
+flowchart TB
+    subgraph Edge["邊緣層"]
+        CDN[CDN]
+        WAF[WAF 防火牆]
+    end
+    subgraph App["應用層"]
+        LB[負載平衡器]
+        API1[API Server 1]
+        API2[API Server 2]
+        Worker[背景工作排程]
+    end
+    subgraph Data["資料層"]
+        DB[(主資料庫)]
+        Replica[(讀取副本)]
+        Cache[(Redis 快取)]
+        MQ[/訊息佇列/]
+    end
+    User((使用者)) --> CDN --> WAF --> LB
+    LB --> API1
+    LB --> API2
+    API1 --> Cache
+    API2 --> Cache
+    API1 --> DB
+    API2 --> Replica
+    API1 -.-> MQ -.-> Worker
+    Worker --> DB
+    DB -. 複寫 .-> Replica
