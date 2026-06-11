@@ -71,3 +71,5 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 ---
 
 Source code, issue tracker, and development docs: [GitHub Repository](https://github.com/markku636/vs-code-extension-super-mermaid)
+
+Author's blog: [Mark Ku's Blog](https://blog.markkulab.net/)
