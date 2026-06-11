@@ -28,7 +28,8 @@ if ($Bump) {
     $parts[2] = [string]([int]$parts[2] + 1)
     $newVersion = $parts -join '.'
     # 只做字串替換,避免 ConvertTo-Json 重排整份 package.json
-    $raw = Get-Content $pkgPath -Raw
+    # 必須指定 UTF8:PS 5.1 預設用 ANSI 讀無 BOM 的 UTF-8,會把 — 等非 ASCII 字元變成 ??
+    $raw = Get-Content $pkgPath -Raw -Encoding UTF8
     $raw = $raw -replace ('"version":\s*"' + [regex]::Escape($pkg.version) + '"'), ('"version": "' + $newVersion + '"')
     [System.IO.File]::WriteAllText($pkgPath, $raw)   # UTF-8 無 BOM
     Write-Host ("[pack] 版號 {0} -> {1}" -f $pkg.version, $newVersion) -ForegroundColor Cyan
