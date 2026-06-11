@@ -1,0 +1,367 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+#canvas {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  background-color: var(--vscode-editor-background);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--vscode-foreground) 9%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 18px 18px;
+}
+
+#canvas:active {
+  cursor: grabbing;
+}
+
+#diagram {
+  position: absolute;
+  inset: 0;
+}
+
+#diagram svg {
+  display: block;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+#toolbar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100% - 24px);
+  padding: 4px 6px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+}
+
+#toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+#toolbar button:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
+
+#toolbar button:active {
+  transform: translateY(0.5px);
+}
+
+#toolbar button.active {
+  background: var(--vscode-toolbar-activeBackground, rgba(99, 102, 106, 0.4));
+  color: var(--vscode-button-foreground, var(--vscode-foreground));
+}
+
+#toolbar .sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.35));
+}
+
+#zoom-level {
+  min-width: 42px;
+  text-align: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  user-select: none;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 4px 2px;
+}
+
+#zoom-level:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+  opacity: 1;
+}
+
+#toolbar select {
+  height: 26px;
+  max-width: 230px;
+  padding: 0 4px;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+
+#block-select {
+  margin-right: 4px;
+}
+
+#empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  user-select: none;
+}
+
+#empty .empty-icon {
+  opacity: 0.55;
+  margin-bottom: 6px;
+}
+
+#empty .empty-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#empty .empty-hint {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+#error {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 9;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+  border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 40%;
+  overflow: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+#error .error-title {
+  font-family: var(--vscode-font-family);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+#toast {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%) translateY(6px);
+  z-index: 11;
+  padding: 6px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 92%, transparent);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.dropdown {
+  position: fixed;
+  z-index: 20;
+  min-width: 190px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown .menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.dropdown .menu-item:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
+
+.dropdown .menu-item svg {
+  flex: none;
+  opacity: 0.8;
+}
+
+.dropdown .menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+}
+
+.dropdown .menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: default;
+}
+
+.dropdown .menu-row select {
+  height: 22px;
+  font-size: 11px;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+  border-radius: 4px;
+}
+
+.dropdown label.menu-row {
+  cursor: pointer;
+  justify-content: flex-start;
+}
+
+#gallery {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 58px 16px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  align-content: start;
+  cursor: default;
+}
+
+.gallery-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  background: var(--vscode-editorWidget-background);
+  cursor: pointer;
+}
+
+.gallery-card:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.gallery-card.active {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+}
+
+.gallery-card-title {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.2));
+}
+
+.gallery-card-title .gallery-card-line {
+  font-weight: 400;
+  opacity: 0.6;
+  margin-left: 6px;
+}
+
+.gallery-card-body {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--vscode-editor-background);
+}
+
+.gallery-card-body svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gallery-card-error {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  color: var(--vscode-errorForeground, #f48771);
+  padding: 10px;
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 100%;
+}
+
+.gallery-card-pending {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+body.gallery-mode #canvas {
+  cursor: default;
+}
+
+body.gallery-mode #zoom-in,
+body.gallery-mode #zoom-out,
+body.gallery-mode #zoom-reset,
+body.gallery-mode #fit-width,
+body.gallery-mode #zoom-level {
+  opacity: 0.35;
+  pointer-events: none;
+}

@@ -1,0 +1,11 @@
+sequenceDiagram
+    autonumber
+    participant P as 玩家
+    participant TPS as ThirdPartyService
+    participant TP as 三方遊戲商
+
+    P->>TPS: GotoGame(TpId, CustId)
+    TPS->>TP: Login API
+    TP-->>TPS: 遊戲 URL
+    TPS-->>P: redirect 遊戲 URL
+    P->>TP: 進入遊戲下注

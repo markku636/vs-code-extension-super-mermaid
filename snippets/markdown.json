@@ -1,0 +1,351 @@
+{
+  "Mermaid Flowchart - Basic": {
+    "prefix": "mmd-flow",
+    "description": "基本流程圖:開始、判斷分支、結束",
+    "body": [
+      "```mermaid",
+      "flowchart TD",
+      "    A([${1:Start}]) --> B{${2:Is it valid?}}",
+      "    B -- Yes --> C[${3:Process data}]",
+      "    B -- No --> D[${4:Show error}]",
+      "    C --> E([End])",
+      "    D --> E$0",
+      "```"
+    ]
+  },
+  "Mermaid Flowchart - Subgraphs": {
+    "prefix": "mmd-flow-sub",
+    "description": "含子圖的流程圖:前後端分區與跨區連線",
+    "body": [
+      "```mermaid",
+      "flowchart LR",
+      "    subgraph Client",
+      "        A[Browser] --> B[${1:SPA}]",
+      "    end",
+      "    subgraph Server",
+      "        C[API Gateway] --> D[${2:Service}]",
+      "        D --> E[(Database)]",
+      "    end",
+      "    B -->|HTTPS| C$0",
+      "```"
+    ]
+  },
+  "Mermaid Sequence - autonumber + alt": {
+    "prefix": "mmd-seq",
+    "description": "循序圖:autonumber 編號與 alt 條件分支",
+    "body": [
+      "```mermaid",
+      "sequenceDiagram",
+      "    autonumber",
+      "    actor U as ${1:User}",
+      "    participant S as ${2:Server}",
+      "    participant DB as Database",
+      "    U->>S: Login request",
+      "    S->>DB: Query user",
+      "    DB-->>S: User record",
+      "    alt credentials valid",
+      "        S-->>U: 200 OK + token",
+      "    else invalid",
+      "        S-->>U: 401 Unauthorized",
+      "    end$0",
+      "```"
+    ]
+  },
+  "Mermaid Class - Inheritance": {
+    "prefix": "mmd-class",
+    "description": "類別圖:繼承關係、欄位與方法",
+    "body": [
+      "```mermaid",
+      "classDiagram",
+      "    class ${1:Animal} {",
+      "        +String name",
+      "        +int age",
+      "        +makeSound() void",
+      "    }",
+      "    class ${2:Dog} {",
+      "        +fetch() void",
+      "    }",
+      "    class Cat {",
+      "        -bool indoor",
+      "    }",
+      "    ${1:Animal} <|-- ${2:Dog}",
+      "    ${1:Animal} <|-- Cat$0",
+      "```"
+    ]
+  },
+  "Mermaid State - Transitions": {
+    "prefix": "mmd-state",
+    "description": "狀態圖 v2:狀態轉移與起訖點",
+    "body": [
+      "```mermaid",
+      "stateDiagram-v2",
+      "    [*] --> Idle",
+      "    Idle --> ${1:Running} : start",
+      "    ${1:Running} --> Paused : pause",
+      "    Paused --> ${1:Running} : resume",
+      "    ${1:Running} --> [*] : stop$0",
+      "```"
+    ]
+  },
+  "Mermaid ER - Database": {
+    "prefix": "mmd-er",
+    "description": "實體關聯圖:主鍵與一對多關係",
+    "body": [
+      "```mermaid",
+      "erDiagram",
+      "    ${1:CUSTOMER} ||--o{ ${2:ORDER} : places",
+      "    ${2:ORDER} ||--|{ ORDER_ITEM : contains",
+      "    PRODUCT ||--o{ ORDER_ITEM : \"ordered in\"",
+      "    ${1:CUSTOMER} {",
+      "        int id PK",
+      "        string name",
+      "        string email",
+      "    }",
+      "    ${2:ORDER} {",
+      "        int id PK",
+      "        date created_at",
+      "    }$0",
+      "```"
+    ]
+  },
+  "Mermaid Pie Chart": {
+    "prefix": "mmd-pie",
+    "description": "圓餅圖:各項占比",
+    "body": [
+      "```mermaid",
+      "pie title ${1:Browser Share}",
+      "    \"Chrome\" : 62",
+      "    \"Safari\" : 20",
+      "    \"Edge\" : 10",
+      "    \"Other\" : 8$0",
+      "```"
+    ]
+  },
+  "Mermaid Quadrant Chart": {
+    "prefix": "mmd-quad",
+    "description": "象限圖:四象限定位",
+    "body": [
+      "```mermaid",
+      "quadrantChart",
+      "    title ${1:Reach and engagement}",
+      "    x-axis Low Reach --> High Reach",
+      "    y-axis Low Engagement --> High Engagement",
+      "    quadrant-1 Expand",
+      "    quadrant-2 Promote",
+      "    quadrant-3 Re-evaluate",
+      "    quadrant-4 Improve",
+      "    Campaign A: [0.3, 0.6]",
+      "    Campaign B: [0.45, 0.23]",
+      "    Campaign C: [0.78, 0.34]$0",
+      "```"
+    ]
+  },
+  "Mermaid XY Chart (beta)": {
+    "prefix": "mmd-xy",
+    "description": "XY 圖(beta):長條加折線",
+    "body": [
+      "```mermaid",
+      "xychart-beta",
+      "    title \"${1:Sales Revenue}\"",
+      "    x-axis [Jan, Feb, Mar, Apr, May, Jun]",
+      "    y-axis \"Revenue (k)\" 0 --> 100",
+      "    bar [25, 48, 38, 60, 72, 85]",
+      "    line [20, 40, 45, 55, 70, 90]$0",
+      "```"
+    ]
+  },
+  "Mermaid Sankey (beta)": {
+    "prefix": "mmd-sankey",
+    "description": "桑基圖(beta):流量分配(CSV 三欄)",
+    "body": [
+      "```mermaid",
+      "sankey-beta",
+      "    ${1:Traffic},Organic,420",
+      "    ${1:Traffic},Ads,260",
+      "    Organic,Signup,180",
+      "    Ads,Signup,90",
+      "    Signup,Paid,60$0",
+      "```"
+    ]
+  },
+  "Mermaid Gantt": {
+    "prefix": "mmd-gantt",
+    "description": "甘特圖:分區與相依任務",
+    "body": [
+      "```mermaid",
+      "gantt",
+      "    title ${1:Project Plan}",
+      "    dateFormat YYYY-MM-DD",
+      "    section Design",
+      "        Requirements :done, a1, ${2:2026-06-01}, 5d",
+      "        Mockups      :active, a2, after a1, 7d",
+      "    section Build",
+      "        Implementation :b1, after a2, 14d",
+      "        Testing        :b2, after b1, 7d$0",
+      "```"
+    ]
+  },
+  "Mermaid Timeline": {
+    "prefix": "mmd-timeline",
+    "description": "時間軸:依年代分段事件",
+    "body": [
+      "```mermaid",
+      "timeline",
+      "    title ${1:Product History}",
+      "    section 2024",
+      "        Q3 : Prototype",
+      "        Q4 : Private beta",
+      "    section 2025",
+      "        Q1 : Public launch",
+      "        Q3 : Mobile app",
+      "    section 2026",
+      "        Q1 : Enterprise tier$0",
+      "```"
+    ]
+  },
+  "Mermaid User Journey": {
+    "prefix": "mmd-journey",
+    "description": "使用者旅程圖:任務與滿意度評分",
+    "body": [
+      "```mermaid",
+      "journey",
+      "    title ${1:Checkout experience}",
+      "    section Browse",
+      "        Search products: 5: Customer",
+      "        Compare options: 3: Customer",
+      "    section Purchase",
+      "        Add to cart: 4: Customer",
+      "        Pay: 2: Customer, Support",
+      "    section After",
+      "        Track delivery: 4: Customer$0",
+      "```"
+    ]
+  },
+  "Mermaid Kanban": {
+    "prefix": "mmd-kanban",
+    "description": "看板:欄位與工作項",
+    "body": [
+      "```mermaid",
+      "kanban",
+      "    Todo",
+      "        [${1:Design login page}]",
+      "        [Write API spec]",
+      "    In progress",
+      "        [Implement auth]",
+      "    Done",
+      "        [Project setup]$0",
+      "```"
+    ]
+  },
+  "Mermaid Mindmap": {
+    "prefix": "mmd-mind",
+    "description": "心智圖:中心主題與分支",
+    "body": [
+      "```mermaid",
+      "mindmap",
+      "  root((${1:Project}))",
+      "    Goals",
+      "      Launch MVP",
+      "      Grow users",
+      "    Risks",
+      "      Scope creep",
+      "      Timeline",
+      "    Team",
+      "      Backend",
+      "      Frontend$0",
+      "```"
+    ]
+  },
+  "Mermaid C4 - System Context": {
+    "prefix": "mmd-c4",
+    "description": "C4 系統情境圖:人員、系統與邊界",
+    "body": [
+      "```mermaid",
+      "C4Context",
+      "    title ${1:System Context}",
+      "    Person(user, \"User\", \"A customer of the platform\")",
+      "    System(app, \"${2:Web App}\", \"Provides the core features\")",
+      "    System_Ext(mail, \"Mail Service\", \"Sends notifications\")",
+      "    Rel(user, app, \"Uses\")",
+      "    Rel(app, mail, \"Sends email via\")$0",
+      "```"
+    ]
+  },
+  "Mermaid Architecture (beta)": {
+    "prefix": "mmd-arch",
+    "description": "架構圖(beta):群組、服務與連線",
+    "body": [
+      "```mermaid",
+      "architecture-beta",
+      "    group cloud(cloud)[${1:Cloud}]",
+      "    service api(server)[API] in cloud",
+      "    service db(database)[Database] in cloud",
+      "    service disk(disk)[Storage] in cloud",
+      "    api:R --> L:db",
+      "    db:R --> L:disk$0",
+      "```"
+    ]
+  },
+  "Mermaid Block (beta)": {
+    "prefix": "mmd-block",
+    "description": "區塊圖(beta):欄位配置與箭頭",
+    "body": [
+      "```mermaid",
+      "block-beta",
+      "    columns 3",
+      "    Frontend blockArrowId<[\"API\"]>(right) Backend",
+      "    space down1<[\" \"]>(down) space",
+      "    Cache[\"${1:Cache}\"] space DB[(\"Database\")]$0",
+      "```"
+    ]
+  },
+  "Mermaid Packet (beta)": {
+    "prefix": "mmd-packet",
+    "description": "封包圖(beta):位元欄位配置",
+    "body": [
+      "```mermaid",
+      "packet-beta",
+      "    0-15: \"Source Port\"",
+      "    16-31: \"Destination Port\"",
+      "    32-63: \"Sequence Number\"",
+      "    64-95: \"Acknowledgment Number\"$0",
+      "```"
+    ]
+  },
+  "Mermaid Git Graph": {
+    "prefix": "mmd-git",
+    "description": "Git 分支圖:branch / merge / tag",
+    "body": [
+      "```mermaid",
+      "gitGraph",
+      "    commit id: \"init\"",
+      "    branch ${1:feature}",
+      "    checkout ${1:feature}",
+      "    commit id: \"work\"",
+      "    commit id: \"more work\"",
+      "    checkout main",
+      "    merge ${1:feature} tag: \"v1.0\"",
+      "    commit id: \"hotfix\"$0",
+      "```"
+    ]
+  },
+  "Mermaid Requirement": {
+    "prefix": "mmd-req",
+    "description": "需求圖:需求、元素與 satisfies 關係",
+    "body": [
+      "```mermaid",
+      "requirementDiagram",
+      "    requirement ${1:login_req} {",
+      "        id: 1",
+      "        text: Users must be able to log in.",
+      "        risk: medium",
+      "        verifymethod: test",
+      "    }",
+      "    element auth_service {",
+      "        type: service",
+      "    }",
+      "    auth_service - satisfies -> ${1:login_req}$0",
+      "```"
+    ]
+  }
+}

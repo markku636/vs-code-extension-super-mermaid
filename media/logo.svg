@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- transparent background; nodes use the Colorful theme's Tailwind palette -->
+  <g stroke="#64748B" stroke-width="12" fill="none" stroke-linecap="round">
+    <line x1="116" y1="78" x2="140" y2="78"/>
+    <line x1="72" y1="108" x2="72" y2="148"/>
+    <line x1="184" y1="108" x2="184" y2="148"/>
+    <line x1="116" y1="178" x2="140" y2="178"/>
+  </g>
+  <rect x="28" y="48" width="88" height="60" rx="16" fill="#60A5FA"/>
+  <rect x="140" y="48" width="88" height="60" rx="16" fill="#4ADE80"/>
+  <rect x="28" y="148" width="88" height="60" rx="16" fill="#FB923C"/>
+  <rect x="140" y="148" width="88" height="60" rx="16" fill="#C084FC"/>
+</svg>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<!-- Simulates VS Code's built-in markdown preview DOM to smoke-test
+     dist/markdownPreview.js. Not packaged. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Markdown Preview Harness</title>
+  <style>body { font-family: "Segoe UI", sans-serif; padding: 16px; }</style>
+</head>
+<body class="vscode-dark">
+  <h1>三方遊戲串接流程圖</h1>
+  <pre><code class="language-mermaid">flowchart LR
+    A["玩家"] -->|"進入遊戲"| B["TpService"]
+    B --> C["三方遊戲商"]</code></pre>
+  <p>some text between</p>
+  <pre><code class="language-mermaid">sequenceDiagram
+    Player->>TpService: GotoGame()
+    TpService-->>Player: 遊戲 URL</code></pre>
+  <pre><code class="language-mermaid">erDiagram
+    CUSTOMER ||--o{ TPBETRECORD : places
+    CUSTOMER {
+        bigint CustId PK
+        varchar UserName
+    }
+    TPBETRECORD {
+        bigint RecordId PK
+        bigint CustId FK
+        decimal BetAmount
+    }
+    TPWAGER ||--|| TPBETRECORD : settles
+    TPWAGER {
+        bigint WagerId PK
+        varchar TicketNo
+    }</code></pre>
+  <pre><code class="language-js">console.log('not mermaid, must stay untouched')</code></pre>
+  <script src="../dist/markdownPreview.js"></script>
+</body>
+</html>

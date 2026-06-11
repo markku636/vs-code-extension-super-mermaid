@@ -1,0 +1,12 @@
+node_modules/**
+src/**
+webview/**
+examples/**
+test/**
+.vscode/**
+esbuild.mjs
+pack.ps1
+scripts/**
+tsconfig.json
+**/*.map
+.gitignore

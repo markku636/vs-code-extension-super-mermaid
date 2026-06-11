@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<!-- Standalone smoke-test harness: simulates the VS Code webview environment
+     so dist/webview.js can be exercised in a plain browser. Not packaged.
+     Keep the body skeleton in sync with PreviewPanel.getHtml(). -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="../media/webview.css" />
+  <style>
+    body.vscode-dark {
+      --vscode-font-family: "Segoe WPC", "Segoe UI", sans-serif;
+      --vscode-editor-font-family: Consolas, "Courier New", monospace;
+      --vscode-foreground: #cccccc;
+      --vscode-icon-foreground: #c5c5c5;
+      --vscode-descriptionForeground: #9d9d9d;
+      --vscode-editor-background: #1f1f1f;
+      --vscode-editorWidget-background: #202020;
+      --vscode-editorWidget-border: #454545;
+      --vscode-toolbar-hoverBackground: rgba(90, 93, 94, 0.31);
+      --vscode-dropdown-background: #313131;
+      --vscode-dropdown-foreground: #cccccc;
+      --vscode-dropdown-border: #3c3c3c;
+      --vscode-inputValidation-errorBackground: #5a1d1d;
+      --vscode-inputValidation-errorBorder: #be1100;
+      --vscode-focusBorder: #007fd4;
+      --vscode-errorForeground: #f48771;
+    }
+  </style>
+  <title>Mermaid Preview Harness</title>
+</head>
+<body class="vscode-dark">
+  <div id="toolbar">
+    <select id="block-select" hidden title="Select diagram"></select>
+    <button id="zoom-out" title="Zoom out (-)">－</button>
+    <span id="zoom-level" title="Click for actual size (1)">100%</span>
+    <button id="zoom-in" title="Zoom in (+)">＋</button>
+    <button id="zoom-reset" title="Fit to view (0)">⛶</button>
+    <button id="fit-width" title="Fit width (w)">↔</button>
+    <button id="gallery-toggle" title="Gallery — all diagrams (g)">▦</button>
+    <div class="sep"></div>
+    <select id="theme-select" title="Mermaid theme / style">
+      <option value="colorful">Colorful</option>
+      <option value="auto">Auto</option>
+      <option value="default">Light</option>
+      <option value="dark">Dark</option>
+      <option value="neutral">Neutral</option>
+      <option value="forest">Forest</option>
+    </select>
+    <div class="sep"></div>
+    <button id="export-menu-btn" title="Export diagram…">⬇</button>
+    <div class="sep"></div>
+    <button id="more-btn" title="More…">⋯</button>
+  </div>
+  <div id="export-menu" class="dropdown" hidden>
+    <button class="menu-item" data-format="svg">⬇<span>Export SVG</span></button>
+    <button class="menu-item" data-format="png">⬇<span>Export PNG</span></button>
+    <button class="menu-item" data-format="jpg">⬇<span>Export JPG</span></button>
+    <button class="menu-item" data-format="webp">⬇<span>Export WebP</span></button>
+    <div class="menu-sep"></div>
+    <button class="menu-item" id="menu-export-all-png">▦<span>Export all (PNG)</span></button>
+    <button class="menu-item" id="menu-export-all-svg">▦<span>Export all (SVG)</span></button>
+    <div class="menu-sep"></div>
+    <div class="menu-row">
+      <span>Scale</span>
+      <select id="png-scale" title="Raster resolution">
+        <option value="1">1x</option>
+        <option value="2">2x</option>
+        <option value="4">4x</option>
+      </select>
+    </div>
+    <label class="menu-row" title="PNG / WebP only">
+      <input type="checkbox" id="bg-transparent" />
+      <span>Transparent background</span>
+    </label>
+  </div>
+  <div id="more-menu" class="dropdown" hidden>
+    <button class="menu-item" id="menu-lock">🔒<span id="menu-lock-label">Lock to current file</span></button>
+    <button class="menu-item" id="menu-refresh">⟳<span>Re-render</span></button>
+    <div class="menu-sep"></div>
+    <button class="menu-item" id="menu-fullscreen">⤢<span>Maximize panel (f)</span></button>
+    <button class="menu-item" id="menu-popout">⧉↗<span>Open in new window</span></button>
+  </div>
+  <div id="canvas">
+    <div id="diagram"></div>
+    <div id="gallery" hidden></div>
+    <div id="empty" hidden>
+      <div class="empty-title">No Mermaid diagram found</div>
+      <div class="empty-hint">Add a ```mermaid code block, or open a .mmd file</div>
+    </div>
+    <div id="error" hidden></div>
+    <div id="toast"></div>
+  </div>
+  <script>
+    const FLOW_SOURCE = `---
+title: Payment Flow
+---
+flowchart LR
+    subgraph Player["玩家端"]
+        P[玩家]
+    end
+    subgraph TPS["ThirdPartyService"]
+        GotoGame["APIController<br/>GotoGame()"]
+        TpBLL["ThirdPartyBLL"]
+    end
+    P -->|"進入遊戲"| GotoGame
+    GotoGame --> TpBLL
+    TpBLL -.->|"遊戲 URL"| P`;
+
+    const SEQ_SOURCE = `sequenceDiagram
+    autonumber
+    Player->>TpService: GotoGame(TpId, CustId)
+    TpService->>Provider: Login API
+    Provider-->>TpService: 遊戲 URL`;
+
+    const PIE_SOURCE = `pie title Browser Share
+    "Chrome" : 62
+    "Safari" : 20
+    "Other" : 18`;
+
+    const GANTT_SOURCE = `gantt
+    title Plan
+    dateFormat YYYY-MM-DD
+    section Design
+        Req :done, a1, 2026-06-01, 5d
+        Mock :active, a2, after a1, 7d
+    section Build
+        Impl :b1, after a2, 14d`;
+
+    const TIMELINE_SOURCE = `timeline
+    title History
+    section 2025
+        Q1 : Launch
+        Q3 : Mobile
+    section 2026
+        Q1 : Enterprise`;
+
+    const MINDMAP_SOURCE = `mindmap
+  root((Project))
+    Goals
+      MVP
+    Risks
+      Scope`;
+
+    const JOURNEY_SOURCE = `journey
+    title Checkout
+    section Browse
+        Search: 5: Customer
+    section Purchase
+        Pay: 2: Customer`;
+
+    const BROKEN_SOURCE = `flowchart LR
+  A --`;
+
+    const BLOCKS = [
+      { source: FLOW_SOURCE, title: 'Payment Flow', label: '1 · Payment Flow (L3)' },
+      { source: SEQ_SOURCE, title: 'sequenceDiagram', label: '2 · sequenceDiagram (L30)' },
+      { source: PIE_SOURCE, title: 'pie', label: '3 · pie (L40)' },
+      { source: GANTT_SOURCE, title: 'gantt', label: '4 · gantt (L50)' },
+      { source: TIMELINE_SOURCE, title: 'timeline', label: '5 · timeline (L60)' },
+      { source: MINDMAP_SOURCE, title: 'mindmap', label: '6 · mindmap (L70)' },
+      { source: JOURNEY_SOURCE, title: 'journey', label: '7 · journey (L80)' },
+      { source: BROKEN_SOURCE, title: 'flowchart', label: '8 · flowchart (L90)' },
+    ];
+
+    window.__exports = [];
+    window.__copies = [];
+    window.__locks = [];
+    window.__reveals = [];
+    window.__diagnostics = [];
+    window.__exportAll = { files: [], errors: [], done: false };
+    window.__state = undefined;
+    window.acquireVsCodeApi = () => ({
+      postMessage(msg) {
+        if (msg.type === 'ready') {
+          window.postMessage({
+            type: 'update',
+            uri: 'file:///d:/fake/third-party-game-flow.md',
+            version: 1,
+            fileName: 'third-party-game-flow.md',
+            blocks: BLOCKS,
+            activeIndex: 0,
+          }, '*');
+        } else if (msg.type === 'export') {
+          window.__exports.push({ format: msg.format, suggestedName: msg.suggestedName, size: msg.data.length, data: msg.data });
+        } else if (msg.type === 'copyText') {
+          window.__copies.push({ what: msg.what, size: msg.text.length, text: msg.text });
+        } else if (msg.type === 'setLocked') {
+          window.__locks.push(msg.locked);
+        } else if (msg.type === 'revealBlock') {
+          window.__reveals.push(msg.index);
+        } else if (msg.type === 'diagnostics') {
+          window.__diagnostics.push(msg);
+        } else if (msg.type === 'exportAllRequest') {
+          window.__exportAll = { files: [], errors: [], done: false, format: msg.format, count: msg.count };
+          window.postMessage({ type: 'exportAllStart' }, '*');
+        } else if (msg.type === 'exportAllFile') {
+          window.__exportAll.files.push({ index: msg.index, name: msg.name, size: msg.data.length, head: msg.data.slice(0, 40) });
+        } else if (msg.type === 'exportAllError') {
+          window.__exportAll.errors.push({ index: msg.index, label: msg.label, message: msg.message });
+        } else if (msg.type === 'exportAllDone') {
+          window.__exportAll.done = true;
+        }
+      },
+      getState() { return window.__state; },
+      setState(s) { window.__state = s; },
+    });
+  </script>
+  <script src="../dist/webview.js"></script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+{
+  "name": "super-mermaid",
+  "displayName": "Super Mermaid",
+  "description": "Mermaid diagrams that look good out of the box — auto-colored live preview with pan/zoom, plus one-click hi-res PNG/SVG export (up to 4x, transparent background, batch Export All).",
+  "version": "0.5.1",
+  "publisher": "mark-ku",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization"
+  ],
+  "icon": "media/logo.png",
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:mermaid"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mermaid",
+        "aliases": [
+          "Mermaid"
+        ],
+        "extensions": [
+          ".mmd",
+          ".mermaid"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mermaid",
+        "scopeName": "source.mermaid",
+        "path": "./syntaxes/mermaid.tmLanguage.json"
+      },
+      {
+        "scopeName": "markdown.mermaid.codeblock",
+        "path": "./syntaxes/mermaid-markdown.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.mermaid": "mermaid"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "mermaid",
+        "path": "./snippets/mermaid.json"
+      },
+      {
+        "language": "markdown",
+        "path": "./snippets/markdown.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "superMermaid.openToSide",
+        "title": "Open Preview to the Side",
+        "category": "Super Mermaid",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "superMermaid.editDiagram",
+        "title": "Edit Diagram",
+        "category": "Super Mermaid"
+      },
+      {
+        "command": "superMermaid.insertTemplate",
+        "title": "Insert Diagram Template",
+        "category": "Super Mermaid",
+        "icon": "$(library)"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "superMermaid.menu",
+        "label": "Super Mermaid"
+      }
+    ],
+    "configuration": {
+      "title": "Super Mermaid",
+      "properties": {
+        "superMermaid.previewLocation": {
+          "type": "string",
+          "enum": [
+            "newWindow",
+            "beside"
+          ],
+          "enumDescriptions": [
+            "Open the preview in a separate floating window",
+            "Open the preview beside the editor (split view)"
+          ],
+          "default": "beside",
+          "markdownDescription": "Where to open the Mermaid preview. `beside` opens it as a split beside the editor (same as the built-in Markdown preview); `newWindow` pops it out into its own floating window."
+        }
+      }
+    },
+    "markdown.previewScripts": [
+      "./dist/markdownPreview.js"
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "superMermaid.openToSide",
+          "when": "editorLangId == markdown || editorLangId == mermaid",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "superMermaid.menu",
+          "when": "editorLangId == markdown || editorLangId == mermaid",
+          "group": "1_superMermaid"
+        }
+      ],
+      "superMermaid.menu": [
+        {
+          "command": "superMermaid.openToSide",
+          "group": "1_preview@1"
+        },
+        {
+          "command": "superMermaid.insertTemplate",
+          "group": "2_insert@1"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "superMermaid.openToSide",
+          "when": "resourceLangId == markdown || resourceLangId == mermaid",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "superMermaid.openToSide",
+          "when": "editorLangId == markdown || editorLangId == mermaid"
+        },
+        {
+          "command": "superMermaid.editDiagram",
+          "when": "false"
+        },
+        {
+          "command": "superMermaid.insertTemplate"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "package": "vsce package --no-dependencies --allow-missing-repository",
+    "gen:snippets": "node scripts/genSnippets.mjs",
+    "build": "tsc --noEmit && node scripts/genSnippets.mjs && node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "type:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.25.0",
+    "mermaid": "^11.15.0",
+    "svg-pan-zoom": "^3.6.2",
+    "typescript": "^5.6.0"
+  }
+}
