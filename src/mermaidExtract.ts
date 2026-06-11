@@ -21,15 +21,33 @@ export interface ExtractOptions {
   includeEmpty?: boolean;
 }
 
+/**
+ * Whole-file mermaid document (.mmd / .mermaid). Other extensions may claim
+ * the file association under their own language ids (e.g. the official
+ * Mermaid Chart extension assigns per-diagram ids like "mermaid.flowchart"),
+ * so match the language id prefix and the file extension, not just "mermaid".
+ * An explicit markdown language mode always wins.
+ */
+export function isMermaidFileDoc(doc: vscode.TextDocument): boolean {
+  if (doc.languageId === 'markdown') {
+    return false;
+  }
+  return (
+    doc.languageId === 'mermaid' ||
+    doc.languageId.startsWith('mermaid.') ||
+    /\.(mmd|mermaid)$/i.test(doc.fileName)
+  );
+}
+
 export function isSupportedDoc(doc: vscode.TextDocument): boolean {
-  return doc.languageId === 'markdown' || doc.languageId === 'mermaid';
+  return doc.languageId === 'markdown' || isMermaidFileDoc(doc);
 }
 
 export function extractMermaidBlocks(
   doc: vscode.TextDocument,
   opts: ExtractOptions = {},
 ): MermaidBlock[] {
-  if (doc.languageId === 'mermaid') {
+  if (isMermaidFileDoc(doc)) {
     const text = doc.getText();
     if (!text.trim() && !opts.includeEmpty) {
       return [];
@@ -85,7 +103,7 @@ export function blockAtPosition(
   doc: vscode.TextDocument,
   line: number,
 ): MermaidBlock | undefined {
-  if (doc.languageId === 'mermaid') {
+  if (isMermaidFileDoc(doc)) {
     return extractMermaidBlocks(doc, { includeEmpty: true })[0];
   }
   const blocks = extractMermaidBlocks(doc, { includeEmpty: true });

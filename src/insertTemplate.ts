@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { blockAtPosition } from './mermaidExtract';
+import { blockAtPosition, isSupportedDoc } from './mermaidExtract';
 import { PreviewPanel } from './previewPanel';
 import { fencedBody, MermaidTemplate, TEMPLATES, TemplateCategory } from './templates';
 
@@ -37,7 +37,7 @@ export function registerInsertTemplateCommand(context: vscode.ExtensionContext):
     const template = picked.template;
 
     let editor = vscode.window.activeTextEditor;
-    if (!editor || !['markdown', 'mermaid'].includes(editor.document.languageId)) {
+    if (!editor || !isSupportedDoc(editor.document)) {
       // No suitable target: open a fresh untitled mermaid document.
       const doc = await vscode.workspace.openTextDocument({ language: 'mermaid', content: '' });
       editor = await vscode.window.showTextDocument(doc, { preview: false });

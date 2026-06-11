@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { blockAtPosition } from './mermaidExtract';
+import { blockAtPosition, isMermaidFileDoc } from './mermaidExtract';
 
 interface KeywordSet {
   keywords: string[];
@@ -239,7 +239,7 @@ export class MermaidCompletionProvider implements vscode.CompletionItemProvider 
     if (!/^\s*[\w-]*$/.test(linePrefix)) {
       return false;
     }
-    const contentStart = doc.languageId === 'mermaid' ? 0 : fenceLine + 1;
+    const contentStart = isMermaidFileDoc(doc) ? 0 : fenceLine + 1;
     for (let l = contentStart; l < line; l++) {
       const text = doc.lineAt(l).text.trim();
       if (text && !text.startsWith('%%')) {

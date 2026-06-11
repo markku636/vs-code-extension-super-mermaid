@@ -7,6 +7,16 @@ import { isSupportedDoc } from './mermaidExtract';
 import { PreviewPanel } from './previewPanel';
 import { MermaidStatusBar } from './statusBar';
 
+// Match by language AND by file extension: other extensions (e.g. Mermaid
+// Chart) can take over .mmd files under their own language ids such as
+// "mermaid.flowchart", which would otherwise disable us for those files.
+const SUPPORTED_SELECTOR: vscode.DocumentSelector = [
+  { language: 'markdown' },
+  { language: 'mermaid' },
+  { pattern: '**/*.mmd' },
+  { pattern: '**/*.mermaid' },
+];
+
 export function activate(context: vscode.ExtensionContext): void {
   const codeLensProvider = new MermaidCodeLensProvider();
   const statusBar = new MermaidStatusBar();
@@ -19,12 +29,9 @@ export function activate(context: vscode.ExtensionContext): void {
     codeLensProvider,
     statusBar,
     diagnostics,
-    vscode.languages.registerCodeLensProvider(
-      [{ language: 'markdown' }, { language: 'mermaid' }],
-      codeLensProvider,
-    ),
+    vscode.languages.registerCodeLensProvider(SUPPORTED_SELECTOR, codeLensProvider),
     vscode.languages.registerCompletionItemProvider(
-      [{ language: 'mermaid' }, { language: 'markdown' }],
+      SUPPORTED_SELECTOR,
       new MermaidCompletionProvider(),
       '-',
       '>',

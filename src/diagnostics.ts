@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { MermaidBlock } from './mermaidExtract';
+import { isMermaidFileDoc, MermaidBlock } from './mermaidExtract';
 
 export interface BlockError {
   index: number;
@@ -23,7 +23,7 @@ export class MermaidDiagnostics implements vscode.Disposable {
       if (!block) {
         continue;
       }
-      const contentStart = doc.languageId === 'mermaid' ? 0 : block.startLine + 1;
+      const contentStart = isMermaidFileDoc(doc) ? 0 : block.startLine + 1;
       // mermaid's preprocessor can shift reported lines by one — clamp into
       // the block so the squiggle never lands on the fence or outside it.
       let line = contentStart + (err.line ?? 1) - 1;

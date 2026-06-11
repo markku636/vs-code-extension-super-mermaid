@@ -2,7 +2,7 @@
   "name": "super-mermaid",
   "displayName": "Super Mermaid",
   "description": "Mermaid diagrams that look good out of the box — auto-colored live preview with pan/zoom, plus one-click hi-res PNG/SVG export (up to 4x, transparent background, batch Export All).",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "publisher": "mark-ku",
   "license": "MIT",
   "repository": {
@@ -20,7 +20,7 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:markdown",
-    "onLanguage:mermaid"
+    "onStartupFinished"
   ],
   "contributes": {
     "languages": [
@@ -113,14 +113,14 @@
       "editor/title": [
         {
           "command": "superMermaid.openToSide",
-          "when": "editorLangId == markdown || editorLangId == mermaid",
+          "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
           "submenu": "superMermaid.menu",
-          "when": "editorLangId == markdown || editorLangId == mermaid",
+          "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "1_superMermaid"
         }
       ],
@@ -137,14 +137,14 @@
       "explorer/context": [
         {
           "command": "superMermaid.openToSide",
-          "when": "resourceLangId == markdown || resourceLangId == mermaid",
+          "when": "resourceLangId == markdown || resourceLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "navigation"
         }
       ],
       "commandPalette": [
         {
           "command": "superMermaid.openToSide",
-          "when": "editorLangId == markdown || editorLangId == mermaid"
+          "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid"
         },
         {
           "command": "superMermaid.editDiagram",
