@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { deflateSync } from 'zlib';
 import { BlockError, MermaidDiagnostics } from './diagnostics';
 import { extractMermaidBlocks, MermaidBlock } from './mermaidExtract';
 
@@ -21,6 +22,7 @@ type WebviewMessage =
   | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
   | { type: 'copyText'; text: string; what: string }
   | { type: 'copyImageFallback'; data: string }
+  | { type: 'shareLive'; code: string; theme: string }
   | { type: 'setLocked'; locked: boolean }
   | { type: 'toggleFullscreen' }
   | { type: 'popOut' }
@@ -72,6 +74,8 @@ const ICON_POPOUT =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9 2h5v5h-1.5V4.56L7.78 9.28 6.72 8.22l4.72-4.72H9V2ZM3.5 4H7v1.5H3.5v7h7V9H12v3.5A1.5 1.5 0 0 1 10.5 14h-7A1.5 1.5 0 0 1 2 12.5v-7A1.5 1.5 0 0 1 3.5 4Z"/></svg>';
 const ICON_REFRESH =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.6v3.2h-3.2" stroke-linejoin="round"/></svg>';
+const ICON_SHARE =
+  '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6.6 9.4l2.8-2.8"/><path d="M7.6 4.6l1.2-1.2a2.55 2.55 0 0 1 3.6 3.6l-1.2 1.2"/><path d="M8.4 11.4l-1.2 1.2a2.55 2.55 0 0 1-3.6-3.6l1.2-1.2"/></svg>';
 const ICON_COPY =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M10.5 5.5v-2A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5h2"/></svg>';
 const ICON_GALLERY =
@@ -258,6 +262,9 @@ export class PreviewPanel {
       case 'copyImageFallback':
         await this.copyImageViaOs(msg.data);
         break;
+      case 'shareLive':
+        await this.shareToMermaidLive(msg.code, msg.theme);
+        break;
       case 'setLocked':
         this.locked = msg.locked;
         break;
@@ -370,6 +377,35 @@ export class PreviewPanel {
       void vscode.window.showWarningMessage(
         `Super Mermaid: exported ${pending.written} of ${pending.total} diagrams to ${where} — skipped ${detail}`,
       );
+    }
+  }
+
+  /**
+   * mermaid.live keeps the whole editor state in the URL fragment as
+   * pako-deflated base64url JSON — nothing is sent to a server until the
+   * link is opened. Node's zlib emits the same zlib stream pako expects.
+   */
+  private async shareToMermaidLive(code: string, theme: string): Promise<void> {
+    const state = JSON.stringify({
+      code,
+      mermaid: JSON.stringify({ theme }),
+      autoSync: true,
+      updateDiagram: true,
+    });
+    const encoded = deflateSync(Buffer.from(state, 'utf8'), { level: 9 }).toString('base64url');
+    const url = `https://mermaid.live/edit#pako:${encoded}`;
+    const warning =
+      url.length > 8000 ? ' (very long link — some chat apps may truncate it)' : '';
+    const action = await vscode.window.showInformationMessage(
+      `Super Mermaid: share link ready${warning}`,
+      'Open in Browser',
+      'Copy URL',
+    );
+    if (action === 'Open in Browser') {
+      await vscode.env.openExternal(vscode.Uri.parse(url));
+    } else if (action === 'Copy URL') {
+      await vscode.env.clipboard.writeText(url);
+      void vscode.window.showInformationMessage('Super Mermaid: share URL copied to clipboard');
     }
   }
 
@@ -493,6 +529,7 @@ export class PreviewPanel {
   <div id="more-menu" class="dropdown" hidden>
     <button class="menu-item" id="menu-lock">${ICON_LOCK}<span id="menu-lock-label">Lock to current file</span></button>
     <button class="menu-item" id="menu-refresh">${ICON_REFRESH}<span>Re-render</span></button>
+    <button class="menu-item" id="menu-share-live">${ICON_SHARE}<span>Share to mermaid.live</span></button>
     <div class="menu-sep"></div>
     <button class="menu-item" id="menu-fullscreen">${ICON_EXPAND}<span>Maximize panel (f)</span></button>
     <button class="menu-item" id="menu-popout">${ICON_POPOUT}<span>Open in new window</span></button>

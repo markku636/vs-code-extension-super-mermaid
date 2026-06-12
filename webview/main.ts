@@ -858,6 +858,22 @@ document.getElementById('menu-lock')!.addEventListener('click', () => {
   showToast(locked ? 'Locked to current file' : 'Following the active editor');
   vscodeApi.postMessage({ type: 'setLocked', locked });
 });
+/** Closest mermaid.live theme for the current preview style. */
+function liveTheme(): string {
+  if (themePref === 'colorful' || themePref === 'auto' || themePref === 'sketch') {
+    return darkTheme ? 'dark' : 'default';
+  }
+  return themePref;
+}
+
+document.getElementById('menu-share-live')!.addEventListener('click', () => {
+  closeMenus();
+  const block = blocks[activeIndex];
+  if (!block) {
+    return;
+  }
+  vscodeApi.postMessage({ type: 'shareLive', code: block.source, theme: liveTheme() });
+});
 document.getElementById('menu-refresh')!.addEventListener('click', () => {
   closeMenus();
   if (galleryMode) {
