@@ -437,6 +437,77 @@ function highlightGalleryCard(index: number): void {
   }
 }
 
+// ─── Click-to-source (preview → editor) ─────────────────────────────────────
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** The enclosing element that maps back to one source statement, if any. */
+function clickableGroupFor(target: Element): Element | undefined {
+  const group = target.closest('g.node, g.cluster, g.mindmap-node, g[class*="timeline-node"]');
+  if (group) {
+    return group;
+  }
+  // Sequence-diagram actors: rect.actor / text.actor inside a plain <g>.
+  const actor = target.closest('.actor');
+  return actor?.parentElement ?? undefined;
+}
+
+/**
+ * Best-effort lookup of the source line a rendered node came from. Mermaid
+ * embeds the author's identifier in the element id ("flowchart-NodeId-12" →
+ * "NodeId"); diagram types without such ids fall back to the label text.
+ */
+function sourceLineFor(group: Element, source: string): number | undefined {
+  const lines = source.split('\n');
+  const idMatch = group.id.match(/^[A-Za-z]\w*-(.+)-\d+$/);
+  if (idMatch) {
+    const re = new RegExp(`(^|[^\\w])${escapeRegExp(idMatch[1])}([^\\w]|$)`);
+    const byId = lines.findIndex((l) => re.test(l));
+    if (byId >= 0) {
+      return byId;
+    }
+  }
+  const label = group.querySelector('.nodeLabel, .label, text')?.textContent?.trim();
+  if (label) {
+    const byText = lines.findIndex((l) => l.includes(label));
+    if (byText >= 0) {
+      return byText;
+    }
+  }
+  return undefined;
+}
+
+// svg-pan-zoom pans with the same button — only treat press+release in place
+// as a click, so dragging never jumps the editor around.
+let pointerDownAt: { x: number; y: number } | undefined;
+diagramEl.addEventListener('pointerdown', (e) => {
+  pointerDownAt = { x: e.clientX, y: e.clientY };
+});
+diagramEl.addEventListener('click', (e) => {
+  if (
+    pointerDownAt &&
+    (Math.abs(e.clientX - pointerDownAt.x) > 4 || Math.abs(e.clientY - pointerDownAt.y) > 4)
+  ) {
+    return;
+  }
+  const block = blocks[activeIndex];
+  if (!block || !(e.target instanceof Element)) {
+    return;
+  }
+  const group = clickableGroupFor(e.target);
+  if (!group) {
+    return;
+  }
+  const line = sourceLineFor(group, block.source);
+  if (line !== undefined) {
+    vscodeApi.postMessage({ type: 'revealLine', index: activeIndex, line });
+  } else {
+    vscodeApi.postMessage({ type: 'revealBlock', index: activeIndex });
+  }
+});
+
 // ─── Export pipeline ────────────────────────────────────────────────────────
 
 async function renderPristineSvg(

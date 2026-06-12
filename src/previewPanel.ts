@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { deflateSync } from 'zlib';
 import { BlockError, MermaidDiagnostics } from './diagnostics';
-import { extractMermaidBlocks, MermaidBlock } from './mermaidExtract';
+import { extractMermaidBlocks, isMermaidFileDoc, MermaidBlock } from './mermaidExtract';
 
 type PreviewLocation = 'newWindow' | 'beside';
 
@@ -19,6 +19,7 @@ type ExportFormat = 'svg' | 'png' | 'jpg' | 'webp';
 type WebviewMessage =
   | { type: 'ready' }
   | { type: 'revealBlock'; index: number }
+  | { type: 'revealLine'; index: number; line: number }
   | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
   | { type: 'copyText'; text: string; what: string }
   | { type: 'copyImageFallback'; data: string }
@@ -252,6 +253,9 @@ export class PreviewPanel {
       case 'revealBlock':
         this.revealBlock(msg.index);
         break;
+      case 'revealLine':
+        this.revealLine(msg.index, msg.line);
+        break;
       case 'export':
         await this.saveExport(msg);
         break;
@@ -446,6 +450,25 @@ export class PreviewPanel {
     }
     editor.revealRange(
       new vscode.Range(block.startLine, 0, block.startLine, 0),
+      vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+    );
+  }
+
+  /** Move the cursor to a clicked node's definition (line is relative to the block source). */
+  private revealLine(index: number, lineInSource: number): void {
+    this.activeIndex = index;
+    const block = this.blocks[index];
+    const editor = this.findSourceEditor();
+    if (!block || !editor) {
+      return;
+    }
+    // Fenced content starts the line after the opening fence; .mmd sources at line 0.
+    const contentStart = isMermaidFileDoc(this.doc) ? 0 : block.startLine + 1;
+    const line = Math.min(Math.max(contentStart + lineInSource, block.startLine), block.endLine);
+    const pos = new vscode.Position(line, 0);
+    editor.selection = new vscode.Selection(pos, pos);
+    editor.revealRange(
+      new vscode.Range(pos, pos),
       vscode.TextEditorRevealType.InCenterIfOutsideViewport,
     );
   }
