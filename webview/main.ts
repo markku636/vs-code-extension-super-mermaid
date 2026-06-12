@@ -612,6 +612,47 @@ async function exportDiagram(format: 'svg' | RasterFormat): Promise<void> {
   }
 }
 
+async function copyImage(): Promise<void> {
+  const block = blocks[activeIndex];
+  if (!block) {
+    return;
+  }
+  const { prepared } = await prepareExportSvgFor(block.source);
+  if (!prepared) {
+    return;
+  }
+  if (cannotRasterize(prepared)) {
+    // Canvas would taint on foreignObject labels — share the SVG markup instead.
+    showToast('This diagram type cannot be rasterized — copied SVG markup instead');
+    vscodeApi.postMessage({
+      type: 'copyText',
+      text: '<?xml version="1.0" encoding="UTF-8"?>\n' + prepared.serialized,
+      what: 'SVG markup',
+    });
+    return;
+  }
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await rasterize(prepared, pngScale, { mime: 'image/png', transparent: transparentBg });
+  } catch (err) {
+    showError(err, 'Copy failed');
+    return;
+  }
+  try {
+    if (typeof ClipboardItem === 'undefined') {
+      throw new Error('ClipboardItem unavailable');
+    }
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed.'))), 'image/png');
+    });
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    showToast(`Image copied (${pngScale}x)`);
+  } catch {
+    // Webview clipboards can be fussy — let the extension host go through the OS.
+    vscodeApi.postMessage({ type: 'copyImageFallback', data: rasterDataUrl(canvas, 'png') });
+  }
+}
+
 // ─── Export All ─────────────────────────────────────────────────────────────
 
 let exportAllFormat: 'svg' | RasterFormat = 'png';
@@ -795,6 +836,10 @@ for (const item of Array.from(exportMenuEl.querySelectorAll<HTMLButtonElement>('
     enqueue(() => exportDiagram(format));
   });
 }
+document.getElementById('menu-copy-image')!.addEventListener('click', () => {
+  closeMenus();
+  enqueue(() => copyImage());
+});
 document.getElementById('menu-export-all-png')!.addEventListener('click', () => {
   closeMenus();
   requestExportAll('png');
@@ -884,6 +929,8 @@ window.addEventListener('keydown', (e) => {
     actualSize();
   } else if (zoomKeysActive && e.key.toLowerCase() === 'w') {
     fitWidth();
+  } else if (zoomKeysActive && e.key.toLowerCase() === 'c') {
+    enqueue(() => copyImage());
   } else if (e.key.toLowerCase() === 'g') {
     galleryToggleBtn.click();
   } else if (e.key.toLowerCase() === 'f') {

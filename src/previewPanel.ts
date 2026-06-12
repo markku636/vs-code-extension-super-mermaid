@@ -1,3 +1,4 @@
+import { exec } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -19,6 +20,7 @@ type WebviewMessage =
   | { type: 'revealBlock'; index: number }
   | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
   | { type: 'copyText'; text: string; what: string }
+  | { type: 'copyImageFallback'; data: string }
   | { type: 'setLocked'; locked: boolean }
   | { type: 'toggleFullscreen' }
   | { type: 'popOut' }
@@ -70,6 +72,8 @@ const ICON_POPOUT =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9 2h5v5h-1.5V4.56L7.78 9.28 6.72 8.22l4.72-4.72H9V2ZM3.5 4H7v1.5H3.5v7h7V9H12v3.5A1.5 1.5 0 0 1 10.5 14h-7A1.5 1.5 0 0 1 2 12.5v-7A1.5 1.5 0 0 1 3.5 4Z"/></svg>';
 const ICON_REFRESH =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.6v3.2h-3.2" stroke-linejoin="round"/></svg>';
+const ICON_COPY =
+  '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M10.5 5.5v-2A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5h2"/></svg>';
 const ICON_GALLERY =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>';
 const ICON_EMPTY =
@@ -251,6 +255,9 @@ export class PreviewPanel {
         await vscode.env.clipboard.writeText(msg.text);
         void vscode.window.showInformationMessage(`Mermaid Preview: ${msg.what} copied to clipboard`);
         break;
+      case 'copyImageFallback':
+        await this.copyImageViaOs(msg.data);
+        break;
       case 'setLocked':
         this.locked = msg.locked;
         break;
@@ -366,6 +373,34 @@ export class PreviewPanel {
     }
   }
 
+  /**
+   * Clipboard-image fallback when the webview's navigator.clipboard is
+   * unavailable: write a temp PNG and hand it to the OS clipboard. Windows
+   * needs Clipboard.SetImage (Set-Clipboard -Path would only copy a file
+   * reference, which pastes as a file icon instead of the picture).
+   */
+  private async copyImageViaOs(dataUrl: string): Promise<void> {
+    const tmp = path.join(os.tmpdir(), `super-mermaid-clip-${Date.now()}.png`);
+    const tmpUri = vscode.Uri.file(tmp);
+    await vscode.workspace.fs.writeFile(tmpUri, decodeExportData('png', dataUrl));
+    const command =
+      process.platform === 'win32'
+        ? `powershell -NoProfile -STA -Command "Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $img=[System.Drawing.Image]::FromFile('${tmp}'); [System.Windows.Forms.Clipboard]::SetImage($img); $img.Dispose()"`
+        : process.platform === 'darwin'
+          ? `osascript -e 'set the clipboard to (read (POSIX file "${tmp}") as «class PNGf»)'`
+          : `xclip -selection clipboard -t image/png -i "${tmp}"`;
+    exec(command, (error) => {
+      void vscode.workspace.fs.delete(tmpUri).then(undefined, () => undefined);
+      if (error) {
+        void vscode.window.showErrorMessage(
+          'Super Mermaid: could not copy the image to the clipboard — use Export PNG instead.',
+        );
+      } else {
+        void vscode.window.showInformationMessage('Super Mermaid: image copied to clipboard');
+      }
+    });
+  }
+
   private revealBlock(index: number): void {
     this.activeIndex = index;
     const block = this.blocks[index];
@@ -463,6 +498,8 @@ export class PreviewPanel {
     <button class="menu-item" id="menu-popout">${ICON_POPOUT}<span>Open in new window</span></button>
   </div>
   <div id="export-menu" class="dropdown" hidden>
+    <button class="menu-item" id="menu-copy-image">${ICON_COPY}<span>Copy as image (c)</span></button>
+    <div class="menu-sep"></div>
     <button class="menu-item" data-format="svg">${ICON_DOWNLOAD}<span>Export SVG</span></button>
     <button class="menu-item" data-format="png">${ICON_DOWNLOAD}<span>Export PNG</span></button>
     <button class="menu-item" data-format="jpg">${ICON_DOWNLOAD}<span>Export JPG</span></button>
