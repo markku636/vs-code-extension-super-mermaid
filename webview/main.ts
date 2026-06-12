@@ -25,7 +25,7 @@ type InMessage =
   | { type: 'exportAllStart' }
   | { type: 'exportAllCancel' };
 
-type ThemePref = 'auto' | 'colorful' | 'default' | 'dark' | 'neutral' | 'forest';
+type ThemePref = 'auto' | 'colorful' | 'sketch' | 'default' | 'dark' | 'neutral' | 'forest';
 type RasterFormat = 'png' | 'jpg' | 'webp';
 
 interface PersistedState {
@@ -113,8 +113,9 @@ function isDarkTheme(): boolean {
 }
 
 function resolvedTheme(): 'default' | 'dark' | 'neutral' | 'forest' {
-  if (themePref === 'auto' || themePref === 'colorful') {
+  if (themePref === 'auto' || themePref === 'colorful' || themePref === 'sketch') {
     // Colorful renders on the auto base theme, then repaints nodes afterwards.
+    // Sketch keeps the auto base theme too — the hand-drawn look does the rest.
     return isDarkTheme() ? 'dark' : 'default';
   }
   return themePref;
@@ -138,6 +139,11 @@ function baseMermaidConfig(): MermaidConfig {
     // read dramatically cleaner.
     config.flowchart = { nodeSpacing: 60, rankSpacing: 65, padding: 12 };
     config.sequence = { actorMargin: 70, boxMargin: 12 };
+  }
+  if (themePref === 'sketch') {
+    config.look = 'handDrawn';
+    // Seed 0 means random — pin it so re-renders don't wobble.
+    config.handDrawnSeed = 42;
   }
   return config;
 }

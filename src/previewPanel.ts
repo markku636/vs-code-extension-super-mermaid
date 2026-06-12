@@ -443,6 +443,7 @@ export class PreviewPanel {
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
       <option value="colorful">Colorful</option>
+      <option value="sketch">Sketch</option>
       <option value="auto">Auto</option>
       <option value="default">Light</option>
       <option value="dark">Dark</option>
