@@ -8,7 +8,7 @@
 
 - **Auto coloring**: Colorful is the default theme — flowcharts, sequence diagrams, ER diagrams, Gantt charts, pie charts, mindmaps, and timelines all get a modern palette with rounded corners and soft shadows, without changing a single line of mermaid code. Not your style? The toolbar can switch back to Sketch / Auto / Light / Dark / Neutral / Forest
 - **Sketch style**: a hand-drawn whiteboard look (mermaid's built-in `handDrawn` renderer) — one pick in the theme dropdown, applies to exports too
-- **Live preview**: updates about 0.3s after you type; mouse-wheel zoom, drag to pan, with Fit / Fit Width / 100% right on the toolbar
+- **Live preview**: updates about 0.3s after you type; mouse-wheel zoom, drag to pan, a Fit button on the toolbar and a floating `−` / `%` / `+` zoom pill in the corner
 - **Click a node to jump to its code**: clicking a node, subgraph, or actor in the preview moves the editor cursor to the line that defines it
 - **Find in diagram**: press `/` (or `Ctrl+F`) and type — everything else dims, matches stay lit, `Enter` cycles through them and the view centers on each
 - **Presentation mode**: press `p` for a full-screen slideshow of every diagram in the document — arrow keys to switch, `Esc` to leave; great for walking through architecture in a meeting
@@ -48,18 +48,18 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 | Control | What it does |
 | --- | --- |
 | Diagram dropdown | Switch between diagrams when one markdown file has several (also follows your cursor in the editor) |
-| `−` / `%` / `+` | Zoom out, current zoom level (click to reset to 100%), zoom in |
-| ⛶ | Fit: fit the whole diagram into the window (double-clicking the canvas does the same) |
-| ↔ | Fit Width: fill the width — use this for wide flowcharts |
-| 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
-| ▦ | Gallery: thumbnail overview of all diagrams, click a card to open it |
 | ▶ | Presentation mode: full-screen slideshow — click / arrow keys to switch, `Esc` or the ✕ button to leave |
+| ◎ | Fit: fit the whole diagram into the window (double-clicking the canvas does the same) |
+| ▦ | Gallery: thumbnail overview of all diagrams, click a card to open it |
+| 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
+| ⧉ | Open the preview in a new window |
+| ⤢ | Maximize the preview panel (`f`) |
 | Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
-| ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
 | 🔗 | Share to mermaid.live: opens or copies a link with the diagram encoded in the URL |
-| 🔒 | Lock the preview to the current file (stops it following the active editor) |
-| ⟳ | Re-render the current diagram |
-| ⤢ / ⧉ | Maximize panel (`f`) / open the preview in a new window |
+| ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
+| ⋯ More | Lock to current file, Re-render, Fit Width |
+
+Zoom sits in a floating `−` / `%` / `+` pill in the bottom-right corner of the canvas — click the `%` to jump back to 100%. When the panel is maximized or popped out to its own window, a ✕ in the top-right corner (or `Esc`) restores the layout and hands focus back to the editor.
 
 ### Keyboard shortcuts (when the preview panel has focus)
 
@@ -80,7 +80,7 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 
 ### Export tips
 
-- Export and copy resolution is controlled by the 1x / 2x / 4x setting on the toolbar; the default is 2x — use 4x for slides
+- Export and copy resolution is controlled by the 1x / 2x / 4x setting in the Export menu; the default is 2x — use 4x for slides
 - The background color follows the current theme; diagrams containing HTML tags (like journey) can't be rasterized, so they're automatically saved as SVG instead
 
 ---
