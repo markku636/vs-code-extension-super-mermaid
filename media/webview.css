@@ -72,7 +72,8 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
 }
 
-#toolbar button {
+#toolbar button,
+#zoom-controls button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -90,11 +91,13 @@ body {
   font-weight: 500;
 }
 
-#toolbar button:hover {
+#toolbar button:hover,
+#zoom-controls button:hover {
   background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
 }
 
-#toolbar button:active {
+#toolbar button:active,
+#zoom-controls button:active {
   transform: translateY(0.5px);
 }
 
@@ -103,11 +106,43 @@ body {
   color: var(--vscode-button-foreground, var(--vscode-foreground));
 }
 
+#lock-btn .icon-unlocked,
+#lock-btn .icon-locked {
+  display: inline-flex;
+  align-items: center;
+}
+
+#lock-btn .icon-locked,
+#lock-btn.active .icon-unlocked {
+  display: none;
+}
+
+#lock-btn.active .icon-locked {
+  display: inline-flex;
+}
+
 #toolbar .sep {
   width: 1px;
   height: 16px;
   margin: 0 4px;
   background: var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.35));
+}
+
+/* Floating zoom pill, bottom-right of the canvas. */
+#zoom-controls {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
 }
 
 #zoom-level {
@@ -276,6 +311,7 @@ body {
 
 /* Presentation mode: chrome hidden, clean backdrop, slide counter. */
 body.presentation #toolbar,
+body.presentation #zoom-controls,
 body.presentation #search-bar {
   display: none !important;
 }
@@ -321,7 +357,8 @@ body.presentation #canvas {
   opacity: 0;
 }
 
-#pres-exit {
+#pres-exit,
+#view-exit {
   position: absolute;
   top: 14px;
   right: 14px;
@@ -342,8 +379,14 @@ body.presentation #canvas {
   cursor: pointer;
 }
 
-#pres-exit:hover {
+#pres-exit:hover,
+#view-exit:hover {
   background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
+
+/* Presentation mode owns the corner — its own ✕ takes over. */
+body.presentation #view-exit {
+  display: none;
 }
 
 #canvas:focus {

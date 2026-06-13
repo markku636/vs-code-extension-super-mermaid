@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Set-Location *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(git status *)",
+      "PowerShell(git diff *)",
+      "PowerShell(Start-Sleep *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(npm run build)"
+    ]
+  }
+}

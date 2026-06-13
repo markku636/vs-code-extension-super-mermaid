@@ -61,19 +61,23 @@ const ICON_ZOOM_IN =
 const ICON_ZOOM_OUT =
   '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.5 1a5.5 5.5 0 0 1 4.38 8.83l4.15 4.14-1.06 1.06-4.15-4.14A5.5 5.5 0 1 1 6.5 1Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM4 5.75h5v1.5H4v-1.5Z"/></svg>';
 const ICON_FIT =
-  '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h4v1.5H3.5V6H2V2Zm8 0h4v4h-1.5V3.5H10V2ZM3.5 10v2.5H6V14H2v-4h1.5Zm11 0v4h-4v-1.5h2.5V10h1.5Z"/></svg>';
+  '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="4.25"/><path d="M8 1.25v2.25M8 12.5v2.25M1.25 8H3.5M12.5 8h2.25"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/></svg>';
 const ICON_DOWNLOAD =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8.75 1v8.04l2.72-2.72 1.06 1.06L8 11.91 3.47 7.38l1.06-1.06 2.72 2.72V1h1.5ZM2 13h12v1.5H2V13Z"/></svg>';
 const ICON_FIT_WIDTH =
   '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 3h1.5v10H1.5V3Zm11.5 0h1.5v10H13V3ZM5.9 5.1 3 8l2.9 2.9 1.06-1.06L5.62 8.5h4.76l-1.34 1.34L10.1 10.9 13 8l-2.9-2.9-1.06 1.06 1.34 1.34H5.62l1.34-1.34L5.9 5.1Z"/></svg>';
 const ICON_LOCK =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+const ICON_UNLOCK =
+  '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 4.95-.5" stroke-linecap="round"/></svg>';
 const ICON_EXPAND =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h5v1.5H4.56l3.22 3.22-1.06 1.06L3.5 4.56V7H2V2Zm12 12H9v-1.5h2.44L8.22 9.28l1.06-1.06 3.22 3.22V9H14v5Z"/></svg>';
 const ICON_POPOUT =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9 2h5v5h-1.5V4.56L7.78 9.28 6.72 8.22l4.72-4.72H9V2ZM3.5 4H7v1.5H3.5v7h7V9H12v3.5A1.5 1.5 0 0 1 10.5 14h-7A1.5 1.5 0 0 1 2 12.5v-7A1.5 1.5 0 0 1 3.5 4Z"/></svg>';
 const ICON_REFRESH =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.6v3.2h-3.2" stroke-linejoin="round"/></svg>';
+const ICON_MORE =
+  '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/></svg>';
 const ICON_PLAY =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.7a.7.7 0 0 1 1.06-.6l8 5.3a.7.7 0 0 1 0 1.2l-8 5.3a.7.7 0 0 1-1.06-.6V2.7Z"/></svg>';
 const ICON_SEARCH =
@@ -101,6 +105,10 @@ export class PreviewPanel {
   /** CodeLens「Edit Diagram」指定要定位的圖（優先於游標位置，套用一次後清除）。 */
   private desiredIndex: number | undefined;
   private locked = false;
+  /** 我們透過 toggleMaximizeEditorGroup 把預覽群組放到最大（顯示 ✕ 用的提示狀態）。 */
+  private maximized = false;
+  /** 預覽被移到獨立視窗（popOut / previewLocation: newWindow）。 */
+  private poppedOut = false;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private pendingExportAll: PendingExportAll | undefined;
   private readonly disposables: vscode.Disposable[] = [];
@@ -140,6 +148,8 @@ export class PreviewPanel {
     }
     if (location === 'newWindow') {
       await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+      PreviewPanel.current.poppedOut = true;
+      PreviewPanel.current.postViewState();
     }
   }
 
@@ -246,6 +256,8 @@ export class PreviewPanel {
       })),
       activeIndex: this.activeIndex,
     });
+    // A webview recreated after moving between windows must re-learn the ✕ state.
+    this.postViewState();
   }
 
   private async onMessage(msg: WebviewMessage): Promise<void> {
@@ -259,16 +271,9 @@ export class PreviewPanel {
       case 'revealLine':
         this.revealLine(msg.index, msg.line);
         break;
-      case 'focusEditor': {
-        const editor = this.findSourceEditor();
-        if (editor) {
-          await vscode.window.showTextDocument(editor.document, {
-            viewColumn: editor.viewColumn,
-            preserveFocus: false,
-          });
-        }
+      case 'focusEditor':
+        await this.exitToEditor();
         break;
-      }
       case 'export':
         await this.saveExport(msg);
         break;
@@ -289,9 +294,13 @@ export class PreviewPanel {
         // The click already focused the webview, so its editor group is the
         // active one that gets maximized/restored.
         await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
+        this.maximized = !this.maximized;
+        this.postViewState();
         break;
       case 'popOut':
         await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+        this.poppedOut = true;
+        this.postViewState();
         break;
       case 'diagnostics':
         // Drop stale results — a newer (debounced) update is already in flight.
@@ -508,6 +517,55 @@ export class PreviewPanel {
     );
   }
 
+  /** The tab holding the source document — found even while its group is hidden by a maximize. */
+  private findSourceTab(): { column: vscode.ViewColumn; isActive: boolean } | undefined {
+    for (const group of vscode.window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        if (
+          tab.input instanceof vscode.TabInputText &&
+          tab.input.uri.toString() === this.doc.uri.toString()
+        ) {
+          return { column: group.viewColumn, isActive: tab.isActive };
+        }
+      }
+    }
+    return undefined;
+  }
+
+  /** Esc / ✕ — undo maximize/pop-out if we're in one, then hand focus back to the source editor. */
+  private async exitToEditor(): Promise<void> {
+    if (this.poppedOut) {
+      // Esc/✕ happened in the webview, so the floating window is the active
+      // one this command pulls back into the main window.
+      await vscode.commands.executeCommand('workbench.action.restoreEditorsToMainWindow');
+      this.poppedOut = false;
+      this.postViewState();
+    }
+    const tab = this.findSourceTab();
+    if (!this.findSourceEditor() && tab?.isActive) {
+      // The source tab is frontmost in its group yet not visible — its group is
+      // hidden because the preview group is maximized. Restore the layout first.
+      await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
+    }
+    if (this.maximized) {
+      this.maximized = false;
+      this.postViewState();
+    }
+    const editor = this.findSourceEditor();
+    const column = editor?.viewColumn ?? tab?.column;
+    if (column !== undefined) {
+      await vscode.window.showTextDocument(this.doc, { viewColumn: column, preserveFocus: false });
+    }
+  }
+
+  /** Tell the webview whether the floating ✕ (back to editor) should be visible. */
+  private postViewState(): void {
+    void this.panel.webview.postMessage({
+      type: 'viewState',
+      exitVisible: this.maximized || this.poppedOut,
+    });
+  }
+
   private updateTitle(): void {
     this.panel.title = `Mermaid: ${path.basename(this.doc.fileName)}`;
   }
@@ -541,11 +599,7 @@ export class PreviewPanel {
 <body>
   <div id="toolbar">
     <select id="block-select" hidden title="Select diagram"></select>
-    <button id="zoom-out" title="Zoom out (-)">${ICON_ZOOM_OUT}</button>
-    <span id="zoom-level" title="Click for actual size (1)">100%</span>
-    <button id="zoom-in" title="Zoom in (+)">${ICON_ZOOM_IN}</button>
     <button id="zoom-reset" title="Fit to view (0, or double-click canvas)">${ICON_FIT}</button>
-    <button id="fit-width" title="Fit width (w)">${ICON_FIT_WIDTH}</button>
     <button id="search-toggle" title="Find in diagram (/)">${ICON_SEARCH}</button>
     <div class="sep"></div>
     <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
@@ -564,10 +618,14 @@ export class PreviewPanel {
     <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
     <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
     <div class="sep"></div>
-    <button id="lock-btn" title="Lock to current file">${ICON_LOCK}</button>
-    <button id="refresh-btn" title="Re-render">${ICON_REFRESH}</button>
     <button id="fullscreen-btn" title="Maximize panel (f)">${ICON_EXPAND}</button>
     <button id="popout-btn" title="Open in new window">${ICON_POPOUT}</button>
+    <button id="more-btn" title="More…">${ICON_MORE}</button>
+  </div>
+  <div id="zoom-controls">
+    <button id="zoom-out" title="Zoom out (-)">${ICON_ZOOM_OUT}</button>
+    <span id="zoom-level" title="Click for actual size (1)">100%</span>
+    <button id="zoom-in" title="Zoom in (+)">${ICON_ZOOM_IN}</button>
   </div>
   <div id="search-bar" hidden>
     <input id="search-input" type="text" placeholder="Find in diagram…" spellcheck="false" />
@@ -597,6 +655,11 @@ export class PreviewPanel {
       <span>Transparent background</span>
     </label>
   </div>
+  <div id="more-menu" class="dropdown" hidden>
+    <button class="menu-item" id="lock-btn" title="Lock to current file"><span class="icon-unlocked">${ICON_UNLOCK}</span><span class="icon-locked">${ICON_LOCK}</span><span id="lock-label">Lock to current file</span></button>
+    <button class="menu-item" id="refresh-btn">${ICON_REFRESH}<span>Re-render</span></button>
+    <button class="menu-item" id="fit-width">${ICON_FIT_WIDTH}<span>Fit width (w)</span></button>
+  </div>
   <div id="canvas">
     <div id="diagram"></div>
     <div id="gallery" hidden></div>
@@ -610,6 +673,7 @@ export class PreviewPanel {
     <div id="pres-counter" hidden></div>
     <div id="pres-hint" hidden>Click / ← → switch · Esc exit</div>
     <button id="pres-exit" hidden title="Exit presentation (Esc)">✕</button>
+    <button id="view-exit" hidden title="Back to editor (Esc)">✕</button>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

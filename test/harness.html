@@ -31,11 +31,7 @@
 <body class="vscode-dark">
   <div id="toolbar">
     <select id="block-select" hidden title="Select diagram"></select>
-    <button id="zoom-out" title="Zoom out (-)">－</button>
-    <span id="zoom-level" title="Click for actual size (1)">100%</span>
-    <button id="zoom-in" title="Zoom in (+)">＋</button>
-    <button id="zoom-reset" title="Fit to view (0)">⛶</button>
-    <button id="fit-width" title="Fit width (w)">↔</button>
+    <button id="zoom-reset" title="Fit to view (0)">◎</button>
     <button id="search-toggle" title="Find in diagram (/)">🔍</button>
     <div class="sep"></div>
     <button id="gallery-toggle" title="Gallery — all diagrams (g)">▦</button>
@@ -54,10 +50,14 @@
     <button id="export-menu-btn" title="Export diagram…">⬇</button>
     <button id="share-live-btn" title="Share to mermaid.live">🔗</button>
     <div class="sep"></div>
-    <button id="lock-btn" title="Lock to current file">🔒</button>
-    <button id="refresh-btn" title="Re-render">⟳</button>
     <button id="fullscreen-btn" title="Maximize panel (f)">⤢</button>
     <button id="popout-btn" title="Open in new window">⧉</button>
+    <button id="more-btn" title="More…">⋯</button>
+  </div>
+  <div id="zoom-controls">
+    <button id="zoom-out" title="Zoom out (-)">－</button>
+    <span id="zoom-level" title="Click for actual size (1)">100%</span>
+    <button id="zoom-in" title="Zoom in (+)">＋</button>
   </div>
   <div id="search-bar" hidden>
     <input id="search-input" type="text" placeholder="Find in diagram…" spellcheck="false" />
@@ -87,6 +87,11 @@
       <span>Transparent background</span>
     </label>
   </div>
+  <div id="more-menu" class="dropdown" hidden>
+    <button class="menu-item" id="lock-btn" title="Lock to current file"><span class="icon-unlocked">🔓</span><span class="icon-locked">🔒</span><span id="lock-label">Lock to current file</span></button>
+    <button class="menu-item" id="refresh-btn">⟳<span>Re-render</span></button>
+    <button class="menu-item" id="fit-width">↔<span>Fit width (w)</span></button>
+  </div>
   <div id="canvas">
     <div id="diagram"></div>
     <div id="gallery" hidden></div>
@@ -99,6 +104,7 @@
     <div id="pres-counter" hidden></div>
     <div id="pres-hint" hidden>Click / ← → switch · Esc exit</div>
     <button id="pres-exit" hidden title="Exit presentation (Esc)">✕</button>
+    <button id="view-exit" hidden title="Back to editor (Esc)">✕</button>
   </div>
   <script>
     const FLOW_SOURCE = `---

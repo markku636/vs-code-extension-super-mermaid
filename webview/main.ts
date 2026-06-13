@@ -23,7 +23,8 @@ type InMessage =
   | UpdateMessage
   | { type: 'setActive'; index: number }
   | { type: 'exportAllStart' }
-  | { type: 'exportAllCancel' };
+  | { type: 'exportAllCancel' }
+  | { type: 'viewState'; exitVisible: boolean };
 
 type ThemePref = 'auto' | 'colorful' | 'sketch' | 'default' | 'dark' | 'neutral' | 'forest';
 type RasterFormat = 'png' | 'jpg' | 'webp';
@@ -55,7 +56,10 @@ const bgCheckEl = document.getElementById('bg-transparent') as HTMLInputElement;
 const galleryToggleBtn = document.getElementById('gallery-toggle') as HTMLButtonElement;
 const exportMenuBtn = document.getElementById('export-menu-btn') as HTMLButtonElement;
 const exportMenuEl = document.getElementById('export-menu') as HTMLDivElement;
+const moreBtn = document.getElementById('more-btn') as HTMLButtonElement;
+const moreMenuEl = document.getElementById('more-menu') as HTMLDivElement;
 const lockBtn = document.getElementById('lock-btn') as HTMLButtonElement;
+const viewExitBtn = document.getElementById('view-exit') as HTMLButtonElement;
 const toastEl = document.getElementById('toast') as HTMLDivElement;
 
 const RASTER_MIME: Record<RasterFormat, string> = {
@@ -733,6 +737,12 @@ presExitBtn.addEventListener('click', (e) => {
   exitPresentation();
 });
 
+// Maximize / pop-out 時的 ✕ — 還原版面並把焦點交還原始碼編輯器（同 Esc）。
+viewExitBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  vscodeApi.postMessage({ type: 'focusEditor' });
+});
+
 /** Step slides; ±Infinity jumps to the first/last diagram (Home/End). */
 function presStep(delta: number): void {
   const next = Math.min(Math.max(activeIndex + delta, 0), Math.max(0, blocks.length - 1));
@@ -1072,7 +1082,10 @@ document.getElementById('zoom-out')!.addEventListener('click', () => {
   updateZoomLabel();
 });
 document.getElementById('zoom-reset')!.addEventListener('click', resetView);
-document.getElementById('fit-width')!.addEventListener('click', fitWidth);
+document.getElementById('fit-width')!.addEventListener('click', () => {
+  closeMenus();
+  fitWidth();
+});
 galleryToggleBtn.addEventListener('click', () => {
   if (galleryMode) {
     exitGallery();
@@ -1093,6 +1106,8 @@ window.addEventListener('resize', () => panZoom?.resize());
 function closeMenus(): void {
   exportMenuEl.hidden = true;
   exportMenuBtn.classList.remove('active');
+  moreMenuEl.hidden = true;
+  moreBtn.classList.remove('active');
 }
 
 function toggleMenu(btn: HTMLButtonElement, menu: HTMLDivElement): void {
@@ -1115,8 +1130,12 @@ exportMenuBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   toggleMenu(exportMenuBtn, exportMenuEl);
 });
+moreBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleMenu(moreBtn, moreMenuEl);
+});
 document.addEventListener('click', (e) => {
-  if (e.target instanceof Node && !exportMenuEl.contains(e.target)) {
+  if (e.target instanceof Node && !exportMenuEl.contains(e.target) && !moreMenuEl.contains(e.target)) {
     closeMenus();
   }
 });
@@ -1124,7 +1143,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') {
     return;
   }
-  if (!exportMenuEl.hidden) {
+  if (!exportMenuEl.hidden || !moreMenuEl.hidden) {
     closeMenus();
   } else if (!searchBarEl.hidden) {
     closeSearch();
@@ -1157,9 +1176,15 @@ document.getElementById('menu-export-all-svg')!.addEventListener('click', () => 
 });
 
 lockBtn.addEventListener('click', () => {
+  closeMenus();
   locked = !locked;
   lockBtn.classList.toggle('active', locked);
-  lockBtn.title = locked ? 'Unlock — follow active editor' : 'Lock to current file';
+  const label = locked ? 'Unlock — follow active editor' : 'Lock to current file';
+  lockBtn.title = label;
+  const labelEl = document.getElementById('lock-label');
+  if (labelEl) {
+    labelEl.textContent = label;
+  }
   showToast(locked ? 'Locked to current file' : 'Following the active editor');
   vscodeApi.postMessage({ type: 'setLocked', locked });
 });
@@ -1179,6 +1204,7 @@ document.getElementById('share-live-btn')!.addEventListener('click', () => {
   vscodeApi.postMessage({ type: 'shareLive', code: block.source, theme: liveTheme() });
 });
 document.getElementById('refresh-btn')!.addEventListener('click', () => {
+  closeMenus();
   if (galleryMode) {
     scheduleGallery();
   } else {
@@ -1331,6 +1357,8 @@ window.addEventListener('message', (event: MessageEvent<InMessage>) => {
   } else if (msg.type === 'exportAllCancel') {
     exportAllCancelled = true;
     exportAllInFlight = false;
+  } else if (msg.type === 'viewState') {
+    viewExitBtn.hidden = !msg.exitVisible;
   }
 });
 
