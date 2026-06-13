@@ -55,9 +55,7 @@ const bgCheckEl = document.getElementById('bg-transparent') as HTMLInputElement;
 const galleryToggleBtn = document.getElementById('gallery-toggle') as HTMLButtonElement;
 const exportMenuBtn = document.getElementById('export-menu-btn') as HTMLButtonElement;
 const exportMenuEl = document.getElementById('export-menu') as HTMLDivElement;
-const moreBtn = document.getElementById('more-btn') as HTMLButtonElement;
-const moreMenuEl = document.getElementById('more-menu') as HTMLDivElement;
-const menuLockLabelEl = document.getElementById('menu-lock-label') as HTMLSpanElement;
+const lockBtn = document.getElementById('lock-btn') as HTMLButtonElement;
 const toastEl = document.getElementById('toast') as HTMLDivElement;
 
 const RASTER_MIME: Record<RasterFormat, string> = {
@@ -450,7 +448,10 @@ function escapeRegExp(text: string): string {
 
 /** The enclosing element that maps back to one source statement, if any. */
 function clickableGroupFor(target: Element): Element | undefined {
-  const group = target.closest('g.node, g.cluster, g.mindmap-node, g[class*="timeline-node"]');
+  // .rough-node is the handDrawn (Sketch) counterpart of .node.
+  const group = target.closest(
+    'g.node, g.rough-node, g.cluster, g.mindmap-node, g[class*="timeline-node"]',
+  );
   if (group) {
     return group;
   }
@@ -466,9 +467,14 @@ function clickableGroupFor(target: Element): Element | undefined {
  */
 function sourceLineFor(group: Element, source: string): number | undefined {
   const lines = source.split('\n');
-  const idMatch = group.id.match(/^[A-Za-z]\w*-(.+)-\d+$/);
-  if (idMatch) {
-    const re = new RegExp(`(^|[^\\w])${escapeRegExp(idMatch[1])}([^\\w]|$)`);
+  // Strip our own render id ("mmd-12-flowchart-A-0" → "flowchart-A-0"); some
+  // renderers (e.g. handDrawn) prepend it, others don't.
+  const rawId = group.id.replace(/^mmd-\d+-/, '');
+  const idMatch = rawId.match(/^[A-Za-z]\w*-(.+)-\d+$/);
+  // Clusters carry the author's id verbatim (e.g. "TPS") instead.
+  const identifier = idMatch?.[1] ?? (group.classList.contains('cluster') ? rawId : undefined);
+  if (identifier) {
+    const re = new RegExp(`(^|[^\\w])${escapeRegExp(identifier)}([^\\w]|$)`);
     const byId = lines.findIndex((l) => re.test(l));
     if (byId >= 0) {
       return byId;
@@ -528,7 +534,7 @@ let searchMatches: Element[] = [];
 let searchCurrent = -1;
 
 const DIMMABLE_SELECTOR =
-  'g.node, g.cluster, g.mindmap-node, g[class*="timeline-node"], .actor';
+  'g.node, g.rough-node, g.cluster, g.mindmap-node, g[class*="timeline-node"], .actor';
 
 /** Same node-level granularity as click-to-source, falling back to the text itself. */
 function highlightTargetFor(el: Element): Element {
@@ -1082,13 +1088,11 @@ canvasEl.addEventListener('dblclick', (e) => {
 });
 window.addEventListener('resize', () => panZoom?.resize());
 
-// ─── Dropdown menus (export ⬇ and more ⋯) ──────────────────────────────────
+// ─── Dropdown menu (export ⬇) ───────────────────────────────────────────────
 
 function closeMenus(): void {
   exportMenuEl.hidden = true;
-  moreMenuEl.hidden = true;
   exportMenuBtn.classList.remove('active');
-  moreBtn.classList.remove('active');
 }
 
 function toggleMenu(btn: HTMLButtonElement, menu: HTMLDivElement): void {
@@ -1111,16 +1115,8 @@ exportMenuBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   toggleMenu(exportMenuBtn, exportMenuEl);
 });
-moreBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  toggleMenu(moreBtn, moreMenuEl);
-});
 document.addEventListener('click', (e) => {
-  if (
-    e.target instanceof Node &&
-    !exportMenuEl.contains(e.target) &&
-    !moreMenuEl.contains(e.target)
-  ) {
+  if (e.target instanceof Node && !exportMenuEl.contains(e.target)) {
     closeMenus();
   }
 });
@@ -1128,7 +1124,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') {
     return;
   }
-  if (!exportMenuEl.hidden || !moreMenuEl.hidden) {
+  if (!exportMenuEl.hidden) {
     closeMenus();
   } else if (!searchBarEl.hidden) {
     closeSearch();
@@ -1160,12 +1156,10 @@ document.getElementById('menu-export-all-svg')!.addEventListener('click', () => 
   requestExportAll('svg');
 });
 
-document.getElementById('menu-lock')!.addEventListener('click', () => {
+lockBtn.addEventListener('click', () => {
   locked = !locked;
-  menuLockLabelEl.textContent = locked
-    ? 'Unlock — follow active editor'
-    : 'Lock to current file';
-  closeMenus();
+  lockBtn.classList.toggle('active', locked);
+  lockBtn.title = locked ? 'Unlock — follow active editor' : 'Lock to current file';
   showToast(locked ? 'Locked to current file' : 'Following the active editor');
   vscodeApi.postMessage({ type: 'setLocked', locked });
 });
@@ -1184,8 +1178,7 @@ document.getElementById('share-live-btn')!.addEventListener('click', () => {
   }
   vscodeApi.postMessage({ type: 'shareLive', code: block.source, theme: liveTheme() });
 });
-document.getElementById('menu-refresh')!.addEventListener('click', () => {
-  closeMenus();
+document.getElementById('refresh-btn')!.addEventListener('click', () => {
   if (galleryMode) {
     scheduleGallery();
   } else {

@@ -44,6 +44,7 @@ body {
 
 /* Click-to-source: nodes jump the editor to their definition. */
 #diagram g.node,
+#diagram g.rough-node,
 #diagram g.cluster,
 #diagram g.mindmap-node,
 #diagram g[class*='timeline-node'],

@@ -66,8 +66,6 @@ const ICON_DOWNLOAD =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8.75 1v8.04l2.72-2.72 1.06 1.06L8 11.91 3.47 7.38l1.06-1.06 2.72 2.72V1h1.5ZM2 13h12v1.5H2V13Z"/></svg>';
 const ICON_FIT_WIDTH =
   '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 3h1.5v10H1.5V3Zm11.5 0h1.5v10H13V3ZM5.9 5.1 3 8l2.9 2.9 1.06-1.06L5.62 8.5h4.76l-1.34 1.34L10.1 10.9 13 8l-2.9-2.9-1.06 1.06 1.34 1.34H5.62l1.34-1.34L5.9 5.1Z"/></svg>';
-const ICON_MORE =
-  '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3.4" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="12.6" cy="8" r="1.4"/></svg>';
 const ICON_LOCK =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
 const ICON_EXPAND =
@@ -548,8 +546,9 @@ export class PreviewPanel {
     <button id="zoom-in" title="Zoom in (+)">${ICON_ZOOM_IN}</button>
     <button id="zoom-reset" title="Fit to view (0, or double-click canvas)">${ICON_FIT}</button>
     <button id="fit-width" title="Fit width (w)">${ICON_FIT_WIDTH}</button>
-    <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
     <button id="search-toggle" title="Find in diagram (/)">${ICON_SEARCH}</button>
+    <div class="sep"></div>
+    <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
     <button id="presentation-toggle" title="Presentation mode (p)">${ICON_PLAY}</button>
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
@@ -565,17 +564,14 @@ export class PreviewPanel {
     <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
     <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
     <div class="sep"></div>
+    <button id="lock-btn" title="Lock to current file">${ICON_LOCK}</button>
+    <button id="refresh-btn" title="Re-render">${ICON_REFRESH}</button>
     <button id="fullscreen-btn" title="Maximize panel (f)">${ICON_EXPAND}</button>
     <button id="popout-btn" title="Open in new window">${ICON_POPOUT}</button>
-    <button id="more-btn" title="More…">${ICON_MORE}</button>
   </div>
   <div id="search-bar" hidden>
     <input id="search-input" type="text" placeholder="Find in diagram…" spellcheck="false" />
     <span id="search-count"></span>
-  </div>
-  <div id="more-menu" class="dropdown" hidden>
-    <button class="menu-item" id="menu-lock">${ICON_LOCK}<span id="menu-lock-label">Lock to current file</span></button>
-    <button class="menu-item" id="menu-refresh">${ICON_REFRESH}<span>Re-render</span></button>
   </div>
   <div id="export-menu" class="dropdown" hidden>
     <button class="menu-item" id="menu-copy-image">${ICON_COPY}<span>Copy as image (c)</span></button>

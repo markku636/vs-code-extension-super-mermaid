@@ -25,9 +25,9 @@
 
 Same mermaid source, zero configuration — this is the difference:
 
-| mermaid default theme | Super Mermaid Colorful (default) |
-| --- | --- |
-| ![Default theme](docs/images/theme-default-flowchart.png) | ![Colorful theme](docs/images/demo-flowchart.png) |
+| mermaid default theme | Super Mermaid Colorful (default) | Sketch (hand-drawn) |
+| --- | --- | --- |
+| ![Default theme](docs/images/theme-default-flowchart.png) | ![Colorful theme](docs/images/demo-flowchart.png) | ![Sketch theme](docs/images/theme-sketch-flowchart.png) |
 
 See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 
@@ -51,14 +51,15 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 | `−` / `%` / `+` | Zoom out, current zoom level (click to reset to 100%), zoom in |
 | ⛶ | Fit: fit the whole diagram into the window (double-clicking the canvas does the same) |
 | ↔ | Fit Width: fill the width — use this for wide flowcharts |
-| ▦ | Gallery: thumbnail overview of all diagrams, click a card to open it |
 | 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
+| ▦ | Gallery: thumbnail overview of all diagrams, click a card to open it |
 | ▶ | Presentation mode: full-screen slideshow — click / arrow keys to switch, `Esc` or the ✕ button to leave |
 | Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
 | ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
 | 🔗 | Share to mermaid.live: opens or copies a link with the diagram encoded in the URL |
-| ⛶ / ⧉ | Maximize panel (`f`) / open the preview in a new window |
-| ⋯ More menu | Lock to the current file, re-render |
+| 🔒 | Lock the preview to the current file (stops it following the active editor) |
+| ⟳ | Re-render the current diagram |
+| ⤢ / ⧉ | Maximize panel (`f`) / open the preview in a new window |
 
 ### Keyboard shortcuts (when the preview panel has focus)
 

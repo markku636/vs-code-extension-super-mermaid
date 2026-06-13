@@ -36,10 +36,14 @@
     <button id="zoom-in" title="Zoom in (+)">＋</button>
     <button id="zoom-reset" title="Fit to view (0)">⛶</button>
     <button id="fit-width" title="Fit width (w)">↔</button>
+    <button id="search-toggle" title="Find in diagram (/)">🔍</button>
+    <div class="sep"></div>
     <button id="gallery-toggle" title="Gallery — all diagrams (g)">▦</button>
+    <button id="presentation-toggle" title="Presentation mode (p)">▶</button>
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
       <option value="colorful">Colorful</option>
+      <option value="sketch">Sketch</option>
       <option value="auto">Auto</option>
       <option value="default">Light</option>
       <option value="dark">Dark</option>
@@ -48,10 +52,20 @@
     </select>
     <div class="sep"></div>
     <button id="export-menu-btn" title="Export diagram…">⬇</button>
+    <button id="share-live-btn" title="Share to mermaid.live">🔗</button>
     <div class="sep"></div>
-    <button id="more-btn" title="More…">⋯</button>
+    <button id="lock-btn" title="Lock to current file">🔒</button>
+    <button id="refresh-btn" title="Re-render">⟳</button>
+    <button id="fullscreen-btn" title="Maximize panel (f)">⤢</button>
+    <button id="popout-btn" title="Open in new window">⧉</button>
+  </div>
+  <div id="search-bar" hidden>
+    <input id="search-input" type="text" placeholder="Find in diagram…" spellcheck="false" />
+    <span id="search-count"></span>
   </div>
   <div id="export-menu" class="dropdown" hidden>
+    <button class="menu-item" id="menu-copy-image">⧉<span>Copy as image (c)</span></button>
+    <div class="menu-sep"></div>
     <button class="menu-item" data-format="svg">⬇<span>Export SVG</span></button>
     <button class="menu-item" data-format="png">⬇<span>Export PNG</span></button>
     <button class="menu-item" data-format="jpg">⬇<span>Export JPG</span></button>
@@ -73,13 +87,6 @@
       <span>Transparent background</span>
     </label>
   </div>
-  <div id="more-menu" class="dropdown" hidden>
-    <button class="menu-item" id="menu-lock">🔒<span id="menu-lock-label">Lock to current file</span></button>
-    <button class="menu-item" id="menu-refresh">⟳<span>Re-render</span></button>
-    <div class="menu-sep"></div>
-    <button class="menu-item" id="menu-fullscreen">⤢<span>Maximize panel (f)</span></button>
-    <button class="menu-item" id="menu-popout">⧉↗<span>Open in new window</span></button>
-  </div>
   <div id="canvas">
     <div id="diagram"></div>
     <div id="gallery" hidden></div>
@@ -89,6 +96,9 @@
     </div>
     <div id="error" hidden></div>
     <div id="toast"></div>
+    <div id="pres-counter" hidden></div>
+    <div id="pres-hint" hidden>Click / ← → switch · Esc exit</div>
+    <button id="pres-exit" hidden title="Exit presentation (Esc)">✕</button>
   </div>
   <script>
     const FLOW_SOURCE = `---

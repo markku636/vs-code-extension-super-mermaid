@@ -148,7 +148,7 @@ const browser = await puppeteer.launch({
 
 try {
   const page = await browser.newPage();
-  await page.setViewport({ width: 1180, height: 760, deviceScaleFactor: 2 });
+  await page.setViewport({ width: 1480, height: 760, deviceScaleFactor: 2 });
   page.on('pageerror', (e) => console.error('[page error]', e.message));
   await page.goto(`http://127.0.0.1:${port}/test/harness.html`, { waitUntil: 'networkidle0' });
   await waitRendered(page); // harness's own sample finished rendering
@@ -223,6 +223,11 @@ try {
   await setTheme('default');
   writeFileSync(join(OUT_DIR, 'theme-default-flowchart.png'), await exportPng(page, ++exportCount));
   console.log('saved theme-default-flowchart.png');
+
+  // Sketch (hand-drawn) — README theme comparison.
+  await setTheme('sketch');
+  writeFileSync(join(OUT_DIR, 'theme-sketch-flowchart.png'), await exportPng(page, ++exportCount));
+  console.log('saved theme-sketch-flowchart.png');
 
   // Colorful theme — every demo block.
   await setTheme('colorful');
