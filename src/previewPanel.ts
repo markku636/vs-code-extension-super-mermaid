@@ -599,11 +599,12 @@ export class PreviewPanel {
 <body>
   <div id="toolbar">
     <select id="block-select" hidden title="Select diagram"></select>
-    <button id="zoom-reset" title="Fit to view (0, or double-click canvas)">${ICON_FIT}</button>
-    <button id="search-toggle" title="Find in diagram (/)">${ICON_SEARCH}</button>
-    <div class="sep"></div>
-    <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
     <button id="presentation-toggle" title="Presentation mode (p)">${ICON_PLAY}</button>
+    <button id="zoom-reset" title="Fit to view (0, or double-click canvas)">${ICON_FIT}</button>
+    <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
+    <button id="search-toggle" title="Find in diagram (/)">${ICON_SEARCH}</button>
+    <button id="popout-btn" title="Open in new window">${ICON_POPOUT}</button>
+    <button id="fullscreen-btn" title="Maximize panel (f)">${ICON_EXPAND}</button>
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
       <option value="colorful">Colorful</option>
@@ -615,11 +616,9 @@ export class PreviewPanel {
       <option value="forest">Forest</option>
     </select>
     <div class="sep"></div>
-    <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
     <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
     <div class="sep"></div>
-    <button id="fullscreen-btn" title="Maximize panel (f)">${ICON_EXPAND}</button>
-    <button id="popout-btn" title="Open in new window">${ICON_POPOUT}</button>
+    <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
     <button id="more-btn" title="More…">${ICON_MORE}</button>
   </div>
   <div id="zoom-controls">
