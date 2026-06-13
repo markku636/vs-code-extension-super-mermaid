@@ -6,9 +6,15 @@
 
 ## Features
 
-- **Auto coloring**: Colorful is the default theme — flowcharts, sequence diagrams, ER diagrams, Gantt charts, pie charts, mindmaps, and timelines all get a modern palette with rounded corners and soft shadows, without changing a single line of mermaid code. Not your style? The toolbar can switch back to Auto / Light / Dark / Neutral / Forest
+- **Auto coloring**: Colorful is the default theme — flowcharts, sequence diagrams, ER diagrams, Gantt charts, pie charts, mindmaps, and timelines all get a modern palette with rounded corners and soft shadows, without changing a single line of mermaid code. Not your style? The toolbar can switch back to Sketch / Auto / Light / Dark / Neutral / Forest
+- **Sketch style**: a hand-drawn whiteboard look (mermaid's built-in `handDrawn` renderer) — one pick in the theme dropdown, applies to exports too
 - **Live preview**: updates about 0.3s after you type; mouse-wheel zoom, drag to pan, with Fit / Fit Width / 100% right on the toolbar
+- **Click a node to jump to its code**: clicking a node, subgraph, or actor in the preview moves the editor cursor to the line that defines it
+- **Find in diagram**: press `/` (or `Ctrl+F`) and type — everything else dims, matches stay lit, `Enter` cycles through them and the view centers on each
+- **Presentation mode**: press `p` for a full-screen slideshow of every diagram in the document — arrow keys to switch, `Esc` to leave; great for walking through architecture in a meeting
 - **Export**: PNG / JPG / WebP / SVG at 1x / 2x / 4x resolution (pick 4x for slides — stays sharp when projected), transparent background supported, and Export All saves every diagram in the document at once
+- **Copy as image**: press `c` to put the current diagram on the clipboard as a PNG — paste straight into Slack, Teams, or PowerPoint
+- **Share to mermaid.live**: one click builds a link that opens the current diagram in the mermaid.live editor — the code lives only in the URL fragment, nothing is uploaded until someone opens the link
 - **Both sources work**: ```` ```mermaid ```` blocks inside Markdown, or standalone `.mmd` / `.mermaid` files
 - **Works in the built-in Markdown preview too**: the standard preview (`Ctrl+Shift+V`) renders mermaid blocks as diagrams with the same auto coloring
 - **Editor language features**: mermaid syntax highlighting, `%%` comment toggle with Ctrl+/, keyword completion, and syntax errors get red squiggles while the preview is open
@@ -46,9 +52,10 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 | ⛶ | Fit: fit the whole diagram into the window (double-clicking the canvas does the same) |
 | ↔ | Fit Width: fill the width — use this for wide flowcharts |
 | ▦ | Gallery: thumbnail overview of all diagrams, click a card to open it |
-| Theme dropdown | Colorful (default) / Auto / Light / Dark / Neutral / Forest — remembers your choice |
-| ⬇ Export menu | Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
-| ⋯ More menu | Lock to the current file, re-render, maximize panel, open in a new window |
+| 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
+| Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
+| ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
+| ⋯ More menu | Lock to the current file, re-render, share to mermaid.live, presentation mode, maximize panel, open in a new window |
 
 ### Keyboard shortcuts (when the preview panel has focus)
 
@@ -62,6 +69,10 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 | `w` | Fit Width |
 | `g` | Gallery (press again to go back to single view) |
 | `f` | Maximize / restore the panel |
+| `c` | Copy the current diagram to the clipboard as a PNG |
+| `/` or `Ctrl+F` | Find in diagram (`Enter` next, `Shift+Enter` previous, `Esc` close) |
+| `p` | Presentation mode (`←` `→` / `Space` / `PgUp` `PgDn` to switch, `Esc` to leave) |
+| Click a node | Jump the editor to the line that defines it |
 
 ### Export tips
 
