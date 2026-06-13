@@ -1195,12 +1195,10 @@ document.getElementById('menu-refresh')!.addEventListener('click', () => {
 document.getElementById('presentation-toggle')!.addEventListener('click', () => {
   enterPresentation();
 });
-document.getElementById('menu-fullscreen')!.addEventListener('click', () => {
-  closeMenus();
+document.getElementById('fullscreen-btn')!.addEventListener('click', () => {
   vscodeApi.postMessage({ type: 'toggleFullscreen' });
 });
-document.getElementById('menu-popout')!.addEventListener('click', () => {
-  closeMenus();
+document.getElementById('popout-btn')!.addEventListener('click', () => {
   vscodeApi.postMessage({ type: 'popOut' });
 });
 

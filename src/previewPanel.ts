@@ -565,6 +565,8 @@ export class PreviewPanel {
     <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
     <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
     <div class="sep"></div>
+    <button id="fullscreen-btn" title="Maximize panel (f)">${ICON_EXPAND}</button>
+    <button id="popout-btn" title="Open in new window">${ICON_POPOUT}</button>
     <button id="more-btn" title="More…">${ICON_MORE}</button>
   </div>
   <div id="search-bar" hidden>
@@ -574,9 +576,6 @@ export class PreviewPanel {
   <div id="more-menu" class="dropdown" hidden>
     <button class="menu-item" id="menu-lock">${ICON_LOCK}<span id="menu-lock-label">Lock to current file</span></button>
     <button class="menu-item" id="menu-refresh">${ICON_REFRESH}<span>Re-render</span></button>
-    <div class="menu-sep"></div>
-    <button class="menu-item" id="menu-fullscreen">${ICON_EXPAND}<span>Maximize panel (f)</span></button>
-    <button class="menu-item" id="menu-popout">${ICON_POPOUT}<span>Open in new window</span></button>
   </div>
   <div id="export-menu" class="dropdown" hidden>
     <button class="menu-item" id="menu-copy-image">${ICON_COPY}<span>Copy as image (c)</span></button>

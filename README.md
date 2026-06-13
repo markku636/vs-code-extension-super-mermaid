@@ -57,7 +57,8 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 | Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
 | ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
 | 🔗 | Share to mermaid.live: opens or copies a link with the diagram encoded in the URL |
-| ⋯ More menu | Lock to the current file, re-render, maximize panel, open in a new window |
+| ⛶ / ⧉ | Maximize panel (`f`) / open the preview in a new window |
+| ⋯ More menu | Lock to the current file, re-render |
 
 ### Keyboard shortcuts (when the preview panel has focus)
 
