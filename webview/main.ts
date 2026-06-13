@@ -715,8 +715,10 @@ function exitPresentation(): void {
   presCounterEl.hidden = true;
   presExitBtn.hidden = true;
   presHintEl.hidden = true;
-  // Sync the editor to wherever the presentation ended.
+  // Sync the editor to wherever the presentation ended, and hand the
+  // keyboard back to it — Esc means "back to editing".
   vscodeApi.postMessage({ type: 'revealBlock', index: activeIndex });
+  vscodeApi.postMessage({ type: 'focusEditor' });
   scheduleRender();
 }
 
@@ -1130,8 +1132,11 @@ document.addEventListener('keydown', (e) => {
     closeMenus();
   } else if (!searchBarEl.hidden) {
     closeSearch();
-  } else {
+  } else if (presentationMode) {
     exitPresentation();
+  } else {
+    // Nothing to dismiss — Esc returns to the source editor.
+    vscodeApi.postMessage({ type: 'focusEditor' });
   }
 });
 

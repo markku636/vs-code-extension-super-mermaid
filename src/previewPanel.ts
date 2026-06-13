@@ -20,6 +20,7 @@ type WebviewMessage =
   | { type: 'ready' }
   | { type: 'revealBlock'; index: number }
   | { type: 'revealLine'; index: number; line: number }
+  | { type: 'focusEditor' }
   | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
   | { type: 'copyText'; text: string; what: string }
   | { type: 'copyImageFallback'; data: string }
@@ -260,6 +261,16 @@ export class PreviewPanel {
       case 'revealLine':
         this.revealLine(msg.index, msg.line);
         break;
+      case 'focusEditor': {
+        const editor = this.findSourceEditor();
+        if (editor) {
+          await vscode.window.showTextDocument(editor.document, {
+            viewColumn: editor.viewColumn,
+            preserveFocus: false,
+          });
+        }
+        break;
+      }
       case 'export':
         await this.saveExport(msg);
         break;
