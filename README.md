@@ -53,9 +53,11 @@ See [docs/DEMO.md](docs/DEMO.md) for what the other diagram types look like.
 | ↔ | Fit Width: fill the width — use this for wide flowcharts |
 | ▦ | Gallery: thumbnail overview of all diagrams, click a card to open it |
 | 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
+| ▶ | Presentation mode: full-screen slideshow — click / arrow keys to switch, `Esc` or the ✕ button to leave |
 | Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
 | ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
-| ⋯ More menu | Lock to the current file, re-render, share to mermaid.live, presentation mode, maximize panel, open in a new window |
+| 🔗 | Share to mermaid.live: opens or copies a link with the diagram encoded in the URL |
+| ⋯ More menu | Lock to the current file, re-render, maximize panel, open in a new window |
 
 ### Keyboard shortcuts (when the preview panel has focus)
 

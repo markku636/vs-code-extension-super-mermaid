@@ -320,6 +320,35 @@ body.presentation #canvas {
   opacity: 0;
 }
 
+#pres-exit {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 12;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#pres-exit:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
+
+#canvas:focus {
+  outline: none;
+}
+
 .dropdown {
   position: fixed;
   z-index: 20;

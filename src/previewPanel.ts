@@ -539,6 +539,7 @@ export class PreviewPanel {
     <button id="fit-width" title="Fit width (w)">${ICON_FIT_WIDTH}</button>
     <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
     <button id="search-toggle" title="Find in diagram (/)">${ICON_SEARCH}</button>
+    <button id="presentation-toggle" title="Presentation mode (p)">${ICON_PLAY}</button>
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
       <option value="colorful">Colorful</option>
@@ -551,6 +552,7 @@ export class PreviewPanel {
     </select>
     <div class="sep"></div>
     <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
+    <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
     <div class="sep"></div>
     <button id="more-btn" title="More…">${ICON_MORE}</button>
   </div>
@@ -561,9 +563,7 @@ export class PreviewPanel {
   <div id="more-menu" class="dropdown" hidden>
     <button class="menu-item" id="menu-lock">${ICON_LOCK}<span id="menu-lock-label">Lock to current file</span></button>
     <button class="menu-item" id="menu-refresh">${ICON_REFRESH}<span>Re-render</span></button>
-    <button class="menu-item" id="menu-share-live">${ICON_SHARE}<span>Share to mermaid.live</span></button>
     <div class="menu-sep"></div>
-    <button class="menu-item" id="menu-presentation">${ICON_PLAY}<span>Presentation mode (p)</span></button>
     <button class="menu-item" id="menu-fullscreen">${ICON_EXPAND}<span>Maximize panel (f)</span></button>
     <button class="menu-item" id="menu-popout">${ICON_POPOUT}<span>Open in new window</span></button>
   </div>
@@ -602,7 +602,8 @@ export class PreviewPanel {
     <div id="error" hidden></div>
     <div id="toast"></div>
     <div id="pres-counter" hidden></div>
-    <div id="pres-hint" hidden>← → switch · Esc exit</div>
+    <div id="pres-hint" hidden>Click / ← → switch · Esc exit</div>
+    <button id="pres-exit" hidden title="Exit presentation (Esc)">✕</button>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

@@ -491,13 +491,14 @@ diagramEl.addEventListener('pointerdown', (e) => {
   pointerDownAt = { x: e.clientX, y: e.clientY };
 });
 diagramEl.addEventListener('click', (e) => {
-  if (presentationMode) {
-    return; // don't jump the editor around mid-presentation
-  }
   if (
     pointerDownAt &&
     (Math.abs(e.clientX - pointerDownAt.x) > 4 || Math.abs(e.clientY - pointerDownAt.y) > 4)
   ) {
+    return;
+  }
+  if (presentationMode) {
+    presStep(1); // PowerPoint-style: click advances, never touches the editor
     return;
   }
   const block = blocks[activeIndex];
@@ -673,6 +674,7 @@ searchInputEl.addEventListener('keydown', (e) => {
 
 const presCounterEl = document.getElementById('pres-counter') as HTMLDivElement;
 const presHintEl = document.getElementById('pres-hint') as HTMLDivElement;
+const presExitBtn = document.getElementById('pres-exit') as HTMLButtonElement;
 
 let presentationMode = false;
 let presHintTimer: ReturnType<typeof setTimeout> | undefined;
@@ -691,11 +693,15 @@ function enterPresentation(): void {
   presentationMode = true;
   document.body.classList.add('presentation');
   presCounterEl.hidden = false;
+  presExitBtn.hidden = false;
   updatePresCounter();
   presHintEl.hidden = false;
   presHintEl.classList.remove('fade');
   clearTimeout(presHintTimer);
   presHintTimer = setTimeout(() => presHintEl.classList.add('fade'), 2200);
+  // Esc / arrows only reach us while the webview owns the keyboard — make sure of it.
+  canvasEl.tabIndex = -1;
+  canvasEl.focus();
   scheduleRender(); // fresh render fits the slide to the screen
 }
 
@@ -707,11 +713,17 @@ function exitPresentation(): void {
   clearTimeout(presHintTimer);
   document.body.classList.remove('presentation');
   presCounterEl.hidden = true;
+  presExitBtn.hidden = true;
   presHintEl.hidden = true;
   // Sync the editor to wherever the presentation ended.
   vscodeApi.postMessage({ type: 'revealBlock', index: activeIndex });
   scheduleRender();
 }
+
+presExitBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  exitPresentation();
+});
 
 /** Step slides; ±Infinity jumps to the first/last diagram (Home/End). */
 function presStep(delta: number): void {
@@ -1160,8 +1172,7 @@ function liveTheme(): string {
   return themePref;
 }
 
-document.getElementById('menu-share-live')!.addEventListener('click', () => {
-  closeMenus();
+document.getElementById('share-live-btn')!.addEventListener('click', () => {
   const block = blocks[activeIndex];
   if (!block) {
     return;
@@ -1176,8 +1187,7 @@ document.getElementById('menu-refresh')!.addEventListener('click', () => {
     scheduleRender({ keepView: true });
   }
 });
-document.getElementById('menu-presentation')!.addEventListener('click', () => {
-  closeMenus();
+document.getElementById('presentation-toggle')!.addEventListener('click', () => {
   enterPresentation();
 });
 document.getElementById('menu-fullscreen')!.addEventListener('click', () => {
