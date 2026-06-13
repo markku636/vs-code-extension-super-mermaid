@@ -75,6 +75,8 @@ const ICON_POPOUT =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9 2h5v5h-1.5V4.56L7.78 9.28 6.72 8.22l4.72-4.72H9V2ZM3.5 4H7v1.5H3.5v7h7V9H12v3.5A1.5 1.5 0 0 1 10.5 14h-7A1.5 1.5 0 0 1 2 12.5v-7A1.5 1.5 0 0 1 3.5 4Z"/></svg>';
 const ICON_REFRESH =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.6v3.2h-3.2" stroke-linejoin="round"/></svg>';
+const ICON_PLAY =
+  '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.7a.7.7 0 0 1 1.06-.6l8 5.3a.7.7 0 0 1 0 1.2l-8 5.3a.7.7 0 0 1-1.06-.6V2.7Z"/></svg>';
 const ICON_SEARCH =
   '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.5 1a5.5 5.5 0 0 1 4.38 8.83l4.15 4.14-1.06 1.06-4.15-4.14A5.5 5.5 0 1 1 6.5 1Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/></svg>';
 const ICON_SHARE =
@@ -561,6 +563,7 @@ export class PreviewPanel {
     <button class="menu-item" id="menu-refresh">${ICON_REFRESH}<span>Re-render</span></button>
     <button class="menu-item" id="menu-share-live">${ICON_SHARE}<span>Share to mermaid.live</span></button>
     <div class="menu-sep"></div>
+    <button class="menu-item" id="menu-presentation">${ICON_PLAY}<span>Presentation mode (p)</span></button>
     <button class="menu-item" id="menu-fullscreen">${ICON_EXPAND}<span>Maximize panel (f)</span></button>
     <button class="menu-item" id="menu-popout">${ICON_POPOUT}<span>Open in new window</span></button>
   </div>
@@ -598,6 +601,8 @@ export class PreviewPanel {
     </div>
     <div id="error" hidden></div>
     <div id="toast"></div>
+    <div id="pres-counter" hidden></div>
+    <div id="pres-hint" hidden>← → switch · Esc exit</div>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

@@ -491,6 +491,9 @@ diagramEl.addEventListener('pointerdown', (e) => {
   pointerDownAt = { x: e.clientX, y: e.clientY };
 });
 diagramEl.addEventListener('click', (e) => {
+  if (presentationMode) {
+    return; // don't jump the editor around mid-presentation
+  }
   if (
     pointerDownAt &&
     (Math.abs(e.clientX - pointerDownAt.x) > 4 || Math.abs(e.clientY - pointerDownAt.y) > 4)
@@ -665,6 +668,61 @@ searchInputEl.addEventListener('keydown', (e) => {
     e.stopPropagation();
   }
 });
+
+// ─── Presentation mode ──────────────────────────────────────────────────────
+
+const presCounterEl = document.getElementById('pres-counter') as HTMLDivElement;
+const presHintEl = document.getElementById('pres-hint') as HTMLDivElement;
+
+let presentationMode = false;
+let presHintTimer: ReturnType<typeof setTimeout> | undefined;
+
+function updatePresCounter(): void {
+  presCounterEl.textContent = `${activeIndex + 1} / ${blocks.length}`;
+}
+
+function enterPresentation(): void {
+  if (presentationMode || blocks.length === 0) {
+    return;
+  }
+  exitGallery();
+  closeSearch();
+  closeMenus();
+  presentationMode = true;
+  document.body.classList.add('presentation');
+  presCounterEl.hidden = false;
+  updatePresCounter();
+  presHintEl.hidden = false;
+  presHintEl.classList.remove('fade');
+  clearTimeout(presHintTimer);
+  presHintTimer = setTimeout(() => presHintEl.classList.add('fade'), 2200);
+  scheduleRender(); // fresh render fits the slide to the screen
+}
+
+function exitPresentation(): void {
+  if (!presentationMode) {
+    return;
+  }
+  presentationMode = false;
+  clearTimeout(presHintTimer);
+  document.body.classList.remove('presentation');
+  presCounterEl.hidden = true;
+  presHintEl.hidden = true;
+  // Sync the editor to wherever the presentation ended.
+  vscodeApi.postMessage({ type: 'revealBlock', index: activeIndex });
+  scheduleRender();
+}
+
+/** Step slides; ±Infinity jumps to the first/last diagram (Home/End). */
+function presStep(delta: number): void {
+  const next = Math.min(Math.max(activeIndex + delta, 0), Math.max(0, blocks.length - 1));
+  if (next === activeIndex) {
+    return;
+  }
+  activeIndex = next;
+  updatePresCounter();
+  scheduleRender();
+}
 
 // ─── Export pipeline ────────────────────────────────────────────────────────
 
@@ -1058,8 +1116,10 @@ document.addEventListener('keydown', (e) => {
   }
   if (!exportMenuEl.hidden || !moreMenuEl.hidden) {
     closeMenus();
-  } else {
+  } else if (!searchBarEl.hidden) {
     closeSearch();
+  } else {
+    exitPresentation();
   }
 });
 
@@ -1115,6 +1175,10 @@ document.getElementById('menu-refresh')!.addEventListener('click', () => {
   } else {
     scheduleRender({ keepView: true });
   }
+});
+document.getElementById('menu-presentation')!.addEventListener('click', () => {
+  closeMenus();
+  enterPresentation();
 });
 document.getElementById('menu-fullscreen')!.addEventListener('click', () => {
   closeMenus();
@@ -1177,6 +1241,23 @@ window.addEventListener('keydown', (e) => {
   ) {
     return;
   }
+  if (presentationMode) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      presStep(1);
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      presStep(-1);
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Home' || e.key === 'End') {
+      presStep(e.key === 'Home' ? -Infinity : Infinity);
+      e.preventDefault();
+      return;
+    }
+  }
   const zoomKeysActive = !galleryMode;
   if (zoomKeysActive && (e.key === '+' || e.key === '=')) {
     panZoom?.zoomBy(1.25);
@@ -1190,11 +1271,17 @@ window.addEventListener('keydown', (e) => {
     actualSize();
   } else if (zoomKeysActive && e.key.toLowerCase() === 'w') {
     fitWidth();
-  } else if (zoomKeysActive && e.key === '/') {
+  } else if (zoomKeysActive && !presentationMode && e.key === '/') {
     openSearch();
   } else if (zoomKeysActive && e.key.toLowerCase() === 'c') {
     enqueue(() => copyImage());
-  } else if (e.key.toLowerCase() === 'g') {
+  } else if (e.key.toLowerCase() === 'p') {
+    if (presentationMode) {
+      exitPresentation();
+    } else {
+      enterPresentation();
+    }
+  } else if (e.key.toLowerCase() === 'g' && !presentationMode) {
     galleryToggleBtn.click();
   } else if (e.key.toLowerCase() === 'f') {
     vscodeApi.postMessage({ type: 'toggleFullscreen' });
@@ -1213,13 +1300,20 @@ window.addEventListener('message', (event: MessageEvent<InMessage>) => {
     fileName = msg.fileName;
     blocks = msg.blocks;
     activeIndex = Math.min(msg.activeIndex, Math.max(0, msg.blocks.length - 1));
+    if (presentationMode) {
+      if (blocks.length === 0) {
+        exitPresentation();
+      } else {
+        updatePresCounter();
+      }
+    }
     if (galleryMode) {
       scheduleGallery();
     } else {
       scheduleRender({ keepView });
     }
     enqueue(() => validateBlocks(msg));
-  } else if (msg.type === 'setActive' && msg.index !== activeIndex) {
+  } else if (msg.type === 'setActive' && msg.index !== activeIndex && !presentationMode) {
     activeIndex = msg.index;
     if (galleryMode) {
       highlightGalleryCard(msg.index);

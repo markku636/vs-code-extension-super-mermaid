@@ -273,6 +273,53 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Presentation mode: chrome hidden, clean backdrop, slide counter. */
+body.presentation #toolbar,
+body.presentation #search-bar {
+  display: none !important;
+}
+
+body.presentation #canvas {
+  background-image: none;
+}
+
+#pres-counter {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 11;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  pointer-events: none;
+}
+
+#pres-hint {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  z-index: 11;
+  padding: 5px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  font-size: 11px;
+  opacity: 0.9;
+  transition: opacity 0.6s ease;
+  user-select: none;
+  pointer-events: none;
+}
+
+#pres-hint.fade {
+  opacity: 0;
+}
+
 .dropdown {
   position: fixed;
   z-index: 20;
