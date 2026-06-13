@@ -144,6 +144,59 @@ body {
   margin-right: 4px;
 }
 
+#search-bar {
+  position: absolute;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+}
+
+#search-bar input {
+  width: 200px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 5px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+#search-bar input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+#search-count {
+  min-width: 34px;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+  user-select: none;
+}
+
+/* Find in diagram: everything dims except the matches; current match glows. */
+#diagram .sm-dim {
+  opacity: 0.22;
+  transition: opacity 0.15s ease;
+}
+
+#diagram .sm-hit {
+  filter: drop-shadow(0 0 5px #f59e0b) drop-shadow(0 0 1.5px #f59e0b);
+}
+
 #empty {
   position: absolute;
   inset: 0;
@@ -370,6 +423,7 @@ body.gallery-mode #zoom-in,
 body.gallery-mode #zoom-out,
 body.gallery-mode #zoom-reset,
 body.gallery-mode #fit-width,
+body.gallery-mode #search-toggle,
 body.gallery-mode #zoom-level {
   opacity: 0.35;
   pointer-events: none;

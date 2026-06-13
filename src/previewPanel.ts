@@ -75,6 +75,8 @@ const ICON_POPOUT =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9 2h5v5h-1.5V4.56L7.78 9.28 6.72 8.22l4.72-4.72H9V2ZM3.5 4H7v1.5H3.5v7h7V9H12v3.5A1.5 1.5 0 0 1 10.5 14h-7A1.5 1.5 0 0 1 2 12.5v-7A1.5 1.5 0 0 1 3.5 4Z"/></svg>';
 const ICON_REFRESH =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.6v3.2h-3.2" stroke-linejoin="round"/></svg>';
+const ICON_SEARCH =
+  '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.5 1a5.5 5.5 0 0 1 4.38 8.83l4.15 4.14-1.06 1.06-4.15-4.14A5.5 5.5 0 1 1 6.5 1Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/></svg>';
 const ICON_SHARE =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6.6 9.4l2.8-2.8"/><path d="M7.6 4.6l1.2-1.2a2.55 2.55 0 0 1 3.6 3.6l-1.2 1.2"/><path d="M8.4 11.4l-1.2 1.2a2.55 2.55 0 0 1-3.6-3.6l1.2-1.2"/></svg>';
 const ICON_COPY =
@@ -534,6 +536,7 @@ export class PreviewPanel {
     <button id="zoom-reset" title="Fit to view (0, or double-click canvas)">${ICON_FIT}</button>
     <button id="fit-width" title="Fit width (w)">${ICON_FIT_WIDTH}</button>
     <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
+    <button id="search-toggle" title="Find in diagram (/)">${ICON_SEARCH}</button>
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
       <option value="colorful">Colorful</option>
@@ -548,6 +551,10 @@ export class PreviewPanel {
     <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
     <div class="sep"></div>
     <button id="more-btn" title="More…">${ICON_MORE}</button>
+  </div>
+  <div id="search-bar" hidden>
+    <input id="search-input" type="text" placeholder="Find in diagram…" spellcheck="false" />
+    <span id="search-count"></span>
   </div>
   <div id="more-menu" class="dropdown" hidden>
     <button class="menu-item" id="menu-lock">${ICON_LOCK}<span id="menu-lock-label">Lock to current file</span></button>

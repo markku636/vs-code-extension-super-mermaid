@@ -311,6 +311,10 @@ async function render(opts: { keepView?: boolean } = {}): Promise<void> {
   }
   updateZoomLabel();
   errorEl.hidden = true;
+  if (!searchBarEl.hidden && searchInputEl.value.trim()) {
+    // Re-apply highlights on the fresh DOM, but don't yank the view around.
+    runSearch(searchInputEl.value, { pan: false });
+  }
 }
 
 function scheduleRender(opts: { keepView?: boolean } = {}): void {
@@ -323,6 +327,7 @@ function enterGallery(): void {
   if (galleryMode) {
     return;
   }
+  closeSearch();
   galleryMode = true;
   destroyPanZoom();
   diagramEl.replaceChildren();
@@ -505,6 +510,159 @@ diagramEl.addEventListener('click', (e) => {
     vscodeApi.postMessage({ type: 'revealLine', index: activeIndex, line });
   } else {
     vscodeApi.postMessage({ type: 'revealBlock', index: activeIndex });
+  }
+});
+
+// ─── Find in diagram ────────────────────────────────────────────────────────
+
+const searchBarEl = document.getElementById('search-bar') as HTMLDivElement;
+const searchInputEl = document.getElementById('search-input') as HTMLInputElement;
+const searchCountEl = document.getElementById('search-count') as HTMLSpanElement;
+const searchToggleBtn = document.getElementById('search-toggle') as HTMLButtonElement;
+
+let searchMatches: Element[] = [];
+let searchCurrent = -1;
+
+const DIMMABLE_SELECTOR =
+  'g.node, g.cluster, g.mindmap-node, g[class*="timeline-node"], .actor';
+
+/** Same node-level granularity as click-to-source, falling back to the text itself. */
+function highlightTargetFor(el: Element): Element {
+  return clickableGroupFor(el) ?? el;
+}
+
+function clearSearchHighlights(): void {
+  const svg = diagramEl.querySelector('svg');
+  if (!svg) {
+    return;
+  }
+  for (const el of Array.from(svg.querySelectorAll('.sm-dim, .sm-hit'))) {
+    el.classList.remove('sm-dim', 'sm-hit');
+  }
+}
+
+function setSearchCurrent(i: number, opts: { pan?: boolean } = {}): void {
+  if (searchMatches.length === 0) {
+    return;
+  }
+  if (searchCurrent >= 0) {
+    searchMatches[searchCurrent]?.classList.remove('sm-hit');
+  }
+  searchCurrent = ((i % searchMatches.length) + searchMatches.length) % searchMatches.length;
+  const el = searchMatches[searchCurrent];
+  el.classList.add('sm-hit');
+  searchCountEl.textContent = `${searchCurrent + 1}/${searchMatches.length}`;
+  if (opts.pan !== false) {
+    panToElement(el);
+  }
+}
+
+/** Center an element in the view at the current zoom via svg-pan-zoom. */
+function panToElement(el: Element): void {
+  const svg = diagramEl.querySelector('svg');
+  if (!panZoom || !svg) {
+    return;
+  }
+  const vp = svg.querySelector<SVGGElement>('.svg-pan-zoom_viewport');
+  const g = el as SVGGraphicsElement;
+  if (!vp || typeof g.getBBox !== 'function') {
+    return;
+  }
+  const vpCtm = vp.getCTM();
+  const elCtm = g.getCTM();
+  if (!vpCtm || !elCtm) {
+    return;
+  }
+  let bb: DOMRect;
+  try {
+    bb = g.getBBox();
+  } catch {
+    return;
+  }
+  // el-local → viewBox coordinates; screen = viewBox * realZoom + pan.
+  const m = vpCtm.inverse().multiply(elCtm);
+  const c = new DOMPoint(bb.x + bb.width / 2, bb.y + bb.height / 2).matrixTransform(m);
+  const sizes = panZoom.getSizes();
+  panZoom.pan({
+    x: sizes.width / 2 - c.x * sizes.realZoom,
+    y: sizes.height / 2 - c.y * sizes.realZoom,
+  });
+}
+
+function runSearch(query: string, opts: { pan?: boolean } = {}): void {
+  clearSearchHighlights();
+  searchMatches = [];
+  searchCurrent = -1;
+  const svg = galleryMode ? null : diagramEl.querySelector('svg');
+  const q = query.trim().toLowerCase();
+  if (!svg || !q) {
+    searchCountEl.textContent = '';
+    return;
+  }
+  const seen = new Set<Element>();
+  for (const textEl of Array.from(svg.querySelectorAll('text, .nodeLabel'))) {
+    if (!(textEl.textContent ?? '').toLowerCase().includes(q)) {
+      continue;
+    }
+    const target = highlightTargetFor(textEl);
+    if (!seen.has(target)) {
+      seen.add(target);
+      searchMatches.push(target);
+    }
+  }
+  if (searchMatches.length === 0) {
+    searchCountEl.textContent = '0';
+    return;
+  }
+  for (const el of Array.from(svg.querySelectorAll(DIMMABLE_SELECTOR))) {
+    const dimTarget = el.classList.contains('actor') ? (el.parentElement ?? el) : el;
+    dimTarget.classList.add('sm-dim');
+  }
+  for (const match of searchMatches) {
+    match.classList.remove('sm-dim');
+  }
+  setSearchCurrent(0, opts);
+}
+
+function openSearch(): void {
+  if (galleryMode) {
+    return; // v1 searches the current diagram only
+  }
+  searchBarEl.hidden = false;
+  searchToggleBtn.classList.add('active');
+  searchInputEl.focus();
+  searchInputEl.select();
+  runSearch(searchInputEl.value);
+}
+
+function closeSearch(): void {
+  if (searchBarEl.hidden) {
+    return;
+  }
+  searchBarEl.hidden = true;
+  searchToggleBtn.classList.remove('active');
+  clearSearchHighlights();
+  searchMatches = [];
+  searchCurrent = -1;
+  searchCountEl.textContent = '';
+}
+
+searchToggleBtn.addEventListener('click', () => {
+  if (searchBarEl.hidden) {
+    openSearch();
+  } else {
+    closeSearch();
+  }
+});
+searchInputEl.addEventListener('input', () => runSearch(searchInputEl.value));
+searchInputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    setSearchCurrent(searchCurrent + (e.shiftKey ? -1 : 1));
+    e.preventDefault();
+  } else if (e.key === 'Escape') {
+    closeSearch();
+    e.preventDefault();
+    e.stopPropagation();
   }
 });
 
@@ -895,8 +1053,13 @@ document.addEventListener('click', (e) => {
   }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
+  if (e.key !== 'Escape') {
+    return;
+  }
+  if (!exportMenuEl.hidden || !moreMenuEl.hidden) {
     closeMenus();
+  } else {
+    closeSearch();
   }
 });
 
@@ -993,6 +1156,17 @@ selectEl.addEventListener('change', () => {
 
 window.addEventListener('keydown', (e) => {
   if (
+    (e.ctrlKey || e.metaKey) &&
+    !e.shiftKey &&
+    !e.altKey &&
+    e.key.toLowerCase() === 'f' &&
+    !galleryMode
+  ) {
+    openSearch();
+    e.preventDefault();
+    return;
+  }
+  if (
     e.target instanceof HTMLSelectElement ||
     e.target instanceof HTMLInputElement ||
     document.activeElement instanceof HTMLSelectElement ||
@@ -1016,6 +1190,8 @@ window.addEventListener('keydown', (e) => {
     actualSize();
   } else if (zoomKeysActive && e.key.toLowerCase() === 'w') {
     fitWidth();
+  } else if (zoomKeysActive && e.key === '/') {
+    openSearch();
   } else if (zoomKeysActive && e.key.toLowerCase() === 'c') {
     enqueue(() => copyImage());
   } else if (e.key.toLowerCase() === 'g') {
