@@ -42,8 +42,21 @@ export function activate(context: vscode.ExtensionContext): void {
       'superMermaid.editDiagram',
       async (uri: vscode.Uri, blockIndex: number) => {
         const doc = await vscode.workspace.openTextDocument(uri);
+        // Edit Diagram 一律:右側並排預覽 + 焦點留在原始碼(編輯模式)。
+        // 預覽若在獨立視窗,先關掉,改用 beside 重新開,確保並排、不留分割。
+        if (PreviewPanel.current?.isPoppedOut()) {
+          PreviewPanel.current.closePanel();
+        }
         await vscode.window.showTextDocument(doc, { preview: false });
-        await PreviewPanel.createOrShow(context, doc, blockIndex);
+        await PreviewPanel.createOrShow(context, doc, blockIndex, false, true);
+      },
+    ),
+    vscode.commands.registerCommand(
+      'superMermaid.editDiagramInNewWindow',
+      async (uri: vscode.Uri, blockIndex: number) => {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(doc, { preview: false });
+        await PreviewPanel.createOrShow(context, doc, blockIndex, true);
       },
     ),
     vscode.commands.registerCommand('superMermaid.openToSide', async (uri?: vscode.Uri) => {

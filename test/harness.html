@@ -33,10 +33,7 @@
     <select id="block-select" hidden title="Select diagram"></select>
     <button id="presentation-toggle" title="Presentation mode (p)">▶</button>
     <button id="zoom-reset" title="Fit to view (0)">◎</button>
-    <button id="gallery-toggle" title="Gallery — all diagrams (g)">▦</button>
     <button id="search-toggle" title="Find in diagram (/)">🔍</button>
-    <button id="popout-btn" title="Open in new window">⧉</button>
-    <button id="fullscreen-btn" title="Maximize panel (f)">⤢</button>
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
       <option value="colorful">Colorful</option>
@@ -87,6 +84,7 @@
     </label>
   </div>
   <div id="more-menu" class="dropdown" hidden>
+    <button class="menu-item" id="gallery-toggle">▦<span>Gallery — all diagrams (g)</span></button>
     <button class="menu-item" id="lock-btn" title="Lock to current file"><span class="icon-unlocked">🔓</span><span class="icon-locked">🔒</span><span id="lock-label">Lock to current file</span></button>
     <button class="menu-item" id="refresh-btn">⟳<span>Re-render</span></button>
     <button class="menu-item" id="fit-width">↔<span>Fit width (w)</span></button>
