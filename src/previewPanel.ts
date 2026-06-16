@@ -26,8 +26,6 @@ type WebviewMessage =
   | { type: 'copyImageFallback'; data: string }
   | { type: 'shareLive'; code: string; theme: string }
   | { type: 'setLocked'; locked: boolean }
-  | { type: 'toggleFullscreen' }
-  | { type: 'popOut' }
   | { type: 'diagnostics'; uri: string; version: number; errors: BlockError[] }
   | { type: 'exportAllRequest'; format: ExportFormat; count: number }
   | { type: 'exportAllFile'; index: number; name: string; data: string }
@@ -70,10 +68,6 @@ const ICON_LOCK =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
 const ICON_UNLOCK =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 4.95-.5" stroke-linecap="round"/></svg>';
-const ICON_EXPAND =
-  '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h5v1.5H4.56l3.22 3.22-1.06 1.06L3.5 4.56V7H2V2Zm12 12H9v-1.5h2.44L8.22 9.28l1.06-1.06 3.22 3.22V9H14v5Z"/></svg>';
-const ICON_POPOUT =
-  '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9 2h5v5h-1.5V4.56L7.78 9.28 6.72 8.22l4.72-4.72H9V2ZM3.5 4H7v1.5H3.5v7h7V9H12v3.5A1.5 1.5 0 0 1 10.5 14h-7A1.5 1.5 0 0 1 2 12.5v-7A1.5 1.5 0 0 1 3.5 4Z"/></svg>';
 const ICON_REFRESH =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.6v3.2h-3.2" stroke-linejoin="round"/></svg>';
 const ICON_MORE =
@@ -105,8 +99,6 @@ export class PreviewPanel {
   /** CodeLens「Edit Diagram」指定要定位的圖（優先於游標位置，套用一次後清除）。 */
   private desiredIndex: number | undefined;
   private locked = false;
-  /** 我們透過 toggleMaximizeEditorGroup 把預覽群組放到最大（顯示 ✕ 用的提示狀態）。 */
-  private maximized = false;
   /** 預覽被移到獨立視窗（popOut / previewLocation: newWindow）。 */
   private poppedOut = false;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -117,22 +109,32 @@ export class PreviewPanel {
     context: vscode.ExtensionContext,
     doc: vscode.TextDocument,
     revealIndex?: number,
+    forceNewWindow = false,
+    forceBeside = false,
   ): Promise<void> {
     if (PreviewPanel.current) {
-      PreviewPanel.current.panel.reveal(undefined, true);
+      // When the preview already lives in its own window, take focus so that
+      // window is raised to the front — otherwise clicking the CodeLens from the
+      // editor looks like nothing happened. Beside-mode keeps the editor focused.
+      PreviewPanel.current.panel.reveal(undefined, !PreviewPanel.current.poppedOut);
       PreviewPanel.current.setSource(doc);
       if (revealIndex !== undefined) {
         PreviewPanel.current.focusBlock(revealIndex);
       }
+      if (forceNewWindow) {
+        await PreviewPanel.current.popOut();
+      }
       return;
     }
-    // 'newWindow' 模式需讓 webview 取得焦點（preserveFocus=false），
-    // 才能接著用 moveEditorToNewWindow 把這個作用中的面板移到獨立視窗。
+    // 'newWindow' 模式（或 CodeLens「Open in New Window」）需讓 webview 取得焦點
+    //（preserveFocus=false），才能接著用 moveEditorToNewWindow 把作用中的面板移到獨立視窗。
     const location = getPreviewLocation();
+    // forceBeside（Edit Diagram）一律右側並排,凌駕 previewLocation: newWindow 設定。
+    const popOut = !forceBeside && (forceNewWindow || location === 'newWindow');
     const panel = vscode.window.createWebviewPanel(
       'superMermaid',
       'Super Mermaid',
-      { viewColumn: vscode.ViewColumn.Beside, preserveFocus: location !== 'newWindow' },
+      { viewColumn: vscode.ViewColumn.Beside, preserveFocus: !popOut },
       {
         enableScripts: true,
         retainContextWhenHidden: true,
@@ -146,10 +148,8 @@ export class PreviewPanel {
     if (revealIndex !== undefined) {
       PreviewPanel.current.focusBlock(revealIndex);
     }
-    if (location === 'newWindow') {
-      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
-      PreviewPanel.current.poppedOut = true;
-      PreviewPanel.current.postViewState();
+    if (popOut) {
+      await PreviewPanel.current.popOut();
     }
   }
 
@@ -289,18 +289,6 @@ export class PreviewPanel {
         break;
       case 'setLocked':
         this.locked = msg.locked;
-        break;
-      case 'toggleFullscreen':
-        // The click already focused the webview, so its editor group is the
-        // active one that gets maximized/restored.
-        await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
-        this.maximized = !this.maximized;
-        this.postViewState();
-        break;
-      case 'popOut':
-        await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
-        this.poppedOut = true;
-        this.postViewState();
         break;
       case 'diagnostics':
         // Drop stale results — a newer (debounced) update is already in flight.
@@ -517,7 +505,7 @@ export class PreviewPanel {
     );
   }
 
-  /** The tab holding the source document — found even while its group is hidden by a maximize. */
+  /** The tab holding the source document — found even while it isn't the visible editor. */
   private findSourceTab(): { column: vscode.ViewColumn; isActive: boolean } | undefined {
     for (const group of vscode.window.tabGroups.all) {
       for (const tab of group.tabs) {
@@ -532,7 +520,35 @@ export class PreviewPanel {
     return undefined;
   }
 
-  /** Esc / ✕ — undo maximize/pop-out if we're in one, then hand focus back to the source editor. */
+  /** 把預覽移到獨立浮動視窗（CodeLens「Open in New Window」/ previewLocation: newWindow）；已彈出則僅聚焦。 */
+  private async popOut(): Promise<void> {
+    if (this.poppedOut) {
+      // 已在獨立視窗 → 帶到前景即可，避免重複 moveEditorToNewWindow 開出空白視窗。
+      this.panel.reveal(undefined, false);
+      return;
+    }
+    // reveal 讓預覽成為作用中面板，moveEditorToNewWindow 才會搬到它。
+    this.panel.reveal(undefined, false);
+    await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+    this.poppedOut = true;
+    this.postViewState();
+  }
+
+  /**
+   * CodeLens「Edit Diagram」:回到編輯模式 —— 預覽若在獨立視窗就先收回主視窗,
+   * 再把焦點交還原始碼編輯器並定位到這張圖的起始行,讓使用者直接改碼。
+   */
+  /** 預覽目前是否在獨立浮動視窗。 */
+  public isPoppedOut(): boolean {
+    return this.poppedOut;
+  }
+
+  /** 關閉預覽面板(連同它的獨立視窗);會觸發 onDidDispose → dispose() 清空 current。 */
+  public closePanel(): void {
+    this.panel.dispose();
+  }
+
+  /** Esc / ✕ — undo pop-out if we're in one, then hand focus back to the source editor. */
   private async exitToEditor(): Promise<void> {
     if (this.poppedOut) {
       // Esc/✕ happened in the webview, so the floating window is the active
@@ -542,15 +558,6 @@ export class PreviewPanel {
       this.postViewState();
     }
     const tab = this.findSourceTab();
-    if (!this.findSourceEditor() && tab?.isActive) {
-      // The source tab is frontmost in its group yet not visible — its group is
-      // hidden because the preview group is maximized. Restore the layout first.
-      await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
-    }
-    if (this.maximized) {
-      this.maximized = false;
-      this.postViewState();
-    }
     const editor = this.findSourceEditor();
     const column = editor?.viewColumn ?? tab?.column;
     if (column !== undefined) {
@@ -562,7 +569,7 @@ export class PreviewPanel {
   private postViewState(): void {
     void this.panel.webview.postMessage({
       type: 'viewState',
-      exitVisible: this.maximized || this.poppedOut,
+      exitVisible: this.poppedOut,
     });
   }
 
@@ -601,10 +608,7 @@ export class PreviewPanel {
     <select id="block-select" hidden title="Select diagram"></select>
     <button id="presentation-toggle" title="Presentation mode (p)">${ICON_PLAY}</button>
     <button id="zoom-reset" title="Fit to view (0, or double-click canvas)">${ICON_FIT}</button>
-    <button id="gallery-toggle" title="Gallery — all diagrams (g)">${ICON_GALLERY}</button>
     <button id="search-toggle" title="Find in diagram (/)">${ICON_SEARCH}</button>
-    <button id="popout-btn" title="Open in new window">${ICON_POPOUT}</button>
-    <button id="fullscreen-btn" title="Maximize panel (f)">${ICON_EXPAND}</button>
     <div class="sep"></div>
     <select id="theme-select" title="Mermaid theme / style">
       <option value="colorful">Colorful</option>
@@ -655,6 +659,7 @@ export class PreviewPanel {
     </label>
   </div>
   <div id="more-menu" class="dropdown" hidden>
+    <button class="menu-item" id="gallery-toggle">${ICON_GALLERY}<span>Gallery — all diagrams (g)</span></button>
     <button class="menu-item" id="lock-btn" title="Lock to current file"><span class="icon-unlocked">${ICON_UNLOCK}</span><span class="icon-locked">${ICON_LOCK}</span><span id="lock-label">Lock to current file</span></button>
     <button class="menu-item" id="refresh-btn">${ICON_REFRESH}<span>Re-render</span></button>
     <button class="menu-item" id="fit-width">${ICON_FIT_WIDTH}<span>Fit width (w)</span></button>

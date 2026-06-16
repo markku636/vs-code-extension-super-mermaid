@@ -185,7 +185,9 @@ try {
   await page.screenshot({ path: join(OUT_DIR, 'preview-panel.png') });
   console.log('saved preview-panel.png');
 
-  await page.click('#gallery-toggle');
+  // Gallery now lives inside the hidden "More" menu, so click the button
+  // programmatically rather than via a viewport hit-test.
+  await page.evaluate(() => document.getElementById('gallery-toggle').click());
   await page.waitForFunction(
     (n) => document.querySelectorAll('#gallery .gallery-card-body svg').length === n,
     { timeout: 60_000 },
@@ -194,7 +196,7 @@ try {
   await sleep(300);
   await page.screenshot({ path: join(OUT_DIR, 'gallery.png') });
   console.log('saved gallery.png');
-  await page.click('#gallery-toggle'); // back to single view
+  await page.evaluate(() => document.getElementById('gallery-toggle').click()); // back to single view
 
   // 2) Light mode for the exported diagram images (white background).
   await page.evaluate(() => {

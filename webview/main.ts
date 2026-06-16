@@ -737,7 +737,7 @@ presExitBtn.addEventListener('click', (e) => {
   exitPresentation();
 });
 
-// Maximize / pop-out 時的 ✕ — 還原版面並把焦點交還原始碼編輯器（同 Esc）。
+// Pop-out 時的 ✕ — 還原版面並把焦點交還原始碼編輯器（同 Esc）。
 viewExitBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   vscodeApi.postMessage({ type: 'focusEditor' });
@@ -1087,6 +1087,7 @@ document.getElementById('fit-width')!.addEventListener('click', () => {
   fitWidth();
 });
 galleryToggleBtn.addEventListener('click', () => {
+  closeMenus();
   if (galleryMode) {
     exitGallery();
   } else {
@@ -1214,12 +1215,6 @@ document.getElementById('refresh-btn')!.addEventListener('click', () => {
 document.getElementById('presentation-toggle')!.addEventListener('click', () => {
   enterPresentation();
 });
-document.getElementById('fullscreen-btn')!.addEventListener('click', () => {
-  vscodeApi.postMessage({ type: 'toggleFullscreen' });
-});
-document.getElementById('popout-btn')!.addEventListener('click', () => {
-  vscodeApi.postMessage({ type: 'popOut' });
-});
 
 themeSelectEl.addEventListener('change', () => {
   themePref = themeSelectEl.value as ThemePref;
@@ -1315,8 +1310,6 @@ window.addEventListener('keydown', (e) => {
     }
   } else if (e.key.toLowerCase() === 'g' && !presentationMode) {
     galleryToggleBtn.click();
-  } else if (e.key.toLowerCase() === 'f') {
-    vscodeApi.postMessage({ type: 'toggleFullscreen' });
   } else {
     return;
   }
