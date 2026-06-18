@@ -140,7 +140,7 @@ function darkenNodeText(group: Element): void {
 
 /** Muted slate edges with round caps read far cleaner than mermaid's defaults. */
 function styleEdges(svg: Element, dark: boolean): void {
-  const edgeColor = dark ? '#94A3B8' : '#64748B';
+  const edgeColor = dark ? '#94A3B8' : '#475569';
   const edgeSelectors = [
     '.edgePaths path',
     'g.edgePath path',
@@ -169,6 +169,23 @@ function styleEdgeLabels(svg: Element): void {
   for (const rect of Array.from(svg.querySelectorAll<SVGElement>('.edgeLabel rect'))) {
     rect.setAttribute('rx', '4');
     rect.setAttribute('ry', '4');
+  }
+}
+
+/**
+ * Sequence message labels and flowchart edge labels keep mermaid's faint
+ * default colour, which disappears on a light canvas background — repaint them
+ * dark (or light in dark mode) so they stay legible like Excalidraw's.
+ */
+function styleLabelText(svg: Element, dark: boolean): void {
+  const color = dark ? '#E2E8F0' : NODE_TEXT;
+  for (const t of Array.from(
+    svg.querySelectorAll<SVGElement>('text.messageText, .edgeLabel text, .edgeLabel tspan'),
+  )) {
+    t.style.fill = color;
+  }
+  for (const t of Array.from(svg.querySelectorAll<HTMLElement>('.edgeLabel span, .edgeLabel p'))) {
+    t.style.color = color;
   }
 }
 
@@ -255,6 +272,7 @@ export function colorizeDiagram(root: ParentNode, opts: ColorizeOptions = {}): v
 
   styleEdges(svg, opts.dark === true);
   styleEdgeLabels(svg);
+  styleLabelText(svg, opts.dark === true);
 
   // Type-specific passes, dispatched on the root's aria-roledescription.
   // Unknown types fall through untouched; every styler early-outs on zero

@@ -140,11 +140,20 @@ function isDarkTheme(): boolean {
   return cls.includes('vscode-dark') || cls.includes('vscode-high-contrast');
 }
 
+/**
+ * Whether the diagram should render dark. A chosen canvas background is always
+ * a light colour, so it pins the diagram to light mode even in a dark VS Code
+ * theme — otherwise dark-theme text and lines disappear on the light canvas.
+ */
+function effectiveDark(): boolean {
+  return canvasBg ? false : isDarkTheme();
+}
+
 function resolvedTheme(): 'default' | 'dark' | 'neutral' | 'forest' {
   if (themePref === 'auto' || themePref === 'colorful' || themePref === 'sketch') {
     // Colorful renders on the auto base theme, then repaints nodes afterwards.
     // Sketch keeps the auto base theme too — the hand-drawn look does the rest.
-    return isDarkTheme() ? 'dark' : 'default';
+    return effectiveDark() ? 'dark' : 'default';
   }
   return themePref;
 }
@@ -215,7 +224,7 @@ function sketchFontFaceCss(): Promise<string | undefined> {
 }
 
 function initMermaid(): void {
-  darkTheme = isDarkTheme();
+  darkTheme = effectiveDark();
   mermaid.initialize(baseMermaidConfig());
 }
 
@@ -1358,6 +1367,14 @@ for (const btn of Array.from(bgSwatchesEl?.querySelectorAll<HTMLButtonElement>('
     canvasBg = btn.dataset.bg ?? '';
     applyCanvasBg();
     persist();
+    // A light background pins the diagram to light mode (see effectiveDark),
+    // so re-init mermaid and repaint to swap text/line colours accordingly.
+    enqueue(async () => initMermaid());
+    if (galleryMode) {
+      scheduleGallery();
+    } else {
+      scheduleRender({ keepView: true });
+    }
   });
 }
 
@@ -1478,7 +1495,7 @@ window.addEventListener('message', (event: MessageEvent<InMessage>) => {
 });
 
 new MutationObserver(() => {
-  if (isDarkTheme() !== darkTheme) {
+  if (effectiveDark() !== darkTheme) {
     enqueue(async () => initMermaid());
     if (galleryMode) {
       scheduleGallery();
