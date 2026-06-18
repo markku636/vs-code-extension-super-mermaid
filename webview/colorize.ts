@@ -292,6 +292,21 @@ export function colorizeDiagram(root: ParentNode, opts: ColorizeOptions = {}): v
   }
 }
 
+/**
+ * Lighter-touch pass for the Sketch theme: leave mermaid's hand-drawn shapes
+ * alone (no recolouring/shadows that would fight the whiteboard look), but
+ * darken the edges and message/edge labels — mermaid's defaults are too faint,
+ * especially against the light paper canvas.
+ */
+export function enhanceContrast(root: ParentNode, opts: ColorizeOptions = {}): void {
+  const svg = resolveSvg(root);
+  if (!svg) {
+    return;
+  }
+  styleEdges(svg, opts.dark === true);
+  styleLabelText(svg, opts.dark === true);
+}
+
 /** Pie: keep mermaid's designed slice palette, just add separation + polish. */
 function stylePie(svg: Element, dark: boolean): void {
   const slices = Array.from(svg.querySelectorAll<SVGElement>('path.pieCircle'));

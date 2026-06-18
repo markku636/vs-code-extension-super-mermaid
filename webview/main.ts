@@ -1,6 +1,6 @@
 import mermaid from 'mermaid';
 import svgPanZoom from 'svg-pan-zoom';
-import { colorizeDiagram } from './colorize';
+import { colorizeDiagram, enhanceContrast } from './colorize';
 
 type PanZoomInstance = ReturnType<typeof svgPanZoom>;
 
@@ -117,15 +117,16 @@ function persist(): void {
   vscodeApi.setState({ theme: themePref, pngScale, transparentBg, canvasBg });
 }
 
-/** Paint the chosen canvas background (or restore the editor default for ''). */
+/** Paint the effective canvas background (chosen colour, Sketch paper, or editor). */
 function applyCanvasBg(): void {
-  canvasEl.style.backgroundColor = canvasBg;
+  const eff = effectiveCanvasBg();
+  canvasEl.style.backgroundColor = eff;
   // A solid colour reads cleaner without the dotted grid; '' restores both.
-  canvasEl.style.backgroundImage = canvasBg ? 'none' : '';
-  // Mirror the current choice on the toolbar swatch button.
+  canvasEl.style.backgroundImage = eff ? 'none' : '';
+  // Mirror the effective background on the toolbar swatch button.
   if (bgCurrentEl) {
-    bgCurrentEl.style.backgroundColor = canvasBg;
-    bgCurrentEl.dataset.bg = canvasBg;
+    bgCurrentEl.style.backgroundColor = eff;
+    bgCurrentEl.dataset.bg = eff;
   }
   for (const btn of Array.from(bgSwatchesEl?.querySelectorAll<HTMLButtonElement>('.bg-swatch') ?? [])) {
     btn.classList.toggle('selected', (btn.dataset.bg ?? '') === canvasBg);
@@ -140,13 +141,24 @@ function isDarkTheme(): boolean {
   return cls.includes('vscode-dark') || cls.includes('vscode-high-contrast');
 }
 
+// Sketch is a light "whiteboard" look like Excalidraw, so it gets a soft paper
+// canvas by default — even in a dark VS Code theme — unless the user picked an
+// explicit background.
+const SKETCH_PAPER = '#FAF9F6';
+function effectiveCanvasBg(): string {
+  if (canvasBg) {
+    return canvasBg;
+  }
+  return themePref === 'sketch' ? SKETCH_PAPER : '';
+}
+
 /**
- * Whether the diagram should render dark. A chosen canvas background is always
- * a light colour, so it pins the diagram to light mode even in a dark VS Code
- * theme — otherwise dark-theme text and lines disappear on the light canvas.
+ * Whether the diagram should render dark. The effective canvas background is
+ * always a light colour, so it pins the diagram to light mode even in a dark
+ * VS Code theme — otherwise dark-theme text and lines vanish on the light canvas.
  */
 function effectiveDark(): boolean {
-  return canvasBg ? false : isDarkTheme();
+  return effectiveCanvasBg() ? false : isDarkTheme();
 }
 
 function resolvedTheme(): 'default' | 'dark' | 'neutral' | 'forest' {
@@ -369,6 +381,8 @@ async function render(opts: { keepView?: boolean } = {}): Promise<void> {
   svgEl.style.height = '100%';
   if (themePref === 'colorful') {
     colorizeDiagram(svgEl, { dark: darkTheme });
+  } else if (themePref === 'sketch') {
+    enhanceContrast(svgEl, { dark: darkTheme });
   }
   panZoom = svgPanZoom(svgEl, {
     zoomEnabled: true,
@@ -498,6 +512,8 @@ async function renderGallery(): Promise<void> {
         svgEl.style.height = '100%';
         if (themePref === 'colorful') {
           colorizeDiagram(svgEl, { dark: darkTheme });
+        } else if (themePref === 'sketch') {
+          enhanceContrast(svgEl, { dark: darkTheme });
         }
       }
     } catch (err) {
@@ -900,6 +916,8 @@ function prepareSvgText(svgText: string, opts: PrepareSvgOptions = {}): Prepared
   svgEl.removeAttribute('style');
   if (themePref === 'colorful') {
     colorizeDiagram(svgEl, { dark: darkTheme });
+  } else if (themePref === 'sketch') {
+    enhanceContrast(svgEl, { dark: darkTheme });
   }
   const svgNs = 'http://www.w3.org/2000/svg';
   if (opts.fontFaceCss) {
@@ -931,7 +949,8 @@ async function prepareExportSvgFor(
   // Embed the hand-drawn font (Sketch only) and paint the chosen canvas
   // background unless the export is meant to be transparent.
   const fontFaceCss = themePref === 'sketch' ? await sketchFontFaceCss() : undefined;
-  const bgColor = !transparentBg && canvasBg ? canvasBg : undefined;
+  const bg = effectiveCanvasBg();
+  const bgColor = !transparentBg && bg ? bg : undefined;
   const prepared = prepareSvgText(result.svg, { fontFaceCss, bgColor });
   return prepared ? { prepared } : { error: 'no svg output' };
 }
@@ -960,7 +979,7 @@ async function rasterize(
     // JPEG has no alpha channel — always paint a background for it.
     if (!opts.transparent || opts.mime === 'image/jpeg') {
       const background =
-        canvasBg ||
+        effectiveCanvasBg() ||
         getComputedStyle(document.body).getPropertyValue('--vscode-editor-background').trim() ||
         (darkTheme ? '#1e1e1e' : '#ffffff');
       ctx.fillStyle = background;
@@ -1342,6 +1361,8 @@ document.getElementById('presentation-toggle')!.addEventListener('click', () => 
 themeSelectEl.addEventListener('change', () => {
   themePref = themeSelectEl.value as ThemePref;
   persist();
+  // Sketch carries its own paper background, so refresh the canvas + swatch.
+  applyCanvasBg();
   // initMermaid must go through the queue: an in-flight export temporarily
   // swaps the global mermaid config and restores it when done.
   enqueue(async () => initMermaid());
