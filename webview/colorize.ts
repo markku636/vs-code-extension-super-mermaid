@@ -25,13 +25,18 @@ const NODE_PALETTE: PaletteEntry[] = [
   { fill: '#EDE9FE', stroke: '#8B5CF6' }, // violet
 ];
 
+// Swimlane / subgraph tints. Hues mirror NODE_PALETTE; fills are strong
+// enough (16% vs the old 7%) and borders saturated enough that adjacent
+// lanes are easy to tell apart at a glance.
 const CLUSTER_PALETTE: PaletteEntry[] = [
-  { fill: 'rgba(59, 130, 246, 0.07)', stroke: '#93C5FD' },
-  { fill: 'rgba(34, 197, 94, 0.07)', stroke: '#86EFAC' },
-  { fill: 'rgba(249, 115, 22, 0.07)', stroke: '#FDBA74' },
-  { fill: 'rgba(168, 85, 247, 0.07)', stroke: '#D8B4FE' },
-  { fill: 'rgba(6, 182, 212, 0.07)', stroke: '#67E8F9' },
-  { fill: 'rgba(239, 68, 68, 0.07)', stroke: '#FCA5A5' },
+  { fill: 'rgba(59, 130, 246, 0.16)', stroke: '#3B82F6' }, // blue
+  { fill: 'rgba(34, 197, 94, 0.16)', stroke: '#22C55E' }, // green
+  { fill: 'rgba(249, 115, 22, 0.16)', stroke: '#F97316' }, // orange
+  { fill: 'rgba(168, 85, 247, 0.16)', stroke: '#A855F7' }, // purple
+  { fill: 'rgba(239, 68, 68, 0.16)', stroke: '#EF4444' }, // red
+  { fill: 'rgba(6, 182, 212, 0.16)', stroke: '#06B6D4' }, // cyan
+  { fill: 'rgba(234, 179, 8, 0.16)', stroke: '#EAB308' }, // yellow
+  { fill: 'rgba(139, 92, 246, 0.16)', stroke: '#8B5CF6' }, // violet
 ];
 
 const NODE_TEXT = '#1F2937';
@@ -181,14 +186,31 @@ export function colorizeDiagram(root: ParentNode, opts: ColorizeOptions = {}): v
     darkenNodeText(node);
   });
 
-  // Flowchart subgraphs
+  // Flowchart subgraphs ("swimlanes"): distinct tint + saturated border, and
+  // a matching bold title so even similarly-sized lanes are easy to tell apart.
   Array.from(svg.querySelectorAll<SVGGElement>('g.cluster')).forEach((cluster, i) => {
     const entry = CLUSTER_PALETTE[i % CLUSTER_PALETTE.length];
     for (const rect of Array.from(cluster.querySelectorAll<SVGElement>(':scope > rect'))) {
       rect.style.fill = entry.fill;
       rect.style.stroke = entry.stroke;
-      rect.style.strokeWidth = '1.2px';
+      rect.style.strokeWidth = '1.5px';
       roundRect(rect, 10);
+    }
+    // Title sits in g.cluster-label as either an HTML label (live preview) or a
+    // <text> node (htmlLabels:false export) — colour + embolden both forms.
+    const label = cluster.querySelector(':scope > .cluster-label');
+    if (label) {
+      for (const el of Array.from(label.querySelectorAll<SVGTextElement>('text, tspan'))) {
+        el.style.fill = entry.stroke;
+        el.style.fontWeight = '700';
+      }
+      for (const el of Array.from(label.querySelectorAll<HTMLElement>('.nodeLabel, span, p'))) {
+        el.style.color = entry.stroke;
+        el.style.fontWeight = '700';
+      }
+      for (const lr of Array.from(label.querySelectorAll<SVGElement>('rect'))) {
+        lr.style.fill = entry.fill;
+      }
     }
   });
 

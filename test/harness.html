@@ -28,7 +28,7 @@
   </style>
   <title>Mermaid Preview Harness</title>
 </head>
-<body class="vscode-dark">
+<body class="vscode-dark" data-font-uri="../media/Excalifont.woff2">
   <div id="toolbar">
     <select id="block-select" hidden title="Select diagram"></select>
     <button id="presentation-toggle" title="Presentation mode (p)">▶</button>
@@ -44,6 +44,7 @@
       <option value="neutral">Neutral</option>
       <option value="forest">Forest</option>
     </select>
+    <button id="bg-menu-btn" title="Background"><span id="bg-current" class="bg-current" data-bg=""></span></button>
     <div class="sep"></div>
     <button id="share-live-btn" title="Share to mermaid.live">🔗</button>
     <div class="sep"></div>
@@ -88,6 +89,17 @@
     <button class="menu-item" id="lock-btn" title="Lock to current file"><span class="icon-unlocked">🔓</span><span class="icon-locked">🔒</span><span id="lock-label">Lock to current file</span></button>
     <button class="menu-item" id="refresh-btn">⟳<span>Re-render</span></button>
     <button class="menu-item" id="fit-width">↔<span>Fit width (w)</span></button>
+  </div>
+  <div id="bg-menu" class="dropdown" hidden>
+    <div class="menu-label">Background<span class="menu-hint">also used for export</span></div>
+    <div class="bg-swatches" id="bg-swatches">
+      <button class="bg-swatch" data-bg="" title="Default — follow editor"></button>
+      <button class="bg-swatch" data-bg="#FFFFFF" style="background-color:#FFFFFF" title="White"></button>
+      <button class="bg-swatch" data-bg="#F3F4F6" style="background-color:#F3F4F6" title="Light gray"></button>
+      <button class="bg-swatch" data-bg="#EFF6FF" style="background-color:#EFF6FF" title="Light blue"></button>
+      <button class="bg-swatch" data-bg="#FEFCE8" style="background-color:#FEFCE8" title="Light yellow"></button>
+      <button class="bg-swatch" data-bg="#FDF2F8" style="background-color:#FDF2F8" title="Light rose"></button>
+    </div>
   </div>
   <div id="canvas">
     <div id="diagram"></div>

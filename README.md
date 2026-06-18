@@ -27,10 +27,10 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 
 ## Why you'll like it
 
-- 🎨 **Looks great out of the box** — Colorful is the default. Flowcharts, sequence, ER, class, state, Gantt, pie, mindmaps, and timelines all get a modern palette with rounded corners and soft shadows, **without changing a single line of mermaid code**. Prefer another look? Switch to Sketch / Auto / Light / Dark / Neutral / Forest from the toolbar.
-- ✏️ **Sketch style** — a hand-drawn whiteboard look (mermaid's built-in `handDrawn` renderer) in one click. Applies to exports too.
+- 🎨 **Looks great out of the box** — Colorful is the default. Flowcharts, sequence, ER, class, state, Gantt, pie, mindmaps, and timelines all get a modern palette with rounded corners and soft shadows — and every subgraph / swimlane gets its own distinct tint and a colored title, so adjacent lanes are easy to tell apart — **without changing a single line of mermaid code**. Prefer another look? Switch to Sketch / Auto / Light / Dark / Neutral / Forest from the toolbar.
+- ✏️ **Sketch style** — a hand-drawn, Excalidraw-like whiteboard look in one click: mermaid's built-in `handDrawn` shapes paired with the bundled **Excalifont** handwriting font (SIL Open Font License 1.1). The font is embedded into PNG / SVG exports too, so the handwriting survives wherever the image goes.
 - ⚡ **Live preview** — refreshes ~0.3s after you type. Mouse-wheel zoom, drag to pan, a Fit button, and a floating `−` / `%` / `+` zoom pill in the corner. On a syntax error the diagram stays at the last good render instead of going blank.
-- 🖼️ **Hi-res export & copy** — PNG / JPG / WebP / SVG at 1x / 2x / **4x** (pick 4x for slides — stays crisp when projected), with optional transparent background. **Export All** saves every diagram in the document at once. Press `c` to copy the current diagram to the clipboard and paste straight into Slack, Teams, or PowerPoint.
+- 🖼️ **Hi-res export & copy** — PNG / JPG / WebP / SVG at 1x / 2x / **4x** (pick 4x for slides — stays crisp when projected), with an optional transparent background or a solid canvas-background color. **Export All** saves every diagram in the document at once. Press `c` to copy the current diagram to the clipboard and paste straight into Slack, Teams, or PowerPoint.
 - 🎯 **Click a node, jump to its code** — clicking any node, subgraph, or actor moves the editor cursor to the line that defines it.
 - 🔍 **Find in diagram** — press `/` (or `Ctrl+F`): everything else dims, matches stay lit, `Enter` cycles through them and the view centers on each.
 - 📽️ **Presentation mode** — press `p` for a full-screen slideshow of every diagram in the document. Arrow keys to switch, `Esc` to leave. Perfect for walking through architecture in a meeting.
@@ -63,6 +63,7 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 | ◎ | Fit: fit the whole diagram into the window (double-clicking the canvas does the same) |
 | 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
 | Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
+| Background swatch | A color well next to the theme dropdown; click to pick the canvas background (also used as the export background) |
 | 🔗 | Share to mermaid.live: opens or copies a link with the diagram encoded in the URL |
 | ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
 | ⋯ More | Gallery (thumbnail overview of all diagrams), Lock to current file, Re-render, Fit Width |
@@ -88,7 +89,8 @@ Zoom sits in a floating `−` / `%` / `+` pill in the bottom-right corner of the
 ### Export tips
 
 - Export and copy resolution is controlled by the 1x / 2x / 4x setting in the Export menu; the default is 2x — use 4x for slides.
-- The background color follows the current theme; diagrams containing HTML tags (like journey) can't be rasterized, so they're automatically saved as SVG instead.
+- By default the exported background follows the editor theme. Click the **Background** swatch next to the theme dropdown to force a solid color (it applies to the preview and to exports), or tick **Transparent background** in the Export menu for a see-through PNG / WebP.
+- Diagrams containing HTML tags (like journey) can't be rasterized, so they're automatically saved as SVG instead.
 
 ---
 

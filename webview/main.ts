@@ -33,6 +33,8 @@ interface PersistedState {
   theme?: ThemePref;
   pngScale?: number;
   transparentBg?: boolean;
+  /** Canvas background override; '' means "follow the editor background". */
+  canvasBg?: string;
 }
 
 declare function acquireVsCodeApi(): {
@@ -53,6 +55,10 @@ const zoomLabelEl = document.getElementById('zoom-level') as HTMLSpanElement;
 const themeSelectEl = document.getElementById('theme-select') as HTMLSelectElement;
 const scaleSelectEl = document.getElementById('png-scale') as HTMLSelectElement;
 const bgCheckEl = document.getElementById('bg-transparent') as HTMLInputElement;
+const bgSwatchesEl = document.getElementById('bg-swatches') as HTMLDivElement;
+const bgMenuBtn = document.getElementById('bg-menu-btn') as HTMLButtonElement;
+const bgMenuEl = document.getElementById('bg-menu') as HTMLDivElement;
+const bgCurrentEl = document.getElementById('bg-current') as HTMLSpanElement;
 const galleryToggleBtn = document.getElementById('gallery-toggle') as HTMLButtonElement;
 const exportMenuBtn = document.getElementById('export-menu-btn') as HTMLButtonElement;
 const exportMenuEl = document.getElementById('export-menu') as HTMLDivElement;
@@ -79,6 +85,7 @@ let darkTheme = false;
 let themePref: ThemePref = 'colorful';
 let pngScale = 2;
 let transparentBg = false;
+let canvasBg = '';
 let locked = false;
 let galleryMode = false;
 let galleryGen = 0;
@@ -98,12 +105,31 @@ if (
 if (saved.transparentBg) {
   transparentBg = true;
 }
+if (typeof saved.canvasBg === 'string') {
+  canvasBg = saved.canvasBg;
+}
 themeSelectEl.value = themePref;
 scaleSelectEl.value = String(pngScale);
 bgCheckEl.checked = transparentBg;
+applyCanvasBg();
 
 function persist(): void {
-  vscodeApi.setState({ theme: themePref, pngScale, transparentBg });
+  vscodeApi.setState({ theme: themePref, pngScale, transparentBg, canvasBg });
+}
+
+/** Paint the chosen canvas background (or restore the editor default for ''). */
+function applyCanvasBg(): void {
+  canvasEl.style.backgroundColor = canvasBg;
+  // A solid colour reads cleaner without the dotted grid; '' restores both.
+  canvasEl.style.backgroundImage = canvasBg ? 'none' : '';
+  // Mirror the current choice on the toolbar swatch button.
+  if (bgCurrentEl) {
+    bgCurrentEl.style.backgroundColor = canvasBg;
+    bgCurrentEl.dataset.bg = canvasBg;
+  }
+  for (const btn of Array.from(bgSwatchesEl?.querySelectorAll<HTMLButtonElement>('.bg-swatch') ?? [])) {
+    btn.classList.toggle('selected', (btn.dataset.bg ?? '') === canvasBg);
+  }
 }
 
 function isDarkTheme(): boolean {
@@ -146,8 +172,46 @@ function baseMermaidConfig(): MermaidConfig {
     config.look = 'handDrawn';
     // Seed 0 means random — pin it so re-renders don't wobble.
     config.handDrawnSeed = 42;
+    // Excalidraw's hand-drawn font turns the wobbly shapes into the full
+    // "whiteboard" look; fall back to the UI font if it hasn't loaded.
+    config.fontFamily = `'Excalifont', ${uiFontFamily()}`;
   }
   return config;
+}
+
+// Mermaid measures text while rendering, so the hand-drawn font must be loaded
+// before the first Sketch render or the layout uses fallback metrics. Cached:
+// the browser only fetches the woff2 once.
+let sketchFontPromise: Promise<unknown> | undefined;
+function ensureSketchFont(): Promise<unknown> {
+  if (!sketchFontPromise) {
+    sketchFontPromise = (document.fonts?.load("16px 'Excalifont'") ?? Promise.resolve()).catch(
+      () => undefined,
+    );
+  }
+  return sketchFontPromise;
+}
+
+// Exported SVGs are rasterized in isolation, where external url() @font-face
+// rules are dropped — so the font must travel inside the SVG as a base64 data
+// URL. Builds (and caches) that @font-face CSS from the woff2 the host exposed.
+let fontFaceCssPromise: Promise<string | undefined> | undefined;
+function sketchFontFaceCss(): Promise<string | undefined> {
+  if (!fontFaceCssPromise) {
+    const uri = document.body.dataset.fontUri;
+    fontFaceCssPromise = (uri ? fetch(uri).then((r) => r.arrayBuffer()) : Promise.reject())
+      .then((buf: ArrayBuffer) => {
+        const bytes = new Uint8Array(buf);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const b64 = btoa(binary);
+        return `@font-face{font-family:'Excalifont';src:url(data:font/woff2;base64,${b64}) format('woff2');}`;
+      })
+      .catch(() => undefined);
+  }
+  return fontFaceCssPromise;
 }
 
 function initMermaid(): void {
@@ -262,6 +326,9 @@ async function render(opts: { keepView?: boolean } = {}): Promise<void> {
     return;
   }
   emptyEl.hidden = true;
+  if (themePref === 'sketch') {
+    await ensureSketchFont();
+  }
 
   const seq = ++renderSeq;
   const id = `mmd-${seq}`;
@@ -373,6 +440,9 @@ async function renderGallery(): Promise<void> {
     return;
   }
   emptyEl.hidden = true;
+  if (themePref === 'sketch') {
+    await ensureSketchFont();
+  }
 
   const bodies: HTMLDivElement[] = [];
   snapshot.forEach((block, i) => {
@@ -762,6 +832,9 @@ async function renderPristineSvg(
 ): Promise<{ svg?: string; error?: string }> {
   const id = `mmd-export-${++exportSeq}`;
   try {
+    if (themePref === 'sketch') {
+      await ensureSketchFont();
+    }
     // Render with htmlLabels disabled: no <foreignObject>, so the SVG stays
     // portable (Confluence, Inkscape, ...) and rasterizing it does not taint
     // the canvas during PNG export.
@@ -792,7 +865,14 @@ interface PreparedSvg {
   height: number;
 }
 
-function prepareSvgText(svgText: string): PreparedSvg | undefined {
+interface PrepareSvgOptions {
+  /** @font-face CSS embedded in the SVG so a bundled font survives rasterizing. */
+  fontFaceCss?: string;
+  /** Solid background painted behind the diagram (also seen by the rasterizer). */
+  bgColor?: string;
+}
+
+function prepareSvgText(svgText: string, opts: PrepareSvgOptions = {}): PreparedSvg | undefined {
   // Parse with the HTML parser (tolerant of mermaid's `<br>`-style void tags),
   // then let XMLSerializer emit well-formed standalone XML.
   const holder = document.createElement('div');
@@ -802,6 +882,8 @@ function prepareSvgText(svgText: string): PreparedSvg | undefined {
     return undefined;
   }
   const viewBox = (svgEl.getAttribute('viewBox') ?? '0 0 800 600').split(/[\s,]+/).map(Number);
+  const minX = viewBox[0] || 0;
+  const minY = viewBox[1] || 0;
   const width = Math.max(1, Math.ceil(viewBox[2] || 800));
   const height = Math.max(1, Math.ceil(viewBox[3] || 600));
   svgEl.setAttribute('width', String(width));
@@ -809,6 +891,22 @@ function prepareSvgText(svgText: string): PreparedSvg | undefined {
   svgEl.removeAttribute('style');
   if (themePref === 'colorful') {
     colorizeDiagram(svgEl, { dark: darkTheme });
+  }
+  const svgNs = 'http://www.w3.org/2000/svg';
+  if (opts.fontFaceCss) {
+    const styleEl = document.createElementNS(svgNs, 'style');
+    styleEl.textContent = opts.fontFaceCss;
+    svgEl.insertBefore(styleEl, svgEl.firstChild);
+  }
+  if (opts.bgColor) {
+    // First child → painted behind everything; spans the full viewBox.
+    const rect = document.createElementNS(svgNs, 'rect');
+    rect.setAttribute('x', String(minX));
+    rect.setAttribute('y', String(minY));
+    rect.setAttribute('width', String(width));
+    rect.setAttribute('height', String(height));
+    rect.setAttribute('fill', opts.bgColor);
+    svgEl.insertBefore(rect, svgEl.firstChild);
   }
   return { serialized: new XMLSerializer().serializeToString(svgEl), width, height };
 }
@@ -821,7 +919,11 @@ async function prepareExportSvgFor(
   if (!result.svg) {
     return { error: result.error ?? 'render failed' };
   }
-  const prepared = prepareSvgText(result.svg);
+  // Embed the hand-drawn font (Sketch only) and paint the chosen canvas
+  // background unless the export is meant to be transparent.
+  const fontFaceCss = themePref === 'sketch' ? await sketchFontFaceCss() : undefined;
+  const bgColor = !transparentBg && canvasBg ? canvasBg : undefined;
+  const prepared = prepareSvgText(result.svg, { fontFaceCss, bgColor });
   return prepared ? { prepared } : { error: 'no svg output' };
 }
 
@@ -849,6 +951,7 @@ async function rasterize(
     // JPEG has no alpha channel — always paint a background for it.
     if (!opts.transparent || opts.mime === 'image/jpeg') {
       const background =
+        canvasBg ||
         getComputedStyle(document.body).getPropertyValue('--vscode-editor-background').trim() ||
         (darkTheme ? '#1e1e1e' : '#ffffff');
       ctx.fillStyle = background;
@@ -1109,6 +1212,8 @@ function closeMenus(): void {
   exportMenuBtn.classList.remove('active');
   moreMenuEl.hidden = true;
   moreBtn.classList.remove('active');
+  bgMenuEl.hidden = true;
+  bgMenuBtn.classList.remove('active');
 }
 
 function toggleMenu(btn: HTMLButtonElement, menu: HTMLDivElement): void {
@@ -1135,8 +1240,17 @@ moreBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   toggleMenu(moreBtn, moreMenuEl);
 });
+bgMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleMenu(bgMenuBtn, bgMenuEl);
+});
 document.addEventListener('click', (e) => {
-  if (e.target instanceof Node && !exportMenuEl.contains(e.target) && !moreMenuEl.contains(e.target)) {
+  if (
+    e.target instanceof Node &&
+    !exportMenuEl.contains(e.target) &&
+    !moreMenuEl.contains(e.target) &&
+    !bgMenuEl.contains(e.target)
+  ) {
     closeMenus();
   }
 });
@@ -1144,7 +1258,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') {
     return;
   }
-  if (!exportMenuEl.hidden || !moreMenuEl.hidden) {
+  if (!exportMenuEl.hidden || !moreMenuEl.hidden || !bgMenuEl.hidden) {
     closeMenus();
   } else if (!searchBarEl.hidden) {
     closeSearch();
@@ -1238,6 +1352,14 @@ bgCheckEl.addEventListener('change', () => {
   transparentBg = bgCheckEl.checked;
   persist();
 });
+
+for (const btn of Array.from(bgSwatchesEl?.querySelectorAll<HTMLButtonElement>('.bg-swatch') ?? [])) {
+  btn.addEventListener('click', () => {
+    canvasBg = btn.dataset.bg ?? '';
+    applyCanvasBg();
+    persist();
+  });
+}
 
 selectEl.addEventListener('change', () => {
   activeIndex = Number(selectEl.value);

@@ -594,16 +594,19 @@ export class PreviewPanel {
     const webview = this.panel.webview;
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview.js'));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'webview.css'));
+    // Exposed to the webview so it can fetch the woff2 and embed it (base64) in
+    // exported SVGs — external url() fonts don't survive SVG-to-canvas raster.
+    const fontUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'Excalifont.woff2'));
     const nonce = getNonce();
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} data: blob:; font-src ${webview.cspSource} data:;" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} data: blob:; font-src ${webview.cspSource} data:; connect-src ${webview.cspSource};" />
   <link rel="stylesheet" href="${styleUri}" />
   <title>Mermaid Preview</title>
 </head>
-<body>
+<body data-font-uri="${fontUri}">
   <div id="toolbar">
     <select id="block-select" hidden title="Select diagram"></select>
     <button id="presentation-toggle" title="Presentation mode (p)">${ICON_PLAY}</button>
@@ -619,10 +622,11 @@ export class PreviewPanel {
       <option value="neutral">Neutral</option>
       <option value="forest">Forest</option>
     </select>
-    <div class="sep"></div>
-    <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
+    <button id="bg-menu-btn" title="Background"><span id="bg-current" class="bg-current" data-bg=""></span></button>
     <div class="sep"></div>
     <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
+    <div class="sep"></div>
+    <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
     <button id="more-btn" title="More…">${ICON_MORE}</button>
   </div>
   <div id="zoom-controls">
@@ -663,6 +667,17 @@ export class PreviewPanel {
     <button class="menu-item" id="lock-btn" title="Lock to current file"><span class="icon-unlocked">${ICON_UNLOCK}</span><span class="icon-locked">${ICON_LOCK}</span><span id="lock-label">Lock to current file</span></button>
     <button class="menu-item" id="refresh-btn">${ICON_REFRESH}<span>Re-render</span></button>
     <button class="menu-item" id="fit-width">${ICON_FIT_WIDTH}<span>Fit width (w)</span></button>
+  </div>
+  <div id="bg-menu" class="dropdown" hidden>
+    <div class="menu-label">Background<span class="menu-hint">also used for export</span></div>
+    <div class="bg-swatches" id="bg-swatches">
+      <button class="bg-swatch" data-bg="" title="Default — follow editor"></button>
+      <button class="bg-swatch" data-bg="#FFFFFF" style="background-color:#FFFFFF" title="White"></button>
+      <button class="bg-swatch" data-bg="#F3F4F6" style="background-color:#F3F4F6" title="Light gray"></button>
+      <button class="bg-swatch" data-bg="#EFF6FF" style="background-color:#EFF6FF" title="Light blue"></button>
+      <button class="bg-swatch" data-bg="#FEFCE8" style="background-color:#FEFCE8" title="Light yellow"></button>
+      <button class="bg-swatch" data-bg="#FDF2F8" style="background-color:#FDF2F8" title="Light rose"></button>
+    </div>
   </div>
   <div id="canvas">
     <div id="diagram"></div>
