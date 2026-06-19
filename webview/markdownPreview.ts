@@ -3,7 +3,7 @@
 // (rendered by markdown-it as <pre><code class="language-mermaid">) and
 // replaces them with rendered SVG.
 import mermaid from 'mermaid';
-import { colorizeDiagram } from './colorize';
+import { boostLegibility, colorizeDiagram } from './colorize';
 
 let seq = 0;
 let rendering = false;
@@ -56,6 +56,7 @@ async function renderAll(): Promise<void> {
         const svgEl = container.querySelector('svg');
         if (svgEl) {
           colorizeDiagram(svgEl, { dark: isDarkTheme() });
+          boostLegibility(svgEl);
         }
         pre.replaceWith(container);
       } catch {

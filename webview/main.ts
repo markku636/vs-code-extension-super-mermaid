@@ -1,6 +1,6 @@
 import mermaid from 'mermaid';
 import svgPanZoom from 'svg-pan-zoom';
-import { colorizeDiagram, enhanceContrast } from './colorize';
+import { boostLegibility, colorizeDiagram, enhanceContrast } from './colorize';
 
 type PanZoomInstance = ReturnType<typeof svgPanZoom>;
 
@@ -384,6 +384,7 @@ async function render(opts: { keepView?: boolean } = {}): Promise<void> {
   } else if (themePref === 'sketch') {
     enhanceContrast(svgEl, { dark: darkTheme });
   }
+  boostLegibility(svgEl); // crisper labels in every theme, including native ones
   panZoom = svgPanZoom(svgEl, {
     zoomEnabled: true,
     panEnabled: true,
@@ -515,6 +516,7 @@ async function renderGallery(): Promise<void> {
         } else if (themePref === 'sketch') {
           enhanceContrast(svgEl, { dark: darkTheme });
         }
+        boostLegibility(svgEl);
       }
     } catch (err) {
       document.getElementById('d' + id)?.remove();
@@ -919,6 +921,7 @@ function prepareSvgText(svgText: string, opts: PrepareSvgOptions = {}): Prepared
   } else if (themePref === 'sketch') {
     enhanceContrast(svgEl, { dark: darkTheme });
   }
+  boostLegibility(svgEl);
   const svgNs = 'http://www.w3.org/2000/svg';
   if (opts.fontFaceCss) {
     const styleEl = document.createElementNS(svgNs, 'style');

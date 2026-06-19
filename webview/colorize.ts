@@ -39,9 +39,64 @@ const CLUSTER_PALETTE: PaletteEntry[] = [
   { fill: 'rgba(139, 92, 246, 0.16)', stroke: '#8B5CF6' }, // violet
 ];
 
+// Vibrant palette for pie / donut charts. Mermaid's default dark-base pie
+// colours are dim and muddy ("dead"); this set is saturated with well-spaced
+// hues so slices pop and stay easy to tell apart.
+const PIE_PALETTE = [
+  '#3B82F6', // blue
+  '#22C55E', // green
+  '#F59E0B', // amber
+  '#A855F7', // purple
+  '#EF4444', // red
+  '#06B6D4', // cyan
+  '#EC4899', // pink
+  '#84CC16', // lime
+  '#F97316', // orange
+  '#14B8A6', // teal
+  '#6366F1', // indigo
+  '#EAB308', // yellow
+];
+
 const NODE_TEXT = '#1F2937';
 const SHADOW_FILTER_ID = 'sm-soft-shadow';
 const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** Normalize a colour to "r,g,b" so an attribute hex and an inline-style rgb match. */
+function canonColor(input: string): string {
+  const s = (input || '').trim();
+  const hex = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(s);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) {
+      h = h
+        .split('')
+        .map((c) => c + c)
+        .join('');
+    }
+    const n = parseInt(h, 16);
+    return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+  }
+  const rgb = /rgba?\(([^)]+)\)/i.exec(s);
+  if (rgb) {
+    const p = rgb[1].split(',').map((x) => Math.round(parseFloat(x)));
+    return `${p[0]},${p[1]},${p[2]}`;
+  }
+  return s.toLowerCase();
+}
+
+/** Pick white or dark text for a fill, by sRGB luminance, so labels stay legible. */
+function readableTextOn(color: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(color.trim());
+  if (!m) {
+    return '#FFFFFF';
+  }
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.62 ? '#1F2937' : '#FFFFFF';
+}
 
 function resolveSvg(root: ParentNode): Element | null {
   if (root instanceof Element && root.tagName.toLowerCase() === 'svg') {
@@ -307,23 +362,93 @@ export function enhanceContrast(root: ParentNode, opts: ColorizeOptions = {}): v
   styleLabelText(svg, opts.dark === true);
 }
 
-/** Pie: keep mermaid's designed slice palette, just add separation + polish. */
+/** Pie / donut: repaint with the vibrant palette (mermaid's defaults read dead),
+ * add white separators + contrast-aware labels. */
 function stylePie(svg: Element, dark: boolean): void {
   const slices = Array.from(svg.querySelectorAll<SVGElement>('path.pieCircle'));
-  if (slices.length === 0) {
+  const swatches = Array.from(svg.querySelectorAll<SVGElement>('g.legend rect, rect.legend'));
+  if (slices.length === 0 && swatches.length === 0) {
     return;
   }
+
+  // Key the remap on the CURRENT fill: mermaid colours slices and their legend
+  // swatch from one ordinal scale keyed on label, so equal fills = same datum.
+  const remap = new Map<string, string>();
+  let next = 0;
+  const newColorFor = (old: string): string => {
+    const key = canonColor(old) || `#slot-${next}`;
+    let c = remap.get(key);
+    if (!c) {
+      c = PIE_PALETTE[next % PIE_PALETTE.length];
+      remap.set(key, c);
+      next += 1;
+    }
+    return c;
+  };
+
   for (const slice of slices) {
+    const old = slice.style.fill || slice.getAttribute('fill') || '';
+    const c = newColorFor(old);
+    slice.style.fill = c;
+    slice.style.opacity = '1'; // dark base theme's pieOpacity < 1 greys slices out.
     slice.style.stroke = dark ? '#0F172A' : '#FFFFFF';
     slice.style.strokeWidth = '2px';
     slice.style.strokeLinejoin = 'round';
   }
-  for (const title of Array.from(svg.querySelectorAll<SVGElement>('text.pieTitleText'))) {
-    title.style.fontWeight = '600';
+  for (const sw of swatches) {
+    const old = sw.style.fill || sw.getAttribute('fill') || '';
+    const c = newColorFor(old);
+    sw.style.fill = c;
+    sw.style.stroke = c;
+    sw.setAttribute('rx', '3');
+    sw.setAttribute('ry', '3');
   }
-  for (const swatch of Array.from(svg.querySelectorAll<SVGElement>('g.legend rect, rect.legend'))) {
-    swatch.setAttribute('rx', '3');
-    swatch.setAttribute('ry', '3');
+  // Percent labels share the slice order — pick white/dark per slice colour.
+  Array.from(svg.querySelectorAll<SVGElement>('text.slice')).forEach((label, i) => {
+    const slice = slices[i];
+    const c = slice ? slice.style.fill || PIE_PALETTE[0] : PIE_PALETTE[0];
+    label.style.fill = readableTextOn(c);
+    label.style.fontWeight = '600';
+  });
+  for (const title of Array.from(svg.querySelectorAll<SVGElement>('text.pieTitleText'))) {
+    title.style.fontWeight = '700';
+    title.style.fill = dark ? '#E2E8F0' : '#1F2937';
+  }
+  for (const t of Array.from(svg.querySelectorAll<SVGElement>('g.legend text'))) {
+    t.style.fill = dark ? '#E2E8F0' : '#1F2937';
+  }
+  for (const oc of Array.from(svg.querySelectorAll<SVGElement>('circle.pieOuterCircle'))) {
+    oc.style.stroke = dark ? '#334155' : '#CBD5E1';
+  }
+}
+
+/**
+ * Legibility booster applied to EVERY theme (colorful, sketch, and the native
+ * default/dark/neutral/forest pass-throughs): bumps label font-weight so small
+ * text and thumbnails read clearly. Weight-only, so it never fights a theme's
+ * colours.
+ */
+export function boostLegibility(root: ParentNode): void {
+  const svg = resolveSvg(root);
+  if (!svg) {
+    return;
+  }
+  // Titles are left to each styler (which sets a heavier 700) so we don't knock
+  // an already-bold colorful title back down to 600.
+  for (const el of Array.from(
+    svg.querySelectorAll<SVGElement>(
+      'g.node text, g.node tspan, g.mindmap-node text, g[class*="timeline-node"] text, text.actor',
+    ),
+  )) {
+    el.style.fontWeight = '600';
+  }
+  for (const el of Array.from(svg.querySelectorAll<HTMLElement>('.nodeLabel, g.node span, g.node p'))) {
+    el.style.fontWeight = '600';
+  }
+  for (const el of Array.from(svg.querySelectorAll<SVGElement>('text'))) {
+    if (!el.style.fontWeight) {
+      el.style.fontWeight = '500';
+    }
   }
 }
 
