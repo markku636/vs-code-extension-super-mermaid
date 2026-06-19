@@ -423,6 +423,40 @@ function stylePie(svg: Element, dark: boolean): void {
 }
 
 /**
+ * Same label weights as boostLegibility, but declared as CSS and injected into
+ * <head> BEFORE the first mermaid.render(). boostLegibility() bumps weight
+ * AFTER render — yet mermaid sizes each label's <foreignObject> from the text
+ * width it measures DURING render, so post-hoc bold spills past the box and the
+ * <foreignObject> clips the trailing glyph (the missing "d" in
+ * "react-super-mermaid", etc.). Pre-declaring the weights makes mermaid measure
+ * the bold metrics so the box already fits. The selectors only ever match
+ * rendered mermaid diagrams, so this is safe even in the shared markdown-preview
+ * DOM. Must run before any render — callers invoke it from initMermaid().
+ */
+export const LEGIBILITY_CSS = `
+g.node text, g.node tspan, g.node .nodeLabel,
+g.mindmap-node text, g.mindmap-node .nodeLabel,
+g[class*="timeline-node"] text, text.actor { font-weight: 600 !important; }
+.cluster-label text, .cluster-label .nodeLabel,
+text.pieTitleText { font-weight: 700 !important; }
+`;
+
+let legibilityInjected = false;
+export function ensureLegibilityStyles(): void {
+  if (legibilityInjected || typeof document === 'undefined') {
+    return;
+  }
+  legibilityInjected = true;
+  if (document.getElementById('sm-legibility-metrics')) {
+    return;
+  }
+  const style = document.createElement('style');
+  style.id = 'sm-legibility-metrics';
+  style.textContent = LEGIBILITY_CSS;
+  (document.head ?? document.documentElement).appendChild(style);
+}
+
+/**
  * Legibility booster applied to EVERY theme (colorful, sketch, and the native
  * default/dark/neutral/forest pass-throughs): bumps label font-weight so small
  * text and thumbnails read clearly. Weight-only, so it never fights a theme's

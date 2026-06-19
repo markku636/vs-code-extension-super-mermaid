@@ -3,7 +3,7 @@
 // (rendered by markdown-it as <pre><code class="language-mermaid">) and
 // replaces them with rendered SVG.
 import mermaid from 'mermaid';
-import { boostLegibility, colorizeDiagram } from './colorize';
+import { boostLegibility, colorizeDiagram, ensureLegibilityStyles } from './colorize';
 
 let seq = 0;
 let rendering = false;
@@ -18,6 +18,9 @@ function isDarkTheme(): boolean {
 }
 
 function initMermaid(): void {
+  // Inject label-weight CSS before the first render so mermaid measures the
+  // boosted metrics and node boxes fit the bold text (no clipped glyphs).
+  ensureLegibilityStyles();
   mermaid.initialize({
     startOnLoad: false,
     theme: isDarkTheme() ? 'dark' : 'default',

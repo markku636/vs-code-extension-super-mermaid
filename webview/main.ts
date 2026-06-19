@@ -1,6 +1,6 @@
 import mermaid from 'mermaid';
 import svgPanZoom from 'svg-pan-zoom';
-import { boostLegibility, colorizeDiagram, enhanceContrast } from './colorize';
+import { boostLegibility, colorizeDiagram, enhanceContrast, ensureLegibilityStyles } from './colorize';
 
 type PanZoomInstance = ReturnType<typeof svgPanZoom>;
 
@@ -237,6 +237,9 @@ function sketchFontFaceCss(): Promise<string | undefined> {
 
 function initMermaid(): void {
   darkTheme = effectiveDark();
+  // Must precede the first mermaid.render() so labels are measured at their
+  // boosted weight and their <foreignObject> boxes are sized to fit (no clip).
+  ensureLegibilityStyles();
   mermaid.initialize(baseMermaidConfig());
 }
 
