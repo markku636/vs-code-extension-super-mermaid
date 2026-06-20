@@ -670,6 +670,7 @@ export class PreviewPanel {
   </div>
   <div id="bg-menu" class="dropdown" hidden>
     <div class="menu-label">Background<span class="menu-hint">also used for export</span></div>
+    <div class="bg-section-label">Surface</div>
     <div class="bg-swatches" id="bg-swatches">
       <button class="bg-swatch" data-bg="" title="Default — follow editor"></button>
       <button class="bg-swatch" data-bg="#FFFFFF" style="background-color:#FFFFFF" title="White"></button>
@@ -677,6 +678,12 @@ export class PreviewPanel {
       <button class="bg-swatch" data-bg="#EFF6FF" style="background-color:#EFF6FF" title="Light blue"></button>
       <button class="bg-swatch" data-bg="#FEFCE8" style="background-color:#FEFCE8" title="Light yellow"></button>
       <button class="bg-swatch" data-bg="#FDF2F8" style="background-color:#FDF2F8" title="Light rose"></button>
+    </div>
+    <div class="bg-section-label">Pattern</div>
+    <div class="bg-seg" id="bg-pattern">
+      <button data-pattern="none" title="No pattern">▢ None</button>
+      <button data-pattern="dots" title="Dot grid">⠿ Dots</button>
+      <button data-pattern="grid" title="Line grid">⊞ Grid</button>
     </div>
   </div>
   <div id="canvas">

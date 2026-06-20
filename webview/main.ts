@@ -28,6 +28,7 @@ type InMessage =
 
 type ThemePref = 'auto' | 'colorful' | 'sketch' | 'default' | 'dark' | 'neutral' | 'forest';
 type RasterFormat = 'png' | 'jpg' | 'webp';
+type BgPattern = 'none' | 'dots' | 'grid';
 
 interface PersistedState {
   theme?: ThemePref;
@@ -35,6 +36,8 @@ interface PersistedState {
   transparentBg?: boolean;
   /** Canvas background override; '' means "follow the editor background". */
   canvasBg?: string;
+  /** Overlay pattern drawn on top of the canvas background. */
+  canvasPattern?: BgPattern;
 }
 
 declare function acquireVsCodeApi(): {
@@ -59,6 +62,7 @@ const bgSwatchesEl = document.getElementById('bg-swatches') as HTMLDivElement;
 const bgMenuBtn = document.getElementById('bg-menu-btn') as HTMLButtonElement;
 const bgMenuEl = document.getElementById('bg-menu') as HTMLDivElement;
 const bgCurrentEl = document.getElementById('bg-current') as HTMLSpanElement;
+const bgPatternEl = document.getElementById('bg-pattern') as HTMLDivElement;
 const galleryToggleBtn = document.getElementById('gallery-toggle') as HTMLButtonElement;
 const exportMenuBtn = document.getElementById('export-menu-btn') as HTMLButtonElement;
 const exportMenuEl = document.getElementById('export-menu') as HTMLDivElement;
@@ -86,6 +90,7 @@ let themePref: ThemePref = 'colorful';
 let pngScale = 2;
 let transparentBg = false;
 let canvasBg = '';
+let canvasPattern: BgPattern = 'dots';
 let locked = false;
 let galleryMode = false;
 let galleryGen = 0;
@@ -108,21 +113,49 @@ if (saved.transparentBg) {
 if (typeof saved.canvasBg === 'string') {
   canvasBg = saved.canvasBg;
 }
+if (saved.canvasPattern === 'none' || saved.canvasPattern === 'dots' || saved.canvasPattern === 'grid') {
+  canvasPattern = saved.canvasPattern;
+}
 themeSelectEl.value = themePref;
 scaleSelectEl.value = String(pngScale);
 bgCheckEl.checked = transparentBg;
 applyCanvasBg();
 
 function persist(): void {
-  vscodeApi.setState({ theme: themePref, pngScale, transparentBg, canvasBg });
+  vscodeApi.setState({ theme: themePref, pngScale, transparentBg, canvasBg, canvasPattern });
 }
 
-/** Paint the effective canvas background (chosen colour, Sketch paper, or editor). */
+/**
+ * Dot/grid ink that contrasts with the *effective* canvas colour (luminance-based),
+ * so the pattern stays visible on any surface — e.g. a light swatch in a dark theme.
+ * An empty `eff` ('' = follow editor) falls back to the VS Code theme darkness.
+ */
+function patternInk(eff: string): { dot: string; line: string } {
+  const hx = /^#([0-9a-fA-F]{6})$/.exec(eff);
+  let light: boolean;
+  if (hx) {
+    const r = parseInt(hx[1].slice(0, 2), 16);
+    const g = parseInt(hx[1].slice(2, 4), 16);
+    const b = parseInt(hx[1].slice(4, 6), 16);
+    light = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.5;
+  } else {
+    light = !isDarkTheme();
+  }
+  const ink = light ? '15, 23, 42' : '226, 232, 240';
+  // Dots are 1px and carry less ink than continuous grid lines → keep them denser.
+  return { dot: `rgba(${ink}, 0.34)`, line: `rgba(${ink}, 0.2)` };
+}
+
+/** Paint the effective canvas background (chosen colour, Sketch paper, or editor) + overlay pattern. */
 function applyCanvasBg(): void {
   const eff = effectiveCanvasBg();
   canvasEl.style.backgroundColor = eff;
-  // A solid colour reads cleaner without the dotted grid; '' restores both.
-  canvasEl.style.backgroundImage = eff ? 'none' : '';
+  // Overlay pattern (none / dots / grid) with ink that adapts to the canvas colour.
+  const ink = patternInk(eff);
+  canvasEl.style.setProperty('--canvas-grid-dot', ink.dot);
+  canvasEl.style.setProperty('--canvas-grid-line', ink.line);
+  canvasEl.classList.toggle('pattern-dots', canvasPattern === 'dots');
+  canvasEl.classList.toggle('pattern-grid', canvasPattern === 'grid');
   // Mirror the effective background on the toolbar swatch button.
   if (bgCurrentEl) {
     bgCurrentEl.style.backgroundColor = eff;
@@ -130,6 +163,9 @@ function applyCanvasBg(): void {
   }
   for (const btn of Array.from(bgSwatchesEl?.querySelectorAll<HTMLButtonElement>('.bg-swatch') ?? [])) {
     btn.classList.toggle('selected', (btn.dataset.bg ?? '') === canvasBg);
+  }
+  for (const btn of Array.from(bgPatternEl?.querySelectorAll<HTMLButtonElement>('button') ?? [])) {
+    btn.classList.toggle('selected', (btn.dataset.pattern ?? '') === canvasPattern);
   }
 }
 
@@ -1401,6 +1437,18 @@ for (const btn of Array.from(bgSwatchesEl?.querySelectorAll<HTMLButtonElement>('
       scheduleGallery();
     } else {
       scheduleRender({ keepView: true });
+    }
+  });
+}
+
+// Pattern toggle (none / dots / grid). Pure canvas styling — no mermaid re-render needed.
+for (const btn of Array.from(bgPatternEl?.querySelectorAll<HTMLButtonElement>('button') ?? [])) {
+  btn.addEventListener('click', () => {
+    const p = btn.dataset.pattern;
+    if (p === 'none' || p === 'dots' || p === 'grid') {
+      canvasPattern = p;
+      applyCanvasBg();
+      persist();
     }
   });
 }

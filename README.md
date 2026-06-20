@@ -63,7 +63,7 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 | ◎ | Fit: fit the whole diagram into the window (double-clicking the canvas does the same) |
 | 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
 | Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
-| Background swatch | A color well next to the theme dropdown; click to pick the canvas background (also used as the export background) |
+| Background swatch | A color well next to the theme dropdown. Opens a menu to pick the canvas **surface** (preset colors or follow-editor) and an independent **pattern** (None / Dots / Grid) — the dot/grid ink adapts to the surface color so it stays visible on any background. Surface + pattern also apply to exports |
 | 🔗 | Share to mermaid.live: opens or copies a link with the diagram encoded in the URL |
 | ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
 | ⋯ More | Gallery (thumbnail overview of all diagrams), Lock to current file, Re-render, Fit Width |
@@ -89,7 +89,7 @@ Zoom sits in a floating `−` / `%` / `+` pill in the bottom-right corner of the
 ### Export tips
 
 - Export and copy resolution is controlled by the 1x / 2x / 4x setting in the Export menu; the default is 2x — use 4x for slides.
-- By default the exported background follows the editor theme. Click the **Background** swatch next to the theme dropdown to force a solid color (it applies to the preview and to exports), or tick **Transparent background** in the Export menu for a see-through PNG / WebP.
+- By default the exported background follows the editor theme. Click the **Background** swatch next to the theme dropdown to pick a surface color and a dot/grid pattern (both apply to the preview and to exports), or tick **Transparent background** in the Export menu for a see-through PNG / WebP.
 - Diagrams containing HTML tags (like journey) can't be rasterized, so they're automatically saved as SVG instead.
 
 ---

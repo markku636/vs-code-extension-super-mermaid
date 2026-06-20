@@ -29,11 +29,23 @@ body {
   inset: 0;
   cursor: grab;
   background-color: var(--vscode-editor-background);
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--vscode-foreground) 9%, transparent) 1px,
-    transparent 1px
-  );
+  /* Overlay-pattern ink. JS overrides these inline so the dot/grid colour
+     contrasts with the *effective* canvas colour (a light swatch in a dark
+     theme still shows the pattern). The vscode-foreground fallback keeps the
+     default editor-background case theme-tuned. */
+  --canvas-grid-dot: color-mix(in srgb, var(--vscode-foreground) 9%, transparent);
+  --canvas-grid-line: color-mix(in srgb, var(--vscode-foreground) 7%, transparent);
+}
+#canvas.pattern-dots {
+  background-image: radial-gradient(var(--canvas-grid-dot) 1px, transparent 1px);
   background-size: 18px 18px;
+  background-position: -9px -9px;
+}
+#canvas.pattern-grid {
+  background-image:
+    linear-gradient(to right, var(--canvas-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--canvas-grid-line) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
 #canvas:active {
@@ -526,6 +538,52 @@ body.presentation #view-exit {
   outline: 2px solid var(--vscode-focusBorder);
   outline-offset: 2px;
   border-color: transparent;
+}
+
+/* Section sub-label inside the background menu (Surface / Pattern). */
+.dropdown .bg-section-label {
+  padding: 4px 10px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  opacity: 0.6;
+  user-select: none;
+}
+
+/* Pattern toggle — equal-width segmented buttons (None / Dots / Grid). */
+.bg-seg {
+  display: flex;
+  margin: 2px 10px 9px;
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.45));
+  border-radius: 6px;
+  overflow: hidden;
+}
+.bg-seg > button {
+  flex: 1 1 0;
+  min-width: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  padding: 5px 8px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--vscode-foreground);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.bg-seg > button + button {
+  border-left: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.45));
+}
+.bg-seg > button:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.16));
+}
+.bg-seg > button.selected {
+  background: var(--vscode-toolbar-activeBackground, var(--vscode-list-activeSelectionBackground));
+  color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground));
+  font-weight: 600;
 }
 
 /* "Default — follow editor": a diagonal slash reads as "no override". */
