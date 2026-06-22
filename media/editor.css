@@ -64,8 +64,44 @@ body {
   opacity: 0.6;
   padding: 0 2px;
 }
-#app {
+#editor-row {
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+}
+#app {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
   position: relative;
+}
+#source-panel {
+  flex: 0 0 clamp(220px, 32%, 440px);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--vscode-panel-border, #3a3a40);
+  background: var(--vscode-editorWidget-background, #1e1e1e);
+}
+#source-panel[hidden] {
+  display: none;
+}
+#source-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+  border-bottom: 1px solid var(--vscode-panel-border, #3a3a40);
+}
+#source-pre {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre;
 }

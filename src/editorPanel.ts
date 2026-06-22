@@ -171,8 +171,17 @@ export class EditorPanel {
     <button class="tbtn" id="btn-zoom-in" title="放大">＋</button>
     <button class="tbtn" id="btn-fit" title="符合視窗">⤢</button>
     <button class="tbtn" id="btn-tidy" title="自動整理排版">⌗ 整理</button>
+    <button class="tbtn" id="btn-source" title="顯示 / 隱藏 Mermaid 原始碼">&lt;/&gt; 原始碼</button>
+    <button class="tbtn" id="btn-svg" title="匯出 SVG">SVG</button>
+    <button class="tbtn" id="btn-png" title="匯出 PNG">PNG</button>
   </div>
-  <div id="app"></div>
+  <div id="editor-row">
+    <div id="app"></div>
+    <aside id="source-panel" hidden>
+      <div id="source-head"><span>Mermaid 原始碼</span><button class="tbtn" id="btn-copy-src">複製</button></div>
+      <pre id="source-pre"><code></code></pre>
+    </aside>
+  </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

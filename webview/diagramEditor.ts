@@ -24,6 +24,14 @@ const fontUri = document.body.getAttribute('data-font-uri') ?? undefined;
 let handle: DiagramEditorHandle | null = null;
 // 載入既有圖期間抑制寫回:避免「開啟即把原圖覆寫成序列化版本」。只有使用者實際編輯才寫回。
 let suppressWriteBack = true;
+// 內建「原始碼」面板:即時 mermaid(供顯示 / 複製)。
+let lastCode = '';
+
+function updateSourcePanel(text: string): void {
+  lastCode = text;
+  const code = document.querySelector('#source-pre code') ?? byId('source-pre');
+  if (code) code.textContent = text;
+}
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
@@ -50,6 +58,18 @@ function wireToolbar(h: DiagramEditorHandle): void {
   byId('btn-zoom-out')?.addEventListener('click', () => h.zoomOut());
   byId('btn-fit')?.addEventListener('click', () => h.fit());
   byId('btn-tidy')?.addEventListener('click', () => void h.tidy());
+  byId('btn-svg')?.addEventListener('click', () => h.downloadSvg());
+  byId('btn-png')?.addEventListener('click', () => void h.downloadPng());
+  byId('btn-source')?.addEventListener('click', () => {
+    const panel = byId('source-panel');
+    if (!panel) return;
+    const show = panel.hasAttribute('hidden');
+    panel.toggleAttribute('hidden', !show);
+    byId('btn-source')?.classList.toggle('active', show);
+  });
+  byId('btn-copy-src')?.addEventListener('click', () => {
+    void navigator.clipboard?.writeText(lastCode).catch(() => {});
+  });
   byId('dir-select')?.addEventListener('change', (e) => {
     h.setDirection((e.target as HTMLSelectElement).value as 'TB' | 'LR' | 'BT' | 'RL');
   });
@@ -77,6 +97,7 @@ window.addEventListener('message', (event) => {
         look: 'clean',
       });
       handle.on('mermaidchange', (text) => {
+        updateSourcePanel(text as string); // 即時更新原始碼面板(載入期間也更新)
         if (suppressWriteBack) return;
         vscodeApi.postMessage({ type: 'mermaidchange', text: text as string });
       });
