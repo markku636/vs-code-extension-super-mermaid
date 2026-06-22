@@ -27,7 +27,7 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
     }
     return extractMermaidBlocks(doc).flatMap((block, index) => {
       const range = new vscode.Range(block.startLine, 0, block.startLine, 0);
-      return [
+      const lenses = [
         new vscode.CodeLens(range, {
           title: '$(edit) Edit Diagram',
           tooltip: 'Open the Super Mermaid preview focused on this diagram',
@@ -41,6 +41,19 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
           arguments: [doc.uri, index],
         }),
       ];
+      // 繪製編輯器只支援 flowchart / graph,只有這兩種才顯示「Draw」(避免在 sequence 等圖種誤開覆寫)。
+      const kw = (block.title ?? '').toLowerCase();
+      if (kw === 'flowchart' || kw === 'graph') {
+        lenses.push(
+          new vscode.CodeLens(range, {
+            title: '$(edit) Draw',
+            tooltip: '以 Excalidraw 式繪製編輯器開啟此流程圖（拖曳節點 / 連線，編輯後寫回）',
+            command: 'superMermaid.editDiagramVisually',
+            arguments: [doc.uri, index],
+          }),
+        );
+      }
+      return lenses;
     });
   }
 

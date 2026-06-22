@@ -19,6 +19,12 @@ The exact same mermaid code. On the left, the stock theme. On the right, what Su
 
 Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported by the extension itself — not retouched. Browse the gallery to see flowcharts, sequence, ER, class, state, Gantt, pie, mindmap, timeline, and architecture diagrams all get the same treatment.
 
+## ✏️ New: draw diagrams visually → get Mermaid
+
+Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above any ```` ```mermaid ```` flowchart block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor**. Drag to place shapes, drag from a node edge to connect — or drag to empty space to spawn a connected node — double-click to rename, right-click to recolor / change shape / align / group into subgraphs, toggle flow direction, and auto-tidy the layout. Everything writes straight back to your file as clean Mermaid, and existing flowcharts open as fully draggable diagrams.
+
+![Draw diagrams visually](docs/images/draw-editor.png)
+
 ## Install
 
 1. Open the Extensions view (`Ctrl+Shift+X`), search **"Super Mermaid"**, click **Install** — or [grab it from the Marketplace](https://marketplace.visualstudio.com/items?itemName=mark-ku.super-mermaid).
@@ -29,6 +35,7 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 
 - 🎨 **Looks great out of the box** — Colorful is the default. Flowcharts, sequence, ER, class, state, Gantt, pie, mindmaps, and timelines all get a modern palette with rounded corners and soft shadows — and every subgraph / swimlane gets its own distinct tint and a colored title, so adjacent lanes are easy to tell apart — **without changing a single line of mermaid code**. Pie / Gantt / mindmap / timeline charts are repainted with a **vibrant, high-contrast palette** (white slice separators, contrast-aware labels) instead of mermaid's dim defaults, and **labels are weight-boosted in every theme** so text stays crisp even in thumbnails. Prefer another look? Switch to Sketch / Auto / Light / Dark / Neutral / Forest from the toolbar.
 - ✏️ **Sketch style** — a hand-drawn, Excalidraw-like whiteboard look in one click: mermaid's built-in `handDrawn` shapes paired with the bundled **Excalifont** handwriting font (SIL Open Font License 1.1). The font is embedded into PNG / SVG exports too, so the handwriting survives wherever the image goes.
+- 🖱️ **Draw it, don't type it** — the **✏ Draw** CodeLens opens an Excalidraw-style visual editor: drag nodes, hover-to-connect (or drag to empty space to spawn a connected node), double-click to rename, right-click to recolor / change shape / align / group into subgraphs. It writes clean Mermaid back to your file, and existing flowcharts open as draggable diagrams.
 - ⚡ **Live preview** — refreshes ~0.3s after you type. Mouse-wheel zoom, drag to pan, a Fit button, and a floating `−` / `%` / `+` zoom pill in the corner. On a syntax error the diagram stays at the last good render instead of going blank.
 - 🖼️ **Hi-res export & copy** — PNG / JPG / WebP / SVG at 1x / 2x / **4x** (pick 4x for slides — stays crisp when projected), with an optional transparent background or a solid canvas-background color. **Export All** saves every diagram in the document at once. Press `c` to copy the current diagram to the clipboard and paste straight into Slack, Teams, or PowerPoint.
 - 🎯 **Click a node, jump to its code** — clicking any node, subgraph, or actor moves the editor cursor to the line that defines it.

@@ -1,0 +1,71 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+body {
+  display: flex;
+  flex-direction: column;
+}
+#toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--vscode-panel-border, #3a3a40);
+  background: var(--vscode-editorWidget-background, #252526);
+  flex-wrap: wrap;
+}
+#toolbar .spacer {
+  flex: 0 0 12px;
+  border-left: 1px solid var(--vscode-panel-border, #3a3a40);
+  align-self: stretch;
+  margin: 0 4px;
+}
+.tbtn,
+#shape-select {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+}
+.tbtn:hover,
+#shape-select:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
+.tbtn.active {
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #fff);
+}
+.tbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+#shape-select {
+  border: 1px solid var(--vscode-panel-border, #3a3a40);
+}
+#zoom-level {
+  font-size: 12px;
+  min-width: 42px;
+  text-align: center;
+  opacity: 0.85;
+}
+.tlabel {
+  font-size: 12px;
+  opacity: 0.6;
+  padding: 0 2px;
+}
+#app {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}

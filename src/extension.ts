@@ -2,8 +2,9 @@ import * as vscode from 'vscode';
 import { MermaidCodeLensProvider } from './codeLensProvider';
 import { MermaidCompletionProvider } from './completionProvider';
 import { MermaidDiagnostics } from './diagnostics';
+import { EditorPanel } from './editorPanel';
 import { registerInsertTemplateCommand } from './insertTemplate';
-import { isSupportedDoc } from './mermaidExtract';
+import { extractMermaidBlocks, isSupportedDoc } from './mermaidExtract';
 import { PreviewPanel } from './previewPanel';
 import { MermaidStatusBar } from './statusBar';
 
@@ -59,6 +60,37 @@ export function activate(context: vscode.ExtensionContext): void {
         await PreviewPanel.createOrShow(context, doc, blockIndex, true);
       },
     ),
+    vscode.commands.registerCommand(
+      'superMermaid.editDiagramVisually',
+      async (uri?: vscode.Uri, blockIndex?: number) => {
+        // CodeLens 帶 (uri, index);選單 / 命令面板則無參數 → 用作用中編輯器。
+        let doc: vscode.TextDocument | undefined;
+        if (uri instanceof vscode.Uri) {
+          doc = await vscode.workspace.openTextDocument(uri);
+          await vscode.window.showTextDocument(doc, { preview: false });
+        } else {
+          doc = vscode.window.activeTextEditor?.document;
+        }
+        if (!doc || !isSupportedDoc(doc)) {
+          void vscode.window.showInformationMessage(
+            'Super Mermaid: 請先開啟 Markdown 或 Mermaid (.mmd) 檔案。',
+          );
+          return;
+        }
+        // 繪製編輯器(Phase 1)只支援 flowchart / graph。其他圖種(sequence / class …)
+        // 目前沒有對應的解析器,若硬開會把原圖覆寫成空 flowchart → 直接擋下、給明確提示。
+        const block = extractMermaidBlocks(doc)[blockIndex ?? 0];
+        const kw = (block?.title ?? '').toLowerCase();
+        if (kw !== 'flowchart' && kw !== 'graph') {
+          void vscode.window.showInformationMessage(
+            `Mermaid 繪製目前僅支援 flowchart / graph 流程圖;此圖為「${block?.title ?? '未知'}」。` +
+              '其他圖種請改用「Edit Diagram」預覽。',
+          );
+          return;
+        }
+        await EditorPanel.createOrShow(context, doc, blockIndex ?? 0);
+      },
+    ),
     vscode.commands.registerCommand('superMermaid.openToSide', async (uri?: vscode.Uri) => {
       // Invoked from the explorer context menu with a file URI, or from the
       // editor title / context menu / command palette without arguments.
@@ -79,6 +111,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.workspace.onDidChangeTextDocument((e) => {
       PreviewPanel.current?.onDocumentChanged(e.document);
+      EditorPanel.current?.onDocumentChanged(e.document);
       if (e.document === vscode.window.activeTextEditor?.document) {
         statusBar.scheduleRefresh(vscode.window.activeTextEditor);
       }

@@ -36,7 +36,19 @@ const markdownPreviewCtx = await esbuild.context({
   minify: !watch,
 });
 
-const contexts = [extensionCtx, webviewCtx, markdownPreviewCtx];
+// 繪製編輯器 webview:import react-super-mermaid/editor(框架無關,零 React)+ mermaid,全部 inline。
+const diagramEditorCtx = await esbuild.context({
+  entryPoints: ['webview/diagramEditor.ts'],
+  outfile: 'dist/diagramEditor.js',
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  target: 'es2022',
+  sourcemap: watch,
+  minify: !watch,
+});
+
+const contexts = [extensionCtx, webviewCtx, markdownPreviewCtx, diagramEditorCtx];
 
 if (watch) {
   await Promise.all(contexts.map((c) => c.watch()));
