@@ -136,6 +136,14 @@ function wireToolbar(h: DiagramEditorHandle): void {
       .catch(() => ta.classList.add('src-error'));
   };
   byId('btn-help')?.addEventListener('click', () => h.toggleHelp());
+  const lookBtn = byId('btn-look') as HTMLButtonElement | null;
+  const syncLookBtn = (): void => {
+    if (lookBtn) lookBtn.classList.toggle('active', h.getLook() === 'sketch');
+  };
+  lookBtn?.addEventListener('click', () => {
+    h.setLook(h.getLook() === 'sketch' ? 'clean' : 'sketch');
+    syncLookBtn();
+  });
   byId('btn-apply-src')?.addEventListener('click', applySrc);
   byId('source-ta')?.addEventListener('keydown', (e) => {
     const ke = e as KeyboardEvent;

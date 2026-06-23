@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.72 — sketch/clean look toggle in the Draw editor
+
+- New **✏ 手繪** toolbar button toggles the canvas between **clean** (crisp
+  rounded shapes + soft shadow) and **sketch** (Excalidraw-style hand-drawn
+  outlines + handwritten font) at runtime, via the shared core's new
+  `setLook`/`getLook`.
+
 ## 0.8.x — Visual Draw editor
 
 A full **Excalidraw-style visual editor** that round-trips to clean Mermaid. Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**).

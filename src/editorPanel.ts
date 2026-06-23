@@ -210,6 +210,7 @@ export class EditorPanel {
     <button class="tbtn" id="btn-svg" title="匯出 SVG">SVG</button>
     <button class="tbtn" id="btn-png" title="匯出 PNG">PNG</button>
     <button class="tbtn" id="btn-copy" title="複製圖片到剪貼簿">⧉ 複製</button>
+    <button class="tbtn" id="btn-look" title="手繪外觀（Excalidraw 風）↔ 簡潔">✏ 手繪</button>
     <button class="tbtn" id="btn-help" title="鍵盤快捷鍵說明（?）">?</button>
   </div>
   <div id="editor-row">
