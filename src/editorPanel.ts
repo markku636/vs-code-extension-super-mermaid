@@ -2,9 +2,26 @@
 // 編輯後把序列化的 mermaid 透過 WorkspaceEdit 精準寫回該 fence(用 startLine/endLine)。
 
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as os from 'os';
 import { extractMermaidBlocks, isMermaidFileDoc } from './mermaidExtract';
 
-type InMessage = { type: 'ready' } | { type: 'mermaidchange'; text: string } | { type: 'error'; message: string };
+type ExportFormat = 'svg' | 'png';
+const EXPORT_FILTERS: Record<ExportFormat, Record<string, string[]>> = {
+  svg: { 'SVG Image': ['svg'] },
+  png: { 'PNG Image': ['png'] },
+};
+function decodeExportData(format: ExportFormat, data: string): Buffer {
+  return format === 'svg'
+    ? Buffer.from(data, 'utf8')
+    : Buffer.from(data.replace(/^data:image\/[a-z.+-]+;base64,/, ''), 'base64');
+}
+
+type InMessage =
+  | { type: 'ready' }
+  | { type: 'mermaidchange'; text: string }
+  | { type: 'error'; message: string }
+  | { type: 'export'; format: ExportFormat; data: string; suggestedName: string };
 
 export class EditorPanel {
   public static current: EditorPanel | undefined;
@@ -76,7 +93,24 @@ export class EditorPanel {
       this.scheduleWriteBack(msg.text);
     } else if (msg.type === 'error') {
       void vscode.window.showWarningMessage(`Mermaid 繪製:${msg.message}`);
+    } else if (msg.type === 'export') {
+      void this.saveExport(msg);
     }
+  }
+
+  /** webview 端取得 SVG/PNG 資料後,host 用儲存對話框寫檔(webview 無法直接觸發下載)。 */
+  private async saveExport(msg: { format: ExportFormat; data: string; suggestedName: string }): Promise<void> {
+    const dir =
+      this.doc.uri.scheme === 'file'
+        ? path.dirname(this.doc.uri.fsPath)
+        : (vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir());
+    const uri = await vscode.window.showSaveDialog({
+      defaultUri: vscode.Uri.file(path.join(dir, msg.suggestedName)),
+      filters: EXPORT_FILTERS[msg.format],
+    });
+    if (!uri) return;
+    await vscode.workspace.fs.writeFile(uri, decodeExportData(msg.format, msg.data));
+    void vscode.window.showInformationMessage(`Mermaid 繪製:已匯出 ${path.basename(uri.fsPath)}`);
   }
 
   /** 防抖寫回(避免一次拖曳產生過多文件編輯)。 */

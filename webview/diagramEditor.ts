@@ -64,8 +64,18 @@ function wireToolbar(h: DiagramEditorHandle): void {
   byId('btn-zoom-out')?.addEventListener('click', () => h.zoomOut());
   byId('btn-fit')?.addEventListener('click', () => h.fit());
   byId('btn-tidy')?.addEventListener('click', () => void h.tidy());
-  byId('btn-svg')?.addEventListener('click', () => h.downloadSvg());
-  byId('btn-png')?.addEventListener('click', () => void h.downloadPng());
+  // webview 無法直接觸發 <a download>;改把資料 postMessage 給 host,由 host 開儲存對話框寫檔。
+  byId('btn-svg')?.addEventListener('click', () => {
+    vscodeApi.postMessage({ type: 'export', format: 'svg', data: h.exportSvg(), suggestedName: 'diagram.svg' });
+  });
+  byId('btn-png')?.addEventListener('click', () => {
+    void h.exportPng().then((blob) => {
+      const reader = new FileReader();
+      reader.onload = () =>
+        vscodeApi.postMessage({ type: 'export', format: 'png', data: reader.result, suggestedName: 'diagram.png' });
+      reader.readAsDataURL(blob);
+    });
+  });
   byId('btn-source')?.addEventListener('click', () => {
     const panel = byId('source-panel');
     if (!panel) return;
