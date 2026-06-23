@@ -96,6 +96,23 @@ function wireToolbar(h: DiagramEditorHandle): void {
       reader.readAsDataURL(blob);
     });
   });
+  const copyBtn = byId('btn-copy') as HTMLButtonElement | null;
+  copyBtn?.addEventListener('click', () => {
+    void h
+      .copyPngToClipboard()
+      .then(() => {
+        copyBtn.textContent = '✓ 已複製';
+        setTimeout(() => {
+          copyBtn.textContent = '⧉ 複製';
+        }, 1400);
+      })
+      .catch(() => {
+        copyBtn.textContent = '✗ 不支援';
+        setTimeout(() => {
+          copyBtn.textContent = '⧉ 複製';
+        }, 1400);
+      });
+  });
   byId('btn-source')?.addEventListener('click', () => {
     const panel = byId('source-panel');
     if (!panel) return;
