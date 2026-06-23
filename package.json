@@ -2,7 +2,7 @@
   "name": "super-mermaid",
   "displayName": "Super Mermaid",
   "description": "Mermaid diagrams that look good out of the box — auto-colored live preview with pan/zoom, plus one-click hi-res PNG/SVG export (up to 4x, transparent background, batch Export All).",
-  "version": "0.8.35",
+  "version": "0.8.36",
   "publisher": "mark-ku",
   "license": "MIT",
   "repository": {
