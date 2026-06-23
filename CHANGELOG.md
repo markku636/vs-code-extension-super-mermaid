@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.74 — pie legend colours match slices
+
+- **Fix** (via shared core): pie-chart legend swatches now match their slice
+  colours (were diverging from the 3rd item on under colourful/auto themes).
+
 ## 0.8.73 — robust empty diagram
 
 - **Fix** (via shared core): opening an empty / whitespace-only mermaid block in
