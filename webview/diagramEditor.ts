@@ -6,6 +6,7 @@ import {
   createDiagramEditor,
   registerFlowchartAdapter,
   registerStateAdapter,
+  registerErAdapter,
   type DiagramEditorHandle,
   type NodeShape,
   type Tool,
@@ -13,6 +14,7 @@ import {
 
 registerFlowchartAdapter();
 registerStateAdapter();
+registerErAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
