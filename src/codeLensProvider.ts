@@ -48,7 +48,9 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
         kw === 'graph' ||
         kw === 'statediagram' ||
         kw === 'statediagram-v2' ||
-        kw === 'erdiagram'
+        kw === 'erdiagram' ||
+        kw === 'classdiagram' ||
+        kw === 'classdiagram-v2'
       ) {
         lenses.push(
           new vscode.CodeLens(range, {

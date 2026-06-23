@@ -81,10 +81,18 @@ export function activate(context: vscode.ExtensionContext): void {
         // 目前沒有對應的解析器,若硬開會把原圖覆寫 → 直接擋下、給明確提示。
         const block = extractMermaidBlocks(doc)[blockIndex ?? 0];
         const kw = (block?.title ?? '').toLowerCase();
-        const DRAWABLE = ['flowchart', 'graph', 'statediagram', 'statediagram-v2', 'erdiagram'];
+        const DRAWABLE = [
+          'flowchart',
+          'graph',
+          'statediagram',
+          'statediagram-v2',
+          'erdiagram',
+          'classdiagram',
+          'classdiagram-v2',
+        ];
         if (!DRAWABLE.includes(kw)) {
           void vscode.window.showInformationMessage(
-            `Mermaid 繪製目前支援 flowchart / graph / stateDiagram / erDiagram;此圖為「${block?.title ?? '未知'}」。` +
+            `Mermaid 繪製目前支援 flowchart / graph / stateDiagram / erDiagram / classDiagram;此圖為「${block?.title ?? '未知'}」。` +
               '其他圖種請改用「Edit Diagram」預覽。',
           );
           return;

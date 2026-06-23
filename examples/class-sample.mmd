@@ -1,0 +1,13 @@
+classDiagram
+    class Animal {
+        +String name
+        +int age
+        +makeSound() void
+    }
+    class Dog {
+        +bark() void
+    }
+    Animal <|-- Dog
+    Animal <|-- Cat
+    Animal o-- Leg
+    Dog ..> Bone : fetches
