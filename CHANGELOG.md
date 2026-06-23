@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.73 — robust empty diagram
+
+- **Fix** (via shared core): opening an empty / whitespace-only mermaid block in
+  the Draw editor no longer throws "No diagram type detected" — the empty-canvas
+  hint shows gracefully.
+
 ## 0.8.72 — sketch/clean look toggle in the Draw editor
 
 - New **✏ 手繪** toolbar button toggles the canvas between **clean** (crisp
