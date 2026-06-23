@@ -47,6 +47,22 @@ function byId<T extends HTMLElement = HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
 }
 
+/** 依圖種顯示/隱藏建立控制項:sequence 用右鍵新增參與者/訊息(隱藏外形與連線);
+ *  只有 flowchart/state/class/er 有流程方向。 */
+function applyTypeUI(type: string): void {
+  const seq = type === 'sequence';
+  const hasDir = ['flowchart', 'graph', 'state', 'class', 'er'].includes(type);
+  const show = (el: Element | null, on: boolean): void => {
+    if (el) (el as HTMLElement).style.display = on ? '' : 'none';
+  };
+  document.querySelectorAll('[data-shape]').forEach((el) => show(el, !seq));
+  show(document.querySelector('[data-tool="edge-create"]'), !seq);
+  show(document.querySelector('.tlabel'), !seq);
+  show(byId('dir-select'), hasDir);
+  const hint = byId('seq-hint');
+  if (hint) (hint as HTMLElement).hidden = !seq;
+}
+
 function setActiveTool(tool: Tool): void {
   document.querySelectorAll('[data-tool]').forEach((el) => {
     el.classList.toggle('active', el.getAttribute('data-tool') === tool);
@@ -134,6 +150,7 @@ window.addEventListener('message', (event) => {
       .loadSource(msg.source ?? '')
       .catch(() => {})
       .finally(() => {
+        applyTypeUI(handle ? handle.getScene().diagramType : 'flowchart');
         // 載入(含 layout)安定後才開放寫回;之後使用者的編輯才會回寫文件。
         setTimeout(() => {
           suppressWriteBack = false;

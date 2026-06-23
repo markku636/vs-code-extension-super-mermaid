@@ -189,6 +189,7 @@ export class EditorPanel {
     <button class="tbtn" data-shape="circle" title="新增圓形節點">◯ 圓形</button>
     <button class="tbtn" data-shape="hexagon" title="新增六角節點">⬡ 六角</button>
     <button class="tbtn" data-shape="cylinder" title="新增資料庫節點">⛁ 資料庫</button>
+    <span id="seq-hint" class="tlabel" hidden>右鍵空白處：新增參與者 / 訊息</span>
     <select id="dir-select" class="tbtn" title="流程方向">
       <option value="TB">↓ 由上而下</option>
       <option value="LR">→ 由左而右</option>
