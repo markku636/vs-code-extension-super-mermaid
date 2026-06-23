@@ -10,27 +10,32 @@
 ---
 title: 訂單處理流程
 ---
-flowchart LR
-    subgraph Client["客戶端"]
-        A([使用者下單]) --> B[購物車結帳]
+flowchart RL
+    J([通知出貨])
+    subgraph Client [客戶端]
+        B[購物車結帳]
+        A([使用者下單])
     end
-    subgraph Backend["後端服務"]
+    subgraph Backend [後端服務]
         C{庫存足夠?}
         D[建立訂單]
         E[發送補貨通知]
         F[呼叫金流 API]
     end
-    subgraph Payment["金流"]
+    subgraph Payment [金流]
         G{付款成功?}
         H[訂單成立]
         I[釋放庫存]
     end
+    A --> B
     B --> C
-    C -- 是 --> D --> F --> G
-    C -- 否 --> E
-    G -- 是 --> H
-    G -- 否 --> I
-    H --> J([通知出貨])
+    C -->|是| D
+    D --> F
+    F --> G
+    C -->|否| E
+    G -->|是| H
+    G -->|否| I
+    H --> J
 ```
 
 ## 循序圖 Sequence
