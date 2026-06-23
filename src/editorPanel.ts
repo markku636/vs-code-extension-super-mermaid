@@ -214,8 +214,8 @@ export class EditorPanel {
   <div id="editor-row">
     <div id="app"></div>
     <aside id="source-panel" hidden>
-      <div id="source-head"><span>Mermaid 原始碼</span><button class="tbtn" id="btn-copy-src">複製</button></div>
-      <pre id="source-pre"><code></code></pre>
+      <div id="source-head"><span id="source-title">Mermaid 原始碼</span><span style="display:flex;gap:4px"><button class="tbtn" id="btn-apply-src" title="套用原始碼變更到圖(Ctrl+Enter)">套用</button><button class="tbtn" id="btn-copy-src">複製</button></span></div>
+      <textarea id="source-ta" spellcheck="false" aria-label="Mermaid 原始碼" title="編輯 Mermaid 原始碼,按「套用」或 Ctrl+Enter 套用"></textarea>
     </aside>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>

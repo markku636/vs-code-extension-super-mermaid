@@ -39,8 +39,12 @@ let lastCode = '';
 
 function updateSourcePanel(text: string): void {
   lastCode = text;
-  const code = document.querySelector('#source-pre code') ?? byId('source-pre');
-  if (code) code.textContent = text;
+  const ta = byId<HTMLTextAreaElement>('source-ta');
+  // 使用者正在編輯 textarea 時不要覆寫,避免打字被畫布更新蓋掉。
+  if (ta && document.activeElement !== ta) {
+    ta.value = text;
+    ta.classList.remove('src-error');
+  }
 }
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T | null {
@@ -122,6 +126,22 @@ function wireToolbar(h: DiagramEditorHandle): void {
   });
   byId('btn-copy-src')?.addEventListener('click', () => {
     void navigator.clipboard?.writeText(lastCode).catch(() => {});
+  });
+  const applySrc = (): void => {
+    const ta = byId<HTMLTextAreaElement>('source-ta');
+    if (!ta) return;
+    void h
+      .loadSource(ta.value)
+      .then(() => ta.classList.remove('src-error'))
+      .catch(() => ta.classList.add('src-error'));
+  };
+  byId('btn-apply-src')?.addEventListener('click', applySrc);
+  byId('source-ta')?.addEventListener('keydown', (e) => {
+    const ke = e as KeyboardEvent;
+    if ((ke.ctrlKey || ke.metaKey) && ke.key === 'Enter') {
+      ke.preventDefault();
+      applySrc();
+    }
   });
   byId('dir-select')?.addEventListener('change', (e) => {
     h.setDirection((e.target as HTMLSelectElement).value as 'TB' | 'LR' | 'BT' | 'RL');

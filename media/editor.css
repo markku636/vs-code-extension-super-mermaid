@@ -107,13 +107,22 @@ select.tbtn option {
   opacity: 0.85;
   border-bottom: 1px solid var(--vscode-panel-border, #3a3a40);
 }
-#source-pre {
+#source-ta {
   flex: 1 1 auto;
   margin: 0;
   padding: 10px 12px;
   overflow: auto;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--vscode-editor-foreground, inherit);
   font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
   font-size: 12.5px;
   line-height: 1.5;
   white-space: pre;
+}
+#source-ta.src-error {
+  outline: 2px solid var(--vscode-editorError-foreground, #ef4444);
+  outline-offset: -2px;
 }
