@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.75 — vibrant xychart bars
+
+- **Improvement** (via shared core): xychart bar/line charts are now colourized
+  (vibrant bars instead of mermaid's near-invisible pale fill).
+
 ## 0.8.74 — pie legend colours match slices
 
 - **Fix** (via shared core): pie-chart legend swatches now match their slice
