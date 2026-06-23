@@ -135,6 +135,7 @@ function wireToolbar(h: DiagramEditorHandle): void {
       .then(() => ta.classList.remove('src-error'))
       .catch(() => ta.classList.add('src-error'));
   };
+  byId('btn-help')?.addEventListener('click', () => h.toggleHelp());
   byId('btn-apply-src')?.addEventListener('click', applySrc);
   byId('source-ta')?.addEventListener('keydown', (e) => {
     const ke = e as KeyboardEvent;
