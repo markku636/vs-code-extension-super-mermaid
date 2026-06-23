@@ -41,9 +41,9 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
           arguments: [doc.uri, index],
         }),
       ];
-      // 繪製編輯器只支援 flowchart / graph,只有這兩種才顯示「Draw」(避免在 sequence 等圖種誤開覆寫)。
+      // 繪製編輯器支援 flowchart / graph / stateDiagram,只有這些才顯示「Draw」(避免在 sequence 等尚未支援的圖種誤開覆寫)。
       const kw = (block.title ?? '').toLowerCase();
-      if (kw === 'flowchart' || kw === 'graph') {
+      if (kw === 'flowchart' || kw === 'graph' || kw === 'statediagram' || kw === 'statediagram-v2') {
         lenses.push(
           new vscode.CodeLens(range, {
             title: '$(edit) Draw',

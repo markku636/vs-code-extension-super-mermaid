@@ -77,13 +77,14 @@ export function activate(context: vscode.ExtensionContext): void {
           );
           return;
         }
-        // 繪製編輯器(Phase 1)只支援 flowchart / graph。其他圖種(sequence / class …)
-        // 目前沒有對應的解析器,若硬開會把原圖覆寫成空 flowchart → 直接擋下、給明確提示。
+        // 繪製編輯器支援 flowchart / graph / stateDiagram。其他圖種(sequence / class / er …)
+        // 目前沒有對應的解析器,若硬開會把原圖覆寫 → 直接擋下、給明確提示。
         const block = extractMermaidBlocks(doc)[blockIndex ?? 0];
         const kw = (block?.title ?? '').toLowerCase();
-        if (kw !== 'flowchart' && kw !== 'graph') {
+        const DRAWABLE = ['flowchart', 'graph', 'statediagram', 'statediagram-v2'];
+        if (!DRAWABLE.includes(kw)) {
           void vscode.window.showInformationMessage(
-            `Mermaid 繪製目前僅支援 flowchart / graph 流程圖;此圖為「${block?.title ?? '未知'}」。` +
+            `Mermaid 繪製目前支援 flowchart / graph / stateDiagram;此圖為「${block?.title ?? '未知'}」。` +
               '其他圖種請改用「Edit Diagram」預覽。',
           );
           return;

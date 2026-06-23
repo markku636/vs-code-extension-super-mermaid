@@ -5,12 +5,14 @@ import mermaid from 'mermaid';
 import {
   createDiagramEditor,
   registerFlowchartAdapter,
+  registerStateAdapter,
   type DiagramEditorHandle,
   type NodeShape,
   type Tool,
 } from 'react-super-mermaid/editor';
 
 registerFlowchartAdapter();
+registerStateAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
