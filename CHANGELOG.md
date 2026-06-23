@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.80 — gantt dark-aware (chart dark-mode pass complete)
+
+- **Fix** (via shared core): gantt bars readable in dark mode; all chart types
+  now render consistently in light & dark.
+
 ## 0.8.79 — timeline + mindmap dark-aware
 
 - **Fix** (via shared core): timeline + mindmap cards/nodes are readable in dark
