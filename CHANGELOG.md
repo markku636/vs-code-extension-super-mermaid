@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.78 — journey chart dark-aware
+
+- **Fix** (via shared core): user-journey task labels are now readable in dark
+  mode (were faint light-on-light).
+
 ## 0.8.77 — quadrant zones dark-aware
 
 - **Fix** (via shared core): quadrant zone tints are now dark-aware (were light
