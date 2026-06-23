@@ -8,6 +8,7 @@ import {
   registerStateAdapter,
   registerErAdapter,
   registerClassAdapter,
+  registerMindmapAdapter,
   type DiagramEditorHandle,
   type NodeShape,
   type Tool,
@@ -17,6 +18,7 @@ registerFlowchartAdapter();
 registerStateAdapter();
 registerErAdapter();
 registerClassAdapter();
+registerMindmapAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;

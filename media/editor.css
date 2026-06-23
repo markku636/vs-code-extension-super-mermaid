@@ -53,6 +53,18 @@ body {
 #shape-select {
   border: 1px solid var(--vscode-panel-border, #3a3a40);
 }
+/* 下拉選單:用 VS Code 下拉色,避免暗色主題下白底白字看不清。 */
+#dir-select,
+select.tbtn {
+  background: var(--vscode-dropdown-background, #2b2b2b);
+  color: var(--vscode-dropdown-foreground, #e8e8e8);
+  border: 1px solid var(--vscode-dropdown-border, #3a3a40);
+}
+#dir-select option,
+select.tbtn option {
+  background: var(--vscode-dropdown-background, #2b2b2b);
+  color: var(--vscode-dropdown-foreground, #e8e8e8);
+}
 #zoom-level {
   font-size: 12px;
   min-width: 42px;

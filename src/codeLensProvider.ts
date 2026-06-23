@@ -50,7 +50,8 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
         kw === 'statediagram-v2' ||
         kw === 'erdiagram' ||
         kw === 'classdiagram' ||
-        kw === 'classdiagram-v2'
+        kw === 'classdiagram-v2' ||
+        kw === 'mindmap'
       ) {
         lenses.push(
           new vscode.CodeLens(range, {
