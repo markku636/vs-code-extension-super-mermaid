@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.79 — timeline + mindmap dark-aware
+
+- **Fix** (via shared core): timeline + mindmap cards/nodes are readable in dark
+  mode (were bright light cards with hard-to-read text).
+
 ## 0.8.78 — journey chart dark-aware
 
 - **Fix** (via shared core): user-journey task labels are now readable in dark
