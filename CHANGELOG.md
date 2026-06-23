@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.77 — quadrant zones dark-aware
+
+- **Fix** (via shared core): quadrant zone tints are now dark-aware (were light
+  rectangles in dark mode).
+
 ## 0.8.76 — quadrant chart: distinct zones + visible points
 
 - **Improvement/fix** (via shared core): quadrant charts get 4 distinct soft
