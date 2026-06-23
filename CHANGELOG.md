@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.76 — quadrant chart: distinct zones + visible points
+
+- **Improvement/fix** (via shared core): quadrant charts get 4 distinct soft
+  zone tints and visible vibrant data points (were pale/indistinguishable with
+  invisible NaN-coloured dots).
+
 ## 0.8.75 — vibrant xychart bars
 
 - **Improvement** (via shared core): xychart bar/line charts are now colourized
