@@ -21,7 +21,7 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 
 ## ✏️ New: draw diagrams visually → get Mermaid
 
-Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above any ```` ```mermaid ```` flowchart block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor**. Drag to place shapes, drag from a node edge to connect — or drag to empty space to spawn a connected node — double-click to rename, right-click to recolor / change shape / align / group into subgraphs, toggle flow direction, and auto-tidy the layout. Everything writes straight back to your file as clean Mermaid, and existing flowcharts open as fully draggable diagrams.
+Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **six diagram types: flowchart, state, ER, class, mindmap, and sequence**. Drag to place shapes, drag from a node edge to connect (or to empty space to spawn a connected node), double-click to rename or edit cell content (ER attributes, class members, sequence messages), right-click for shape / colour / align / group / type-specific actions, build sequences from scratch, toggle direction, auto-tidy, and export SVG/PNG. The editor's colours match the live preview exactly, and everything writes straight back to your file as clean Mermaid (round-trip stable). Data charts (pie / gantt / journey / timeline / etc.) aren't drawn by dragging — use the live preview for those.
 
 ![Draw diagrams visually](docs/images/draw-editor.png)
 
