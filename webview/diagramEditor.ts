@@ -9,6 +9,7 @@ import {
   registerErAdapter,
   registerClassAdapter,
   registerMindmapAdapter,
+  registerSequenceAdapter,
   type DiagramEditorHandle,
   type NodeShape,
   type Tool,
@@ -19,6 +20,7 @@ registerStateAdapter();
 registerErAdapter();
 registerClassAdapter();
 registerMindmapAdapter();
+registerSequenceAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;

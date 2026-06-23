@@ -90,10 +90,11 @@ export function activate(context: vscode.ExtensionContext): void {
           'classdiagram',
           'classdiagram-v2',
           'mindmap',
+          'sequencediagram',
         ];
         if (!DRAWABLE.includes(kw)) {
           void vscode.window.showInformationMessage(
-            `Mermaid 繪製目前支援 flowchart / graph / stateDiagram / erDiagram / classDiagram / mindmap;此圖為「${block?.title ?? '未知'}」。` +
+            `Mermaid 繪製目前支援 flowchart / graph / stateDiagram / erDiagram / classDiagram / mindmap / sequenceDiagram;此圖為「${block?.title ?? '未知'}」。` +
               '其他圖種請改用「Edit Diagram」預覽。',
           );
           return;
