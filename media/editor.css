@@ -76,6 +76,21 @@ select.tbtn option {
   opacity: 0.6;
   padding: 0 2px;
 }
+/* 連線樣式群組:線型按鈕(迷你預覽)+ 箭頭下拉 + 雙向。 */
+#edge-style {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.line-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+}
+.line-btn svg {
+  display: block;
+}
 #editor-row {
   flex: 1 1 auto;
   min-height: 0;

@@ -21,7 +21,8 @@ type InMessage =
   | { type: 'ready' }
   | { type: 'mermaidchange'; text: string }
   | { type: 'error'; message: string }
-  | { type: 'export'; format: ExportFormat; data: string; suggestedName: string };
+  | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
+  | { type: 'selectBlock'; index: number };
 
 export class EditorPanel {
   public static current: EditorPanel | undefined;
@@ -30,6 +31,8 @@ export class EditorPanel {
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
   private writeTimer: ReturnType<typeof setTimeout> | undefined;
+  /** 尚未送出的回寫內容(供切換圖前 flush,避免 debounce 寫回到上一張)。 */
+  private pendingText: string | undefined;
   private applyingEdit = false;
 
   static async createOrShow(
@@ -74,16 +77,20 @@ export class EditorPanel {
     this.postLoad();
   }
 
-  private currentBlockSource(): string {
-    const blocks = extractMermaidBlocks(this.doc);
-    const block = blocks[this.blockIndex] ?? blocks[0];
-    return block?.source ?? '';
-  }
-
   private postLoad(): void {
     const dark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark ||
       vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
-    void this.panel.webview.postMessage({ type: 'load', source: this.currentBlockSource(), dark });
+    const blocks = extractMermaidBlocks(this.doc);
+    const activeIndex = blocks[this.blockIndex] ? this.blockIndex : 0;
+    // 下拉清單:沿用 mermaidExtract 的 displayTitle(frontmatter title)/ title(圖種關鍵字)。
+    const list = blocks.map((b, i) => ({ index: i, label: `${i + 1}. ${b.displayTitle ?? b.title}` }));
+    void this.panel.webview.postMessage({
+      type: 'load',
+      source: blocks[activeIndex]?.source ?? '',
+      dark,
+      blocks: list,
+      activeIndex,
+    });
   }
 
   private onMessage(msg: InMessage): void {
@@ -95,7 +102,15 @@ export class EditorPanel {
       void vscode.window.showWarningMessage(`Mermaid 繪製:${msg.message}`);
     } else if (msg.type === 'export') {
       void this.saveExport(msg);
+    } else if (msg.type === 'selectBlock') {
+      this.selectBlock(msg.index);
     }
+  }
+
+  /** 切換到同檔的另一張圖:先把上一張未送出的編輯 flush(避免寫回到舊 block),再重綁載入。 */
+  private selectBlock(index: number): void {
+    this.flushWriteBack();
+    this.rebind(this.doc, index);
   }
 
   /** webview 端取得 SVG/PNG 資料後,host 用儲存對話框寫檔(webview 無法直接觸發下載)。 */
@@ -115,8 +130,26 @@ export class EditorPanel {
 
   /** 防抖寫回(避免一次拖曳產生過多文件編輯)。 */
   private scheduleWriteBack(text: string): void {
+    this.pendingText = text;
     if (this.writeTimer) clearTimeout(this.writeTimer);
-    this.writeTimer = setTimeout(() => void this.writeBack(text), 200);
+    this.writeTimer = setTimeout(() => {
+      this.writeTimer = undefined;
+      const t = this.pendingText;
+      this.pendingText = undefined;
+      if (t != null) void this.writeBack(t);
+    }, 200);
+  }
+
+  /** 立即送出尚未 flush 的回寫(切換圖前呼叫)。writeBack 的同步前段會以「目前 blockIndex」
+   *  鎖定目標 fence,故必須在 rebind 改 blockIndex 之前呼叫。 */
+  private flushWriteBack(): void {
+    if (this.writeTimer) {
+      clearTimeout(this.writeTimer);
+      this.writeTimer = undefined;
+    }
+    const t = this.pendingText;
+    this.pendingText = undefined;
+    if (t != null) void this.writeBack(t);
   }
 
   private async writeBack(text: string): Promise<void> {
@@ -177,6 +210,7 @@ export class EditorPanel {
 </head>
 <body data-font-uri="${fontUri}">
   <div id="toolbar">
+    <select id="diagram-select" class="tbtn" title="切換此檔的其他圖表" style="display:none"></select>
     <button class="tbtn" data-tool="select" title="選取 / 移動 (V)">➤ 選取</button>
     <button class="tbtn" data-tool="edge-create" title="從節點拉出連線 (E)">↘ 連線</button>
     <button class="tbtn" data-tool="pan" title="平移畫布">✋ 平移</button>
@@ -189,7 +223,28 @@ export class EditorPanel {
     <button class="tbtn" data-shape="circle" title="新增圓形節點">◯ 圓形</button>
     <button class="tbtn" data-shape="hexagon" title="新增六角節點">⬡ 六角</button>
     <button class="tbtn" data-shape="cylinder" title="新增資料庫節點">⛁ 資料庫</button>
+    <select id="shape-select" class="tbtn" title="更多外形（新增節點）">
+      <option value="">＋ 更多外形…</option>
+      <option value="subroutine">⧈ 子流程</option>
+      <option value="doubleCircle">◎ 雙圈</option>
+      <option value="ellipse">⬭ 橢圓</option>
+      <option value="parallelogram">▱ 平行四邊形</option>
+      <option value="parallelogramAlt">▰ 平行四邊形(左)</option>
+      <option value="trapezoid">⏢ 梯形</option>
+      <option value="trapezoidAlt">⏏ 梯形(倒)</option>
+      <option value="odd">⬠ 旗標</option>
+    </select>
     <span id="seq-hint" class="tlabel" hidden>右鍵空白處：新增參與者 / 訊息</span>
+    <span id="edge-style">
+      <span class="spacer"></span>
+      <span id="line-label" class="tlabel">線：</span>
+      <button class="tbtn line-btn" data-linekind="solid" title="實線" aria-label="實線"><svg width="26" height="10" viewBox="0 0 26 10"><line x1="2" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <button class="tbtn line-btn" data-linekind="dotted" title="虛線" aria-label="虛線"><svg width="26" height="10" viewBox="0 0 26 10"><line x1="2" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2 4"/></svg></button>
+      <button class="tbtn line-btn" data-linekind="thick" title="粗線" aria-label="粗線"><svg width="26" height="10" viewBox="0 0 26 10"><line x1="2" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg></button>
+      <button class="tbtn line-btn" data-linekind="invisible" title="隱形（不顯示連線）" aria-label="隱形"><svg width="26" height="10" viewBox="0 0 26 10"><line x1="2" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="1 4" stroke-opacity="0.4"/></svg></button>
+      <select id="arrow-select" class="tbtn" title="箭頭樣式（套用到選取的連線 / 新連線預設）"></select>
+      <button class="tbtn" id="btn-bidir" title="雙向箭頭（起點也加箭頭）">⇄ 雙向</button>
+    </span>
     <select id="dir-select" class="tbtn" title="流程方向">
       <option value="TB">↓ 由上而下</option>
       <option value="LR">→ 由左而右</option>

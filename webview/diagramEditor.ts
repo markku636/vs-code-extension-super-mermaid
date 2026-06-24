@@ -10,7 +10,9 @@ import {
   registerClassAdapter,
   registerMindmapAdapter,
   registerSequenceAdapter,
+  type ArrowHead,
   type DiagramEditorHandle,
+  type LineKind,
   type NodeShape,
   type Tool,
 } from 'react-super-mermaid/editor';
@@ -51,18 +53,108 @@ function byId<T extends HTMLElement = HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
 }
 
+// 箭頭端的友善名稱(下拉選單用)。flowchart 用前 5 種;三角 / 菱形 / 鳥足為 class/er 圖種。
+const ARROW_LABEL: Record<string, string> = {
+  none: '⎯ 無箭頭',
+  arrow: '▸ 箭頭',
+  open: '⇁ 開放',
+  dot: '● 圓點',
+  cross: '✕ 交叉',
+  triangle: '▷ 三角(繼承)',
+  diamond: '◇ 空心菱(聚合)',
+  diamondFilled: '◆ 實心菱(組合)',
+  crowFootOne: '⊣ 一',
+  crowFootMany: '⪛ 多',
+};
+
+/** 依目前圖種能力重建箭頭下拉的選項(保留現值)。 */
+function rebuildArrowOptions(sel: HTMLSelectElement, heads: readonly string[]): void {
+  const cur = sel.value;
+  sel.textContent = '';
+  for (const head of heads) {
+    const opt = document.createElement('option');
+    opt.value = head;
+    opt.textContent = ARROW_LABEL[head] ?? head;
+    sel.appendChild(opt);
+  }
+  if (heads.includes(cur)) sel.value = cur;
+}
+
+/** 把連線控制項同步成指定樣式(新連線預設 / 選取連線)。 */
+function syncEdgeControls(style: { lineKind: string; arrowStart: string; arrowEnd: string }): void {
+  document.querySelectorAll('[data-linekind]').forEach((el) => {
+    el.classList.toggle('active', el.getAttribute('data-linekind') === style.lineKind);
+  });
+  const arrowSel = byId<HTMLSelectElement>('arrow-select');
+  if (arrowSel && Array.from(arrowSel.options).some((o) => o.value === style.arrowEnd)) {
+    arrowSel.value = style.arrowEnd;
+  }
+  byId('btn-bidir')?.classList.toggle('active', style.arrowStart !== 'none');
+}
+
+/** 用 host 傳來的 block 清單重建「切換圖表」下拉;只有 1 張(或無)時隱藏。 */
+function populateDiagramSelect(blocks?: Array<{ index: number; label: string }>, activeIndex?: number): void {
+  const sel = byId<HTMLSelectElement>('diagram-select');
+  if (!sel) return;
+  if (!blocks || blocks.length <= 1) {
+    sel.style.display = 'none';
+    return;
+  }
+  sel.style.display = '';
+  sel.textContent = '';
+  for (const b of blocks) {
+    const opt = document.createElement('option');
+    opt.value = String(b.index);
+    opt.textContent = b.label;
+    sel.appendChild(opt);
+  }
+  sel.value = String(activeIndex ?? 0);
+}
+
 /** 依圖種顯示/隱藏建立控制項:sequence 用右鍵新增參與者/訊息(隱藏外形與連線);
- *  只有 flowchart/state/class/er 有流程方向。 */
+ *  只有 flowchart/state/class/er 有流程方向;timeline 走表單,隱藏所有畫布工具。 */
 function applyTypeUI(type: string): void {
   const seq = type === 'sequence';
-  const hasDir = ['flowchart', 'graph', 'state', 'class', 'er'].includes(type);
+  const timeline = type === 'timeline';
+  const canvas = !timeline; // 畫布工具(選取/平移/縮放/整理/手繪)只在畫布圖種顯示
+  const hasDir = canvas && ['flowchart', 'graph', 'state', 'class', 'er'].includes(type);
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
-  document.querySelectorAll('[data-shape]').forEach((el) => show(el, !seq));
-  show(document.querySelector('[data-tool="edge-create"]'), !seq);
-  show(document.querySelector('.tlabel'), !seq);
+  // 建立工具:sequence 與 timeline 都不用外形/連線(timeline 用左側表單)。
+  document.querySelectorAll('[data-shape]').forEach((el) => show(el, !seq && !timeline));
+  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline);
+  show(document.querySelector('[data-tool="select"]'), canvas);
+  show(document.querySelector('[data-tool="pan"]'), canvas);
+  show(document.querySelector('.tlabel'), !seq && !timeline);
   show(byId('dir-select'), hasDir);
+  // 「更多外形」下拉:與一鍵外形同進退。
+  show(byId('shape-select'), !seq && !timeline);
+
+  // 連線樣式(線型 / 箭頭):依目前圖種能力顯示;sequence 走右鍵、timeline 無畫布。
+  const caps = handle?.getCapabilities() ?? null;
+  const lineKinds = caps?.lineKinds ?? [];
+  const arrowHeads = caps?.arrowHeads ?? [];
+  const edgeOk = canvas && !seq && caps !== null;
+  const showLine = edgeOk && lineKinds.length > 1;
+  const showArrow = edgeOk && arrowHeads.length > 1;
+  show(byId('edge-style'), showLine || showArrow);
+  show(byId('line-label'), showLine);
+  document.querySelectorAll('[data-linekind]').forEach((el) => {
+    show(el, showLine && lineKinds.includes(el.getAttribute('data-linekind') as LineKind));
+  });
+  const arrowSel = byId<HTMLSelectElement>('arrow-select');
+  if (arrowSel) {
+    rebuildArrowOptions(arrowSel, arrowHeads);
+    show(arrowSel, showArrow);
+  }
+  show(byId('btn-bidir'), edgeOk && arrowHeads.includes('arrow' as ArrowHead) && (type === 'flowchart' || type === 'graph'));
+  if (handle) syncEdgeControls(handle.getEdgeStyleDefault());
+
+  // 純畫布操作(選取刪除 / 縮放 / 符合視窗 / 整理 / 手繪 / 快捷鍵說明):timeline 無畫布,一律隱藏。
+  for (const id of ['btn-delete', 'btn-zoom-out', 'zoom-level', 'btn-zoom-in', 'btn-fit', 'btn-tidy', 'btn-look', 'btn-help']) {
+    show(byId(id), canvas);
+  }
   const hint = byId('seq-hint');
   if (hint) (hint as HTMLElement).hidden = !seq;
 }
@@ -80,6 +172,34 @@ function wireToolbar(h: DiagramEditorHandle): void {
   // 常用外形按鈕:點一下直接在畫布中央放節點(免下拉選單、免再點畫布)。
   document.querySelectorAll('[data-shape]').forEach((el) => {
     el.addEventListener('click', () => h.addNode(el.getAttribute('data-shape') as NodeShape));
+  });
+  // 「更多外形」下拉:選一個就新增該外形,再重設回提示。
+  byId('shape-select')?.addEventListener('change', (e) => {
+    const sel = e.target as HTMLSelectElement;
+    if (sel.value) h.addNode(sel.value as NodeShape);
+    sel.value = '';
+  });
+  // 連線線型:套到選取的連線(若有)+ 設為新連線預設。
+  document.querySelectorAll('[data-linekind]').forEach((el) => {
+    el.addEventListener('click', () => {
+      h.applyEdgeStyle({ lineKind: el.getAttribute('data-linekind') as LineKind });
+      syncEdgeControls(h.getEdgeStyleDefault());
+    });
+  });
+  byId('arrow-select')?.addEventListener('change', (e) => {
+    h.applyEdgeStyle({ arrowEnd: (e.target as HTMLSelectElement).value as ArrowHead });
+  });
+  byId('btn-bidir')?.addEventListener('click', () => {
+    const cur = h.getEdgeStyleDefault();
+    h.applyEdgeStyle({ arrowStart: cur.arrowStart === 'none' ? 'arrow' : 'none' });
+    syncEdgeControls(h.getEdgeStyleDefault());
+  });
+  // 選到單一連線 → 控制項反映該連線目前的樣式。
+  h.on('selectionchange', (ids) => {
+    const sel = ids as string[];
+    if (sel.length !== 1) return;
+    const e = h.getScene().edges.find((x) => x.id === sel[0]);
+    if (e) syncEdgeControls({ lineKind: e.lineKind, arrowStart: e.arrowStart, arrowEnd: e.arrowEnd });
   });
   byId('btn-undo')?.addEventListener('click', () => h.undo());
   byId('btn-redo')?.addEventListener('click', () => h.redo());
@@ -155,6 +275,10 @@ function wireToolbar(h: DiagramEditorHandle): void {
   byId('dir-select')?.addEventListener('change', (e) => {
     h.setDirection((e.target as HTMLSelectElement).value as 'TB' | 'LR' | 'BT' | 'RL');
   });
+  // 切換此檔的其他圖表(由 host 重新 loadSource;不經 handle,故與圖種無關)。
+  byId('diagram-select')?.addEventListener('change', (e) => {
+    vscodeApi.postMessage({ type: 'selectBlock', index: Number((e.target as HTMLSelectElement).value) });
+  });
   h.on('toolchange', (t) => setActiveTool(t as Tool));
   h.on('zoomchange', (p) => {
     const el = byId('zoom-level');
@@ -168,8 +292,15 @@ function wireToolbar(h: DiagramEditorHandle): void {
 }
 
 window.addEventListener('message', (event) => {
-  const msg = event.data as { type: string; source?: string; dark?: boolean };
+  const msg = event.data as {
+    type: string;
+    source?: string;
+    dark?: boolean;
+    blocks?: Array<{ index: number; label: string }>;
+    activeIndex?: number;
+  };
   if (msg.type === 'load') {
+    populateDiagramSelect(msg.blocks, msg.activeIndex);
     if (!handle) {
       // 不在建構時帶 source —— 改用 loadSource 並全程抑制寫回,確保「開啟既有圖」不會覆寫原檔。
       handle = createDiagramEditor(app, {
