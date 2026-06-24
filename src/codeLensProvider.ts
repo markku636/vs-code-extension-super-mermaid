@@ -41,8 +41,10 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
           arguments: [doc.uri, index],
         }),
       ];
-      // 繪製編輯器支援 flowchart / graph / stateDiagram,只有這些才顯示「Draw」(避免在 sequence 等尚未支援的圖種誤開覆寫)。
+      // 繪製編輯器支援的圖種才顯示編輯入口(避免在尚未支援的圖種誤開覆寫)。
+      // 畫布圖種 → 「Draw」(拖拉繪製);timeline 等資料圖表 → 「Edit」(結構化表單)。
       const kw = (block.title ?? '').toLowerCase();
+      const isForm = kw === 'timeline';
       if (
         kw === 'flowchart' ||
         kw === 'graph' ||
@@ -52,12 +54,15 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
         kw === 'classdiagram' ||
         kw === 'classdiagram-v2' ||
         kw === 'mindmap' ||
-        kw === 'sequencediagram'
+        kw === 'sequencediagram' ||
+        isForm
       ) {
         lenses.push(
           new vscode.CodeLens(range, {
-            title: '$(edit) Draw',
-            tooltip: '以 Excalidraw 式繪製編輯器開啟此流程圖（拖曳節點 / 連線，編輯後寫回）',
+            title: isForm ? '$(edit) Edit' : '$(edit) Draw',
+            tooltip: isForm
+              ? '以結構化表單編輯此時間軸（區段 / 時間點 / 事件，編輯後寫回）'
+              : '以 Excalidraw 式繪製編輯器開啟此流程圖（拖曳節點 / 連線，編輯後寫回）',
             command: 'superMermaid.editDiagramVisually',
             arguments: [doc.uri, index],
           }),

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.82 — Draw editor: clear previous diagram on switch
+
+- **Fix** (via shared core): in the visual Draw editor, switching from a
+  **sequence** diagram to another diagram (e.g. flowchart) left the old diagram
+  rendered underneath the new one. The sequence renderer writes straight into
+  the SVG layers and bypasses the node cache that the diff renderer relies on to
+  remove stale elements; the layers are now hard-cleared when leaving sequence
+  mode.
+
 ## 0.8.80 — gantt dark-aware (chart dark-mode pass complete)
 
 - **Fix** (via shared core): gantt bars readable in dark mode; all chart types

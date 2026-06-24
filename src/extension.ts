@@ -77,8 +77,8 @@ export function activate(context: vscode.ExtensionContext): void {
           );
           return;
         }
-        // 繪製編輯器支援 flowchart / graph / stateDiagram。其他圖種(sequence / class / er …)
-        // 目前沒有對應的解析器,若硬開會把原圖覆寫 → 直接擋下、給明確提示。
+        // 繪製 / 表單編輯器支援的圖種才放行;其他圖種沒有對應解析器,硬開會把原圖覆寫 → 擋下並提示。
+        // timeline 走結構化表單編輯器(非畫布),其餘為畫布繪製。
         const block = extractMermaidBlocks(doc)[blockIndex ?? 0];
         const kw = (block?.title ?? '').toLowerCase();
         const DRAWABLE = [
@@ -91,10 +91,11 @@ export function activate(context: vscode.ExtensionContext): void {
           'classdiagram-v2',
           'mindmap',
           'sequencediagram',
+          'timeline',
         ];
         if (!DRAWABLE.includes(kw)) {
           void vscode.window.showInformationMessage(
-            `Mermaid 繪製目前支援 flowchart / graph / stateDiagram / erDiagram / classDiagram / mindmap / sequenceDiagram;此圖為「${block?.title ?? '未知'}」。` +
+            `Mermaid 視覺編輯目前支援 flowchart / graph / stateDiagram / erDiagram / classDiagram / mindmap / sequenceDiagram / timeline;此圖為「${block?.title ?? '未知'}」。` +
               '其他圖種請改用「Edit Diagram」預覽。',
           );
           return;

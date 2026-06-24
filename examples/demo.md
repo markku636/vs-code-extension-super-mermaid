@@ -50,7 +50,6 @@ sequenceDiagram
     participant W as Web 前端
     participant API as Auth API
     participant DB as 資料庫
-
     U->>W: 輸入帳號密碼
     W->>API: POST /login
     API->>DB: 查詢使用者
@@ -101,13 +100,10 @@ classDiagram
 ## 實體關聯圖 ER
 
 ```mermaid
----
-title: 電商資料庫
----
 erDiagram
-    CUSTOMER ||--o{ ORDER : "下單"
-    ORDER ||--|{ ORDER_ITEM : "包含"
-    PRODUCT ||--o{ ORDER_ITEM : "被訂購"
+    CUSTOMER ||--o{ ORDER : 下單
+    ORDER ||--|{ ORDER_ITEM : 包含
+    PRODUCT ||--o{ ORDER_ITEM : 被訂購
     CUSTOMER {
         string cust_id PK
         string name
