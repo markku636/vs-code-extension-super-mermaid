@@ -2,7 +2,7 @@
   "name": "super-mermaid",
   "displayName": "Super Mermaid",
   "description": "Mermaid diagrams that look good out of the box — auto-colored live preview with pan/zoom, plus one-click hi-res PNG/SVG export (up to 4x, transparent background, batch Export All).",
-  "version": "0.8.84",
+  "version": "0.7.17",
   "publisher": "mark-ku",
   "license": "MIT",
   "repository": {
@@ -81,12 +81,6 @@
         "category": "Super Mermaid"
       },
       {
-        "command": "superMermaid.editDiagramVisually",
-        "title": "Draw Diagram (Visual Editor)",
-        "category": "Super Mermaid",
-        "icon": "$(edit)"
-      },
-      {
         "command": "superMermaid.insertTemplate",
         "title": "Insert Diagram Template",
         "category": "Super Mermaid",
@@ -141,10 +135,6 @@
           "group": "1_preview@1"
         },
         {
-          "command": "superMermaid.editDiagramVisually",
-          "group": "1_preview@2"
-        },
-        {
           "command": "superMermaid.insertTemplate",
           "group": "2_insert@1"
         }
@@ -170,10 +160,6 @@
           "when": "false"
         },
         {
-          "command": "superMermaid.editDiagramVisually",
-          "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid"
-        },
-        {
           "command": "superMermaid.insertTemplate"
         }
       ]
@@ -184,8 +170,7 @@
     "package": "npx --yes @vscode/vsce package --no-dependencies --allow-missing-repository",
     "gen:snippets": "node scripts/genSnippets.mjs",
     "gen:demo-images": "node scripts/genDemoImages.mjs",
-    "build:lib": "npm --prefix ../react-super-mermaid run build",
-    "build": "npm run build:lib && tsc --noEmit && node scripts/genSnippets.mjs && node esbuild.mjs",
+    "build": "tsc --noEmit && node scripts/genSnippets.mjs && node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "type:check": "tsc --noEmit"
   },
@@ -195,7 +180,6 @@
     "esbuild": "^0.25.0",
     "mermaid": "^11.15.0",
     "puppeteer-core": "^25.1.0",
-    "react-super-mermaid": "file:../react-super-mermaid",
     "svg-pan-zoom": "^3.6.2",
     "typescript": "^5.6.0"
   }
