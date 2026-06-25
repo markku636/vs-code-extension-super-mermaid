@@ -45,6 +45,7 @@ Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` `
 - 🔗 **Share to mermaid.live** — one click builds a link that opens the diagram in the mermaid.live editor. The code lives only in the URL fragment — nothing is uploaded until someone opens the link.
 - 🪟 **Pop out** — open the preview in its own floating window via the **Open in New Window** CodeLens above each diagram (or set `superMermaid.previewLocation` to `newWindow`), so you can park it on a second monitor while you keep editing.
 - 📝 **Both sources, plus the built-in preview** — works with ```` ```mermaid ```` blocks in Markdown, standalone `.mmd` / `.mermaid` files, **and** the built-in Markdown preview (`Ctrl+Shift+V`) renders mermaid blocks with the same auto coloring.
+- 📄 **Full Markdown document preview** — beyond just the diagrams, render the **whole `.md` file** (headings, text, tables **and** auto-colored Mermaid) in a dedicated Super Mermaid preview. Right-click → **Open Markdown Preview to the Side** to split it beside the editor, or **Open Markdown Preview in New Window** to pop it onto a second monitor. It updates live as you type and follows your editor theme.
 - 🧠 **Editor smarts** — mermaid syntax highlighting, `%%` comment toggle with `Ctrl+/`, keyword completion, and red squiggles on syntax errors while the preview is open.
 - 📚 **Template library** — the `Super Mermaid: Insert Diagram Template` command offers 21 ready-made templates, plus `mmd-*` snippets.
 - 🌐 **Every diagram type, fully offline** — flowchart, sequenceDiagram, erDiagram, classDiagram, gantt, pie, mindmap, timeline, journey, C4, architecture… The mermaid engine is bundled inside the extension, so there's no network call and **your code never leaves your machine**.
@@ -60,6 +61,24 @@ Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` `
    - Right-click a `.md` / `.mmd` file in the Explorer → same command
    - Command Palette (`Ctrl+Shift+P`) → **Super Mermaid: Open Preview to the Side**
 3. Then just edit and watch — it refreshes about every 0.3s. On a syntax error a red message pops up and the diagram stays at the last successful render instead of going blank.
+
+### Preview the whole Markdown document
+
+The preview above shows just the diagrams. To render the **entire Markdown file** — headings, text, tables **and** auto-colored Mermaid — use either:
+
+- Right-click in the editor (or on a `.md` file in the Explorer) → **Open Markdown Preview to the Side** / **Open Markdown Preview in New Window**
+- Command Palette (`Ctrl+Shift+P`) → **Super Mermaid: Open Markdown Preview to the Side** / **… in New Window**
+
+**to the Side** splits it beside the editor (like the built-in Markdown preview); **in New Window** pops it into its own floating window so you can park it on a second monitor. Both update live as you type and follow the editor theme. In the floating window, a ✕ in the top-right corner (or `Esc`) brings it back and hands focus to the editor. Use the **Lock** button in the preview's toolbar to pin it to the current file instead of following the active editor.
+
+The full-document preview is built for reading long docs:
+
+- **Scroll sync** — scroll the editor and the preview follows to the same place, and vice-versa. **Right-click** anything in the preview → **Go to source line** to jump the editor to the line that produced it.
+- **Flicker-free live edits** — as you type, unchanged diagrams are reused from cache and the new content is swapped in atomically, so diagrams don't blink on every keystroke.
+- **Outline** — click **Outline** in the toolbar (or press `o`) for a clickable table of contents down the side that tracks your position as you scroll.
+- **Syntax highlighting** — non-Mermaid code blocks (C#, SQL, JSON, TypeScript…) are highlighted with colors that match your light/dark theme.
+- **Zoom** — **`Ctrl` + mouse wheel** zooms the whole document (text and diagrams together); a floating `−` / `%` / `+` pill in the bottom-right shows the level. `Ctrl` `+` / `-` / `0` work too, and clicking the `%` resets to 100%.
+- **Reading themes** — a **Theme** dropdown in the toolbar restyles the whole preview (background, text, code highlighting, and diagram colors) independently of your VS Code theme: **Follow VS Code**, **Light** (default), and dark presets **Dark Purple · Dark Green · Dark Pink · Dark Yellow · Dark Red · Dark Black**. Your choice (and zoom level) is remembered across reopen and restart. Chinese/CJK text uses a dedicated reading font so it stays crisp.
 
 ### Toolbar (left to right)
 

@@ -4,9 +4,28 @@ import { MermaidCompletionProvider } from './completionProvider';
 import { MermaidDiagnostics } from './diagnostics';
 import { EditorPanel } from './editorPanel';
 import { registerInsertTemplateCommand } from './insertTemplate';
+import { isMarkdownDoc, MarkdownPreviewPanel } from './markdownPreviewPanel';
 import { extractMermaidBlocks, isSupportedDoc } from './mermaidExtract';
 import { PreviewPanel } from './previewPanel';
 import { MermaidStatusBar } from './statusBar';
+
+/** 解析「整份 Markdown 預覽」指令的目標文件:explorer 帶 uri,其餘用作用中編輯器。 */
+async function resolveMarkdownDoc(uri?: vscode.Uri): Promise<vscode.TextDocument | undefined> {
+  let doc: vscode.TextDocument | undefined;
+  if (uri instanceof vscode.Uri) {
+    doc = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(doc, { preview: false });
+  } else {
+    doc = vscode.window.activeTextEditor?.document;
+  }
+  if (!doc || !isMarkdownDoc(doc)) {
+    void vscode.window.showInformationMessage(
+      'Super Mermaid: open a Markdown (.md) file first to preview it.',
+    );
+    return undefined;
+  }
+  return doc;
+}
 
 // Match by language AND by file extension: other extensions (e.g. Mermaid
 // Chart) can take over .mmd files under their own language ids such as
@@ -121,9 +140,28 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       await PreviewPanel.createOrShow(context, doc);
     }),
+    vscode.commands.registerCommand(
+      'superMermaid.openMarkdownPreview',
+      async (uri?: vscode.Uri) => {
+        const doc = await resolveMarkdownDoc(uri);
+        if (doc) {
+          await MarkdownPreviewPanel.createOrShow(context, doc, false, true);
+        }
+      },
+    ),
+    vscode.commands.registerCommand(
+      'superMermaid.openMarkdownPreviewInNewWindow',
+      async (uri?: vscode.Uri) => {
+        const doc = await resolveMarkdownDoc(uri);
+        if (doc) {
+          await MarkdownPreviewPanel.createOrShow(context, doc, true);
+        }
+      },
+    ),
     vscode.workspace.onDidChangeTextDocument((e) => {
       PreviewPanel.current?.onDocumentChanged(e.document);
       EditorPanel.current?.onDocumentChanged(e.document);
+      MarkdownPreviewPanel.current?.onDocumentChanged(e.document);
       if (e.document === vscode.window.activeTextEditor?.document) {
         statusBar.scheduleRefresh(vscode.window.activeTextEditor);
       }
@@ -131,10 +169,16 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.onDidChangeTextEditorSelection((e) => {
       PreviewPanel.current?.onSelectionChanged(e.textEditor);
     }),
+    vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
+      MarkdownPreviewPanel.current?.onEditorScrolled(e.textEditor);
+    }),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       statusBar.refresh(editor);
       if (editor && isSupportedDoc(editor.document)) {
         PreviewPanel.current?.onActiveEditorChanged(editor.document);
+      }
+      if (editor && isMarkdownDoc(editor.document)) {
+        MarkdownPreviewPanel.current?.onActiveEditorChanged(editor.document);
       }
     }),
     vscode.workspace.onDidCloseTextDocument((doc) => {

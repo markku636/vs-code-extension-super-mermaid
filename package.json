@@ -2,7 +2,7 @@
   "name": "super-mermaid",
   "displayName": "Super Mermaid",
   "description": "Mermaid diagrams that look good out of the box — auto-colored live preview with pan/zoom, plus one-click hi-res PNG/SVG export (up to 4x, transparent background, batch Export All).",
-  "version": "0.7.17",
+  "version": "0.8.96",
   "publisher": "mark-ku",
   "license": "MIT",
   "repository": {
@@ -66,8 +66,7 @@
     "commands": [
       {
         "command": "superMermaid.openToSide",
-        "title": "Open Preview to the Side",
-        "category": "Super Mermaid",
+        "title": "Super Mermaid: Open Preview to the Side",
         "icon": "$(open-preview)"
       },
       {
@@ -82,15 +81,18 @@
       },
       {
         "command": "superMermaid.insertTemplate",
-        "title": "Insert Diagram Template",
-        "category": "Super Mermaid",
+        "title": "Super Mermaid: Insert Diagram Template",
         "icon": "$(library)"
-      }
-    ],
-    "submenus": [
+      },
       {
-        "id": "superMermaid.menu",
-        "label": "Super Mermaid"
+        "command": "superMermaid.openMarkdownPreview",
+        "title": "Super Mermaid: Open Markdown Preview to the Side",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "superMermaid.openMarkdownPreviewInNewWindow",
+        "title": "Super Mermaid: Open Markdown Preview in New Window",
+        "icon": "$(multiple-windows)"
       }
     ],
     "configuration": {
@@ -124,19 +126,24 @@
       ],
       "editor/context": [
         {
-          "submenu": "superMermaid.menu",
-          "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid",
-          "group": "1_superMermaid"
-        }
-      ],
-      "superMermaid.menu": [
-        {
           "command": "superMermaid.openToSide",
-          "group": "1_preview@1"
+          "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "1_superMermaid@1"
+        },
+        {
+          "command": "superMermaid.openMarkdownPreview",
+          "when": "editorLangId == markdown || resourceExtname == .md || resourceExtname == .markdown",
+          "group": "1_superMermaid@2"
+        },
+        {
+          "command": "superMermaid.openMarkdownPreviewInNewWindow",
+          "when": "editorLangId == markdown || resourceExtname == .md || resourceExtname == .markdown",
+          "group": "1_superMermaid@3"
         },
         {
           "command": "superMermaid.insertTemplate",
-          "group": "2_insert@1"
+          "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "1_superMermaid@4"
         }
       ],
       "explorer/context": [
@@ -144,12 +151,30 @@
           "command": "superMermaid.openToSide",
           "when": "resourceLangId == markdown || resourceLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "navigation"
+        },
+        {
+          "command": "superMermaid.openMarkdownPreview",
+          "when": "resourceLangId == markdown || resourceExtname == .md || resourceExtname == .markdown",
+          "group": "navigation"
+        },
+        {
+          "command": "superMermaid.openMarkdownPreviewInNewWindow",
+          "when": "resourceLangId == markdown || resourceExtname == .md || resourceExtname == .markdown",
+          "group": "navigation"
         }
       ],
       "commandPalette": [
         {
           "command": "superMermaid.openToSide",
           "when": "editorLangId == markdown || editorLangId =~ /^mermaid/ || resourceExtname == .mmd || resourceExtname == .mermaid"
+        },
+        {
+          "command": "superMermaid.openMarkdownPreview",
+          "when": "editorLangId == markdown || resourceExtname == .md || resourceExtname == .markdown"
+        },
+        {
+          "command": "superMermaid.openMarkdownPreviewInNewWindow",
+          "when": "editorLangId == markdown || resourceExtname == .md || resourceExtname == .markdown"
         },
         {
           "command": "superMermaid.editDiagram",
@@ -175,9 +200,12 @@
     "type:check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.25.0",
+    "highlight.js": "^11.10.0",
+    "markdown-it": "^14.1.0",
     "mermaid": "^11.15.0",
     "puppeteer-core": "^25.1.0",
     "svg-pan-zoom": "^3.6.2",

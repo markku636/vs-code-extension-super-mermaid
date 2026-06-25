@@ -48,7 +48,26 @@ const diagramEditorCtx = await esbuild.context({
   minify: !watch,
 });
 
-const contexts = [extensionCtx, webviewCtx, markdownPreviewCtx, diagramEditorCtx];
+// 整份 Markdown 文件預覽 webview:host 用 markdown-it 渲染 HTML 後送進來,
+// 本檔負責把 ```mermaid 區塊渲染成自動上色的 SVG(共用 colorize)。
+const markdownDocumentCtx = await esbuild.context({
+  entryPoints: ['webview/markdownDocument.ts'],
+  outfile: 'dist/markdownDocument.js',
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  target: 'es2022',
+  sourcemap: watch,
+  minify: !watch,
+});
+
+const contexts = [
+  extensionCtx,
+  webviewCtx,
+  markdownPreviewCtx,
+  diagramEditorCtx,
+  markdownDocumentCtx,
+];
 
 if (watch) {
   await Promise.all(contexts.map((c) => c.watch()));

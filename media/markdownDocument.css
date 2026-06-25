@@ -1,0 +1,514 @@
+/* 整份 Markdown 文件預覽的樣式。所有顏色都走 --md-* 變數,預設對應 VSCode 主題(--vscode-*);
+   選了內建預覽主題(Velvet / Jade / …)時,webview 會在 <body> 上 inline 覆寫這些 --md-* 變數。
+   排版走 GitHub 風,程式碼語法高亮也吃 --md-hl-* 變數。 */
+
+:root {
+  --md-bg: var(--vscode-editor-background);
+  --md-fg: var(--vscode-foreground);
+  --md-border: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  --md-muted: var(--vscode-descriptionForeground, #888);
+  --md-code-bg: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.15));
+  --md-link: var(--vscode-textLink-foreground, #3794ff);
+  --md-link-active: var(--vscode-textLink-activeForeground, #4daafc);
+  --md-accent: var(--vscode-focusBorder, #3794ff);
+  --md-table-stripe: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
+  --md-hover: rgba(128, 128, 128, 0.18);
+  /* highlight.js — light defaults */
+  --md-hl-comment: #6a737d;
+  --md-hl-keyword: #d73a49;
+  --md-hl-string: #032f62;
+  --md-hl-number: #005cc5;
+  --md-hl-title: #6f42c1;
+  --md-hl-type: #e36209;
+}
+
+/* highlight.js — dark defaults (only for the "Editor" theme following a dark VS Code theme;
+   named preview themes set --md-hl-* inline on <body>, which wins over these). */
+body.vscode-dark,
+body.vscode-high-contrast {
+  --md-hl-comment: #8b949e;
+  --md-hl-keyword: #ff7b72;
+  --md-hl-string: #a5d6ff;
+  --md-hl-number: #79c0ff;
+  --md-hl-title: #d2a8ff;
+  --md-hl-type: #ffa657;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* 工具列固定在上、其下是可捲動的版面(同步 / TOC sticky 都以此為基準)。 */
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  color: var(--md-fg);
+  background: var(--md-bg);
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: var(--vscode-font-size, 14px);
+  line-height: 1.6;
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────── */
+#md-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--md-bg);
+  border-bottom: 1px solid var(--md-border);
+}
+
+#md-filename {
+  font-size: 12px;
+  color: var(--md-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.md-spacer {
+  flex: 1;
+}
+
+#md-theme-label {
+  font-size: 12px;
+  color: var(--md-fg);
+  opacity: 0.85;
+}
+
+#md-theme {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 6px;
+  color: var(--md-fg);
+  background: var(--md-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#md-toolbar button {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 9px;
+  color: var(--md-fg);
+  background: transparent;
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#md-toolbar button:hover {
+  background: var(--md-hover);
+}
+
+#md-toolbar button.active {
+  background: var(--md-hover);
+  border-color: var(--md-accent);
+}
+
+#md-exit {
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+/* ── Layout (scroll container) ─────────────────────────────────────── */
+#md-layout {
+  flex: 1 1 auto;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  scroll-behavior: auto;
+}
+
+/* ── Outline / TOC ─────────────────────────────────────────────────── */
+#md-toc {
+  position: sticky;
+  top: 0;
+  flex: 0 0 250px;
+  max-height: 100%;
+  overflow: auto;
+  padding: 14px 8px 24px;
+  box-sizing: border-box;
+  border-right: 1px solid var(--md-border);
+  background: var(--md-bg);
+}
+
+#md-toc[hidden] {
+  display: none;
+}
+
+.md-toc-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--md-muted);
+  padding: 0 10px 6px;
+}
+
+.md-toc-empty {
+  font-size: 12px;
+  color: var(--md-muted);
+  padding: 4px 10px;
+}
+
+.md-toc-item {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 3px 8px;
+  border-left: 2px solid transparent;
+  color: var(--md-fg);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.md-toc-item:hover {
+  background: var(--md-hover);
+}
+
+.md-toc-item.active {
+  border-left-color: var(--md-accent);
+  color: var(--md-link);
+  background: var(--md-hover);
+}
+
+/* ── Markdown body ─────────────────────────────────────────────────── */
+.markdown-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  /* 文件閱讀字體:拉丁字用 system sans,中文走 JhengHei / PingFang / Noto,避免 UI 字體把中文渲染得又細又淡。 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei UI',
+    'Microsoft JhengHei', 'PingFang TC', 'Noto Sans CJK TC', 'Noto Sans TC', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+/* 抗鋸齒只在暗色主題開:亮底深字若用 antialiased 會變細變淡(看起來像白字),故亮色不開。 */
+body.md-theme-dark .markdown-body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 全寬模式:撐滿整個預覽寬度,寬表格不再被裁切 / 需要左右捲。 */
+body.md-wide .markdown-body {
+  max-width: none;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin: 1.6em 0 0.6em;
+  font-weight: 600;
+  line-height: 1.25;
+  scroll-margin-top: 8px;
+}
+
+.markdown-body h1 {
+  font-size: 1.9em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-border);
+}
+
+.markdown-body h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-border);
+}
+
+.markdown-body h3 {
+  font-size: 1.25em;
+}
+
+.markdown-body h4 {
+  font-size: 1.05em;
+}
+
+.markdown-body p,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body blockquote,
+.markdown-body table,
+.markdown-body pre {
+  margin: 0 0 1em;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.8em;
+}
+
+.markdown-body li + li {
+  margin-top: 0.25em;
+}
+
+.markdown-body a {
+  color: var(--md-link);
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  color: var(--md-link-active);
+  text-decoration: underline;
+}
+
+.markdown-body blockquote {
+  padding: 0.2em 1em;
+  color: var(--md-muted);
+  border-left: 3px solid var(--md-border);
+}
+
+.markdown-body blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body hr {
+  height: 1px;
+  margin: 1.8em 0;
+  border: 0;
+  background: var(--md-border);
+}
+
+/* Inline + block code */
+.markdown-body code {
+  font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Consolas, monospace);
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: var(--md-code-bg);
+  /* 明確指定文字色,避免在某些主題下程式碼繼承到淡色 / 白色而看不清。 */
+  color: var(--md-fg);
+}
+
+.markdown-body pre {
+  padding: 12px 14px;
+  overflow: auto;
+  border-radius: 6px;
+  background: var(--md-code-bg);
+  border: 1px solid var(--md-border);
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+
+/* Tables */
+.markdown-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  border-collapse: collapse;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 6px 13px;
+  border: 1px solid var(--md-border);
+}
+
+.markdown-body th {
+  font-weight: 600;
+  background: var(--md-code-bg);
+}
+
+.markdown-body tr:nth-child(2n) td {
+  background: var(--md-table-stripe);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+}
+
+.md-render-error {
+  color: var(--vscode-errorForeground, #f14c4c);
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+/* ── Zoom pill (floating, bottom-right) ────────────────────────────── */
+#md-zoom {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--md-border);
+  background: var(--md-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  user-select: none;
+}
+
+#md-zoom button {
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  width: 26px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-fg);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#md-zoom button:hover {
+  background: var(--md-hover);
+}
+
+#md-zoom-level {
+  min-width: 46px;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-fg);
+  cursor: pointer;
+}
+
+#md-zoom-level:hover {
+  color: var(--md-link);
+}
+
+/* ── Right-click menu (Go to source line) ──────────────────────────── */
+#md-context-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 150px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--md-border);
+  background: var(--md-bg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.36);
+}
+
+#md-context-menu[hidden] {
+  display: none;
+}
+
+#md-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--md-fg);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#md-context-menu button[hidden] {
+  display: none;
+}
+
+#md-context-menu button:hover {
+  background: var(--md-accent);
+  color: var(--md-bg);
+}
+
+/* ── Rendered mermaid diagrams ─────────────────────────────────────── */
+.mermaid-preview-block {
+  margin: 1.2em 0;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid var(--md-border);
+  border-radius: 8px;
+  background: var(--md-bg);
+  overflow: auto;
+}
+
+.mermaid-preview-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── highlight.js token colors (driven by --md-hl-*) ───────────────── */
+/* 程式碼區塊(含無語言的純文字 fence)的基底文字色,確保亮色主題下不會是白字。 */
+.markdown-body pre,
+.markdown-body pre code,
+.hljs {
+  color: var(--md-fg);
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--md-hl-comment);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag,
+.hljs-name {
+  color: var(--md-hl-keyword);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: var(--md-hl-string);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-template-variable,
+.hljs-variable,
+.hljs-attr,
+.hljs-attribute,
+.hljs-property {
+  color: var(--md-hl-number);
+}
+.hljs-title,
+.hljs-section,
+.hljs-function .hljs-title {
+  color: var(--md-hl-title);
+}
+.hljs-type,
+.hljs-class .hljs-title,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: var(--md-hl-type);
+}
+.hljs-meta,
+.hljs-tag {
+  color: var(--md-hl-comment);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
