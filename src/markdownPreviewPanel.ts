@@ -1,7 +1,10 @@
 import hljs from 'highlight.js';
 import MarkdownIt from 'markdown-it';
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
+type ExportFormat = 'png' | 'pdf';
 
 type WebviewMessage =
   | { type: 'ready' }
@@ -11,7 +14,19 @@ type WebviewMessage =
   | { type: 'openLink'; href: string }
   | { type: 'previewScrolled'; line: number }
   | { type: 'revealLine'; line: number }
+  | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
+  | { type: 'exportError'; message: string }
   | { type: 'persist'; theme: string; zoom: number; wide: boolean };
+
+const EXPORT_FILTERS: Record<ExportFormat, Record<string, string[]>> = {
+  png: { 'PNG Image': ['png'] },
+  pdf: { 'PDF Document': ['pdf'] },
+};
+
+/** webview 端把畫面轉成 base64(PNG 為 data URL、PDF 為 base64 字串);剝掉 data: 前綴後解碼成位元組。 */
+function decodeExportData(data: string): Buffer {
+  return Buffer.from(data.replace(/^data:[^;]+;base64,/, ''), 'base64');
+}
 
 // v2:之前版本會在開啟時自動把預設值寫進 globalState,導致改預設無效;換 key 讓舊值失效。
 const THEME_KEY = 'superMermaid.markdownPreview.theme.v2';
@@ -268,6 +283,12 @@ export class MarkdownPreviewPanel {
       case 'openLink':
         await this.openLink(msg.href);
         break;
+      case 'export':
+        await this.saveExport(msg);
+        break;
+      case 'exportError':
+        void vscode.window.showErrorMessage(`Super Mermaid: export failed — ${msg.message}`);
+        break;
       case 'previewScrolled':
         this.revealEditorLine(msg.line, false);
         break;
@@ -322,6 +343,36 @@ export class MarkdownPreviewPanel {
       await vscode.window.showTextDocument(doc, { preview: true });
     } catch {
       /* 連結指向不存在的檔案:忽略。 */
+    }
+  }
+
+  /** 接收 webview 算好的 PNG / PDF 位元組,跳存檔對話框寫檔(預設放文件同一資料夾)。 */
+  private async saveExport(msg: {
+    format: ExportFormat;
+    data: string;
+    suggestedName: string;
+  }): Promise<void> {
+    const dir =
+      this.doc.uri.scheme === 'file'
+        ? path.dirname(this.doc.uri.fsPath)
+        : (vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir());
+    const uri = await vscode.window.showSaveDialog({
+      defaultUri: vscode.Uri.file(path.join(dir, msg.suggestedName)),
+      filters: EXPORT_FILTERS[msg.format],
+    });
+    if (!uri) {
+      return;
+    }
+    await vscode.workspace.fs.writeFile(uri, decodeExportData(msg.data));
+    const choice = await vscode.window.showInformationMessage(
+      `Super Mermaid: exported ${path.basename(uri.fsPath)}`,
+      'Open',
+      'Reveal in Explorer',
+    );
+    if (choice === 'Open') {
+      await vscode.env.openExternal(uri);
+    } else if (choice === 'Reveal in Explorer') {
+      await vscode.commands.executeCommand('revealFileInOS', uri);
     }
   }
 
@@ -423,7 +474,7 @@ export class MarkdownPreviewPanel {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} https: data: blob:; font-src ${webview.cspSource} data:; connect-src ${webview.cspSource};" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} https: data: blob:; font-src ${webview.cspSource} data:; connect-src ${webview.cspSource}; frame-src 'self' data: blob:;" />
   <link rel="stylesheet" href="${styleUri}" />
   <title>Markdown Preview</title>
 </head>
@@ -446,6 +497,13 @@ export class MarkdownPreviewPanel {
     <button id="md-wide" title="Full width — stop wide tables being cut off (w)" aria-pressed="false">Wide</button>
     <button id="md-lock" title="Lock to current file" aria-pressed="false">Lock</button>
     <button id="md-refresh" title="Re-render (the preview also updates as you type)">Refresh</button>
+    <div id="md-export-wrap">
+      <button id="md-export" title="Export the document as PNG or PDF" aria-haspopup="true" aria-expanded="false">Export &#9662;</button>
+      <div id="md-export-menu" hidden>
+        <button class="md-export-item" data-format="png">Export PNG</button>
+        <button class="md-export-item" data-format="pdf">Export PDF</button>
+      </div>
+    </div>
     <button id="md-exit" title="Back to editor (Esc)" hidden>&#10005;</button>
   </div>
   <div id="md-layout">
@@ -461,6 +519,7 @@ export class MarkdownPreviewPanel {
     <button id="md-ctx-goto">Go to source line</button>
     <button id="md-ctx-copy" hidden>Copy</button>
   </div>
+  <div id="md-export-overlay" hidden><div class="md-export-spinner">Exporting…</div></div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

@@ -3,6 +3,8 @@
 //  1. 把 ```mermaid 區塊渲染成自動上色的 SVG(離屏渲染 + 依 source 快取 → 打字不閃爍)
 //  2. Editor↔Preview 雙向捲動同步、雙擊預覽跳回原始碼
 //  3. 文件大綱(TOC)側欄 + scrollspy
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import mermaid from 'mermaid';
 import { boostLegibility, colorizeDiagram, ensureLegibilityStyles } from './colorize';
 
@@ -31,6 +33,9 @@ const ctxMenu = document.getElementById('md-context-menu')!;
 const ctxGoto = document.getElementById('md-ctx-goto') as HTMLButtonElement;
 const ctxCopy = document.getElementById('md-ctx-copy') as HTMLButtonElement;
 const themeSelect = document.getElementById('md-theme') as HTMLSelectElement;
+const exportBtn = document.getElementById('md-export') as HTMLButtonElement;
+const exportMenu = document.getElementById('md-export-menu')!;
+const exportOverlay = document.getElementById('md-export-overlay')!;
 
 let seq = 0;
 let rendering = false;
@@ -603,6 +608,110 @@ lockBtn.addEventListener('click', () => {
 refreshBtn.addEventListener('click', () => vscode.postMessage({ type: 'refresh' }));
 exitBtn.addEventListener('click', () => vscode.postMessage({ type: 'focusEditor' }));
 
+// ── 匯出 PNG / PDF ──────────────────────────────────────────────────────
+// 在 webview 端把整份 #md-content rasterize 成點陣圖(html2canvas 會原生渲染內嵌的 mermaid SVG、
+// 表格、程式碼高亮),PNG 直接送出;PDF 用 jsPDF 把這張長圖依 A4 切頁。算好的位元組丟回 host 存檔。
+let exporting = false;
+
+function setExportMenuOpen(open: boolean): void {
+  exportMenu.hidden = !open;
+  exportBtn.setAttribute('aria-expanded', String(open));
+}
+
+/** 取得目前生效的底色(內建主題的 --md-bg 或跟隨 VSCode),作為匯出背景。 */
+function exportBackground(): string {
+  const bg = getComputedStyle(document.body).backgroundColor;
+  return bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' ? bg : '#ffffff';
+}
+
+/** 去掉副檔名後接上目標格式,作為存檔預設檔名。 */
+function suggestedName(ext: string): string {
+  const base = (filenameEl.textContent || 'document').replace(/\.(md|markdown)$/i, '');
+  return `${base}.${ext}`;
+}
+
+async function captureContent(): Promise<HTMLCanvasElement> {
+  // zoom 會干擾 html2canvas 的尺寸量測 → 暫時還原成 100% 再擷取,完成後復原(遮罩蓋住閃動)。
+  const prevZoom = content.style.getPropertyValue('zoom');
+  content.style.setProperty('zoom', '1');
+  try {
+    // 在量測到的自然高度下,把 scale 壓在合理上限,避免超長文件撐爆 canvas 尺寸限制。
+    const naturalHeight = content.scrollHeight || 1;
+    const scale = Math.max(1, Math.min(2, 14000 / naturalHeight));
+    return await html2canvas(content, {
+      backgroundColor: exportBackground(),
+      scale,
+      useCORS: true,
+      logging: false,
+      windowWidth: content.scrollWidth,
+    });
+  } finally {
+    if (prevZoom) {
+      content.style.setProperty('zoom', prevZoom);
+    } else {
+      content.style.removeProperty('zoom');
+    }
+  }
+}
+
+function canvasToPdf(canvas: HTMLCanvasElement): string {
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const imgW = pageW;
+  const imgH = (canvas.height * imgW) / canvas.width;
+  // 同一張長圖以負位移逐頁貼上(共用 alias 'doc',影像只內嵌一次,PDF 不會膨脹)。
+  let position = 0;
+  let heightLeft = imgH;
+  pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH, 'doc', 'FAST');
+  heightLeft -= pageH;
+  while (heightLeft > 0) {
+    position -= pageH;
+    pdf.addPage();
+    pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH, 'doc', 'FAST');
+    heightLeft -= pageH;
+  }
+  return pdf.output('datauristring');
+}
+
+async function runExport(format: 'png' | 'pdf'): Promise<void> {
+  if (exporting || !content.childNodes.length) {
+    return;
+  }
+  exporting = true;
+  exportOverlay.hidden = false;
+  // 讓遮罩先上畫面再開始重運算(html2canvas 同步段會卡 UI)。
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  try {
+    const canvas = await captureContent();
+    const data = format === 'png' ? canvas.toDataURL('image/png') : canvasToPdf(canvas);
+    vscode.postMessage({ type: 'export', format, data, suggestedName: suggestedName(format) });
+  } catch (err) {
+    vscode.postMessage({
+      type: 'exportError',
+      message: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    exporting = false;
+    exportOverlay.hidden = true;
+  }
+}
+
+exportBtn.addEventListener('click', (e) => {
+  e.stopPropagation(); // 否則同一次點擊會被 window click 立刻關掉。
+  setExportMenuOpen(exportMenu.hidden);
+});
+exportMenu.addEventListener('click', (e) => {
+  const item = (e.target as HTMLElement)?.closest('.md-export-item');
+  const format = item?.getAttribute('data-format');
+  if (format === 'png' || format === 'pdf') {
+    setExportMenuOpen(false);
+    void runExport(format);
+  }
+});
+window.addEventListener('click', () => setExportMenuOpen(false));
+
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey) {
     if (e.key === '=' || e.key === '+') {
@@ -620,6 +729,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (!ctxMenu.hidden) {
       hideCtxMenu(); // 選單開著時 Esc 先收選單,不要直接跳回編輯器。
+      return;
+    }
+    if (!exportMenu.hidden) {
+      setExportMenuOpen(false); // 匯出選單開著時 Esc 先收選單。
       return;
     }
     vscode.postMessage({ type: 'focusEditor' });

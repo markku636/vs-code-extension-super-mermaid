@@ -119,6 +119,73 @@ body {
   padding: 4px 8px;
 }
 
+/* ── Export dropdown ───────────────────────────────────────────────── */
+#md-export-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+#md-export-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 140px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--md-border);
+  background: var(--md-bg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.36);
+}
+
+#md-export-menu[hidden] {
+  display: none;
+}
+
+.md-export-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--md-fg);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.md-export-item:hover {
+  background: var(--md-accent);
+  color: var(--md-bg);
+}
+
+/* 匯出進行中:全螢幕半透明遮罩 + 提示,避免使用者在 rasterize 期間誤動。 */
+#md-export-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 14px;
+}
+
+#md-export-overlay[hidden] {
+  display: none;
+}
+
+#md-export-overlay .md-export-spinner {
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
 /* ── Layout (scroll container) ─────────────────────────────────────── */
 #md-layout {
   flex: 1 1 auto;

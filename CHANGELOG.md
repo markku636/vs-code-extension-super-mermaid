@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.97 — Markdown preview: export to PNG / PDF
+
+- **Feature**: the full Markdown document preview now has an **Export** button in
+  its toolbar. It rasterizes the rendered document exactly as shown — chosen
+  preview theme, tables, highlighted code, and auto-colored Mermaid diagrams —
+  and saves it as a **PNG** image or a multi-page **PDF** (`html2canvas` +
+  `jsPDF`, bundled into the webview; works fully offline). The save dialog
+  defaults to the document's folder, and a notification offers **Open** /
+  **Reveal in Explorer** afterwards.
+
 ## 0.8.82 — Draw editor: clear previous diagram on switch
 
 - **Fix** (via shared core): in the visual Draw editor, switching from a
