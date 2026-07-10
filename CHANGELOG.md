@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.9.5 — Markdown preview: find bar, content width modes, stable export
+
+- **Feature**: **Find in document** (`Ctrl+F`, or the toolbar **Find** button) —
+  match count, prev / next (`Enter` / `Shift+Enter`), `Esc` to close. Highlights
+  reach the label text inside mermaid diagrams. The native webview find widget is
+  disabled so the two no longer fight over `Ctrl+F`.
+- **Feature**: the **Wide** toggle becomes a three-way **content width** cycle —
+  **Auto** / **Full** / **Reading** (toolbar button, or press `w`). Auto keeps the
+  920px reading column on narrow panels and goes full-width at ≥1200px, so wide
+  tables stop being cut off without permanently wasting a large screen. An
+  existing `wide = true` preference migrates to **Full**.
+- **Fix**: PNG / PDF export pins the content to a fixed 820px document width
+  during capture, so the exported page no longer changes with the preview panel's
+  width.
+- **Fix**: PDF export produced a corrupt file — jsPDF's `datauristring` emits
+  `data:application/pdf;filename=generated.pdf;base64,…`, and the decoder only
+  stripped a bare `;base64,` prefix, leaving the `filename=` segment in the
+  payload. It now strips through the first comma (base64 never contains one).
+- **Build**: re-declare `react-super-mermaid` as a devDependency, pinned to the
+  published npm release instead of the long-gone `file:../react-super-mermaid`
+  path. Without it `tsc` could not resolve `react-super-mermaid/editor`, so
+  `npm run build` — and therefore `vsce package` — failed on a fresh clone.
+
 ## 0.9.4 — Markdown preview: light callouts (no dark blockquote band)
 
 - **Fix**: blockquotes / callouts now render as a **light, subtle box** in the
