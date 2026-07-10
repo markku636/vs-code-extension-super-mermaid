@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.9.4 — Markdown preview: light callouts (no dark blockquote band)
+
+- **Fix**: blockquotes / callouts now render as a **light, subtle box** in the
+  Light theme (and a subtle raised box in dark themes) instead of appearing as a
+  dark band with faint text. The background is driven by the theme-tuned
+  `--md-code-bg` (light under light themes, subtle under dark), the left accent
+  border uses the theme accent, and the text is full-contrast `--md-fg`. This
+  removes the "black background, unreadable" callouts in the Light theme and in
+  exported PDF / PNG.
+
+## 0.9.2 — Markdown preview: readable Light theme (export PDF fix)
+
+- **Fix**: the **Light** preview theme (`daylight`) was tinted **purple** and hard
+  to read — blockquote / muted text used `#635D97` and links/accent `#644AC9`.
+  Retuned to neutral, high-contrast colors: muted text `#4B5563`, accent/links
+  `#0969DA` (GitHub blue), and light-theme code `number` highlight `#0550AE`
+  (was purple). Inline `code` stays dark-text-on-light-background. Since PDF /
+  PNG export rasterizes the live preview, exporting in the Light theme now
+  produces clean, legible output.
+
 ## 0.8.97 — Markdown preview: export to PNG / PDF
 
 - **Feature**: the full Markdown document preview now has an **Export** button in

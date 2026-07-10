@@ -22,7 +22,7 @@ const content = document.getElementById('md-content')!;
 const tocAside = document.getElementById('md-toc')!;
 const filenameEl = document.getElementById('md-filename')!;
 const tocToggle = document.getElementById('md-toc-toggle') as HTMLButtonElement;
-const wideBtn = document.getElementById('md-wide') as HTMLButtonElement;
+const widthBtn = document.getElementById('md-width') as HTMLButtonElement;
 const lockBtn = document.getElementById('md-lock') as HTMLButtonElement;
 const refreshBtn = document.getElementById('md-refresh') as HTMLButtonElement;
 const exitBtn = document.getElementById('md-exit') as HTMLButtonElement;
@@ -36,6 +36,13 @@ const themeSelect = document.getElementById('md-theme') as HTMLSelectElement;
 const exportBtn = document.getElementById('md-export') as HTMLButtonElement;
 const exportMenu = document.getElementById('md-export-menu')!;
 const exportOverlay = document.getElementById('md-export-overlay')!;
+const findBtn = document.getElementById('md-find-btn') as HTMLButtonElement;
+const findBar = document.getElementById('md-find')!;
+const findInput = document.getElementById('md-find-input') as HTMLInputElement;
+const findCount = document.getElementById('md-find-count')!;
+const findPrevBtn = document.getElementById('md-find-prev') as HTMLButtonElement;
+const findNextBtn = document.getElementById('md-find-next') as HTMLButtonElement;
+const findCloseBtn = document.getElementById('md-find-close') as HTMLButtonElement;
 
 let seq = 0;
 let rendering = false;
@@ -68,17 +75,17 @@ const THEMES: Record<string, PreviewTheme> = {
   amber: { label: 'Amber', dark: true, bg: '#2C2A21', fg: '#F8F8F2', muted: '#A99F70', accent: '#FFCA80' },
   ember: { label: 'Ember', dark: true, bg: '#2C2122', fg: '#F8F8F2', muted: '#A97079', accent: '#FF9580' },
   abyss: { label: 'Abyss', dark: true, bg: '#0B0D0F', fg: '#F8F8F2', muted: '#708CA9', accent: '#9580FF' },
-  daylight: { label: 'Daylight', dark: false, bg: '#F5F5F5', fg: '#1F1F1F', muted: '#635D97', accent: '#644AC9' },
+  daylight: { label: 'Daylight', dark: false, bg: '#F5F5F5', fg: '#1F1F1F', muted: '#4B5563', accent: '#0969DA' },
 };
 const HL_DARK = { keyword: '#FF80BF', string: '#FFFF80', number: '#9580FF', title: '#8AFF80', type: '#80FFEA' };
-const HL_LIGHT = { keyword: '#A3144D', string: '#846E15', number: '#644AC9', title: '#14710A', type: '#036A96' };
+const HL_LIGHT = { keyword: '#A3144D', string: '#846E15', number: '#0550AE', title: '#14710A', type: '#036A96' };
 
 // 初始偏好優先用 host 由 globalState 帶進來的 data-initial-*(跨開關 / 重啟記住);
 // 退而求其次用 webview 自己的 state;再不然用預設(淺色 Light)。
 const ds = document.body.dataset;
 // 優先序:webview 自己的 state(本 panel 最新)→ host 由 globalState 帶進的 data-initial(跨 panel/重啟)→ 預設。
 const savedState = vscode.getState() as
-  | { zoom?: number; theme?: string; wide?: boolean }
+  | { zoom?: number; theme?: string; width?: string }
   | undefined;
 const initialZoom = parseFloat(ds.initialZoom ?? '');
 let zoom =
@@ -91,8 +98,14 @@ const wantTheme = savedState?.theme || ds.initialTheme || 'velvet';
 /** 'editor' = 跟隨 VSCode 主題;其餘為 THEMES 的 key。預設 Dark Purple(velvet)。 */
 let currentTheme: string =
   wantTheme === 'editor' || wantTheme in THEMES ? wantTheme : 'velvet';
-/** 全寬模式:撐滿預覽寬度(寬表格不被裁切)。 */
-let wide = typeof savedState?.wide === 'boolean' ? savedState.wide : ds.initialWide === '1';
+/** 內容寬度模式:auto=依視窗寬度自動切換 / full=真.全寬 / reading=920px 閱讀欄。 */
+type WidthMode = 'auto' | 'full' | 'reading';
+const WIDTH_MODES: WidthMode[] = ['auto', 'full', 'reading'];
+const WIDTH_LABELS: Record<WidthMode, string> = { auto: 'Auto', full: 'Full', reading: 'Reading' };
+function asWidthMode(v: unknown): WidthMode {
+  return v === 'full' || v === 'reading' ? v : 'auto';
+}
+let widthMode: WidthMode = asWidthMode(savedState?.width ?? ds.initialWidth);
 
 /** 已渲染的 mermaid SVG 快取(source → 上色後的 innerHTML),source 沒變就直接重用,打字不閃。 */
 const mermaidCache = new Map<string, string>();
@@ -205,6 +218,10 @@ async function applyHtml(html: string): Promise<void> {
       scrollToLine(anchorLine, false);
     } else if (prevHeight > 0) {
       layout.scrollTop = (prevTop / prevHeight) * layout.scrollHeight;
+    }
+    // 內容換新(打字 / 換主題)後標亮會被洗掉 → 若搜尋列開著就重套(不捲動,保留閱讀位置)。
+    if (!findBar.hidden && findInput.value.trim()) {
+      runFind(findInput.value, { scroll: false });
     }
   } finally {
     rendering = false;
@@ -440,33 +457,49 @@ function escapeAttr(s: string): string {
 }
 
 let persistTimer: ReturnType<typeof setTimeout> | undefined;
-function persistState(): void {
+/**
+ * 回寫偏好。immediate=true(離散變更:主題 / 寬度)立即送 host,避免使用者改完在 400ms 內關掉
+ * 預覽導致 globalState 沒寫到、下次開預覽吃到舊值;縮放(連續變動)維持 debounce。
+ * 訊息一律帶最新的 theme/zoom/width 三者,故立即送也不會漏掉尚未 flush 的 zoom。
+ */
+function persistState(immediate = false): void {
   if (booting) {
     return; // 初始套用(套用記住的/預設值)不回寫,否則會把預設值固化、之後改預設無效。
   }
-  vscode.setState({ zoom, theme: currentTheme, wide }); // webview 內部即時記住(reload 用)。
-  // 跨開關 / 重啟靠 host 的 globalState;縮放可能連續變動,稍微 debounce 再寫。
+  vscode.setState({ zoom, theme: currentTheme, width: widthMode }); // webview 內部即時記住(reload 用)。
   if (persistTimer) {
     clearTimeout(persistTimer);
+    persistTimer = undefined;
   }
-  persistTimer = setTimeout(
-    () => vscode.postMessage({ type: 'persist', theme: currentTheme, zoom, wide }),
-    400,
-  );
+  const flush = () =>
+    vscode.postMessage({ type: 'persist', theme: currentTheme, zoom, width: widthMode });
+  if (immediate) {
+    flush();
+  } else {
+    persistTimer = setTimeout(flush, 400);
+  }
 }
 
-/** 全寬切換:撐滿預覽寬度,寬表格不被裁切。 */
-function applyWide(): void {
-  document.body.classList.toggle('md-wide', wide);
-  wideBtn.setAttribute('aria-pressed', String(wide));
-  wideBtn.classList.toggle('active', wide);
-  persistState();
+/** 套用內容寬度模式:切 body class、更新按鈕文字 / 高亮。 */
+function applyWidth(): void {
+  for (const m of WIDTH_MODES) {
+    document.body.classList.toggle(`md-width-${m}`, m === widthMode);
+  }
+  widthBtn.textContent = WIDTH_LABELS[widthMode];
+  widthBtn.title =
+    `Content width: ${WIDTH_LABELS[widthMode]} — click / press w to cycle ` +
+    '(Auto fits the window, Full = 100%, Reading = 920px)';
+  widthBtn.classList.toggle('active', widthMode !== 'auto'); // 非預設(手動覆寫)時點亮。
+  persistState(true); // 離散變更,立即回寫(免 <400ms 關閉預覽遺失)。
 }
 
-wideBtn.addEventListener('click', () => {
-  wide = !wide;
-  applyWide();
-});
+/** Auto → Full → Reading → Auto 循環。 */
+function cycleWidth(): void {
+  widthMode = WIDTH_MODES[(WIDTH_MODES.indexOf(widthMode) + 1) % WIDTH_MODES.length];
+  applyWidth();
+}
+
+widthBtn.addEventListener('click', cycleWidth);
 
 // ── 主題(內建預覽配色)─────────────────────────────────────────────
 const THEME_VARS = [
@@ -526,7 +559,7 @@ function applyTheme(name: string): void {
   lastDark = effectiveDark();
   document.body.classList.toggle('md-theme-dark', lastDark);
   themeSelect.value = currentTheme;
-  persistState();
+  persistState(true); // 離散變更,立即回寫(免 <400ms 關閉預覽遺失)。
 }
 
 themeSelect.addEventListener('change', () => {
@@ -568,7 +601,7 @@ zoomOutBtn.addEventListener('click', () => setZoom(zoom - ZOOM_STEP));
 zoomLevelEl.addEventListener('click', () => setZoom(1));
 applyTheme(currentTheme); // 套用已記住的主題(或預設 Dark Purple)。
 applyZoom(); // 套用已記住的縮放(或預設 100%)。
-applyWide(); // 套用已記住的全寬設定。
+applyWidth(); // 套用已記住的寬度模式(或預設 Auto)。
 booting = false; // 之後的變更才回寫偏好。
 
 // ── 連結 / 工具列 / 鍵盤 ───────────────────────────────────────────────
@@ -630,10 +663,22 @@ function suggestedName(ext: string): string {
   return `${base}.${ext}`;
 }
 
+/**
+ * 匯出固定排版寬度(px)。匯出時把內容鎖在這個寬度再擷取,版面就不會吃到目前面板/Auto/Full 的實際寬度
+ * ——否則寬視窗下整份會被拉得很寬,縮成 A4 後字變小、表格欄距散開、整體「亂」。820 接近 A4 直印內容寬,
+ * 縮放到頁面後幾乎 1:1,字級舒適、表格也排得整齊。
+ */
+const EXPORT_WIDTH = 820;
+
 async function captureContent(): Promise<HTMLCanvasElement> {
   // zoom 會干擾 html2canvas 的尺寸量測 → 暫時還原成 100% 再擷取,完成後復原(遮罩蓋住閃動)。
+  // 同時把寬度鎖成固定文件寬(蓋過 Auto/Full/Reading 的 max-width),確保匯出版面一致、不被面板寬度影響。
   const prevZoom = content.style.getPropertyValue('zoom');
+  const prevWidth = content.style.width;
+  const prevMaxWidth = content.style.maxWidth;
   content.style.setProperty('zoom', '1');
+  content.style.width = `${EXPORT_WIDTH}px`;
+  content.style.maxWidth = `${EXPORT_WIDTH}px`;
   try {
     // 在量測到的自然高度下,把 scale 壓在合理上限,避免超長文件撐爆 canvas 尺寸限制。
     const naturalHeight = content.scrollHeight || 1;
@@ -643,7 +688,8 @@ async function captureContent(): Promise<HTMLCanvasElement> {
       scale,
       useCORS: true,
       logging: false,
-      windowWidth: content.scrollWidth,
+      width: EXPORT_WIDTH,
+      windowWidth: EXPORT_WIDTH,
     });
   } finally {
     if (prevZoom) {
@@ -651,6 +697,8 @@ async function captureContent(): Promise<HTMLCanvasElement> {
     } else {
       content.style.removeProperty('zoom');
     }
+    content.style.width = prevWidth;
+    content.style.maxWidth = prevMaxWidth;
   }
 }
 
@@ -712,6 +760,193 @@ exportMenu.addEventListener('click', (e) => {
 });
 window.addEventListener('click', () => setExportMenuOpen(false));
 
+// ── 文件內搜尋(Find bar)─────────────────────────────────────────────
+// 把命中的文字節點切開、包進 <mark>,跨整份文件(含 mermaid 節點的 foreignObject HTML 文字)標亮,
+// 並可上下筆切換、捲到畫面中央。重渲染(打字 / 換主題)後會自動重套標亮。
+const SVG_NS = 'http://www.w3.org/2000/svg';
+let findMatches: HTMLElement[] = [];
+let findCurrent = -1;
+
+/** 此文字節點能否安全地用 HTML <mark> 包起來:純 SVG <text> 不行(會破壞向量),
+ *  但 mermaid 節點標籤是 foreignObject 內的 HTML 文字,可以。 */
+function isWrappableText(node: Text): boolean {
+  let el = node.parentElement;
+  while (el) {
+    if (el.namespaceURI === SVG_NS) {
+      if (el.localName === 'foreignObject') {
+        return true; // foreignObject 之下是 HTML,可包。
+      }
+      if (el.localName === 'svg') {
+        return false; // 一路到 svg 根都沒遇到 foreignObject → 是原生 SVG 文字,不包。
+      }
+    }
+    el = el.parentElement;
+  }
+  return true;
+}
+
+/** 還原所有標亮:把 <mark class="md-find-hit"> 換回純文字並合併相鄰文字節點。 */
+function clearFindHighlights(): void {
+  for (const m of Array.from(content.querySelectorAll('mark.md-find-hit'))) {
+    const parent = m.parentNode;
+    if (!parent) {
+      continue;
+    }
+    parent.replaceChild(document.createTextNode(m.textContent ?? ''), m);
+    parent.normalize(); // 合併拆開的相鄰文字節點,避免越搜越碎。
+  }
+}
+
+/** 把單一文字節點內所有命中(大小寫不敏感)包成 <mark>。 */
+function highlightInTextNode(node: Text, lowerQuery: string): void {
+  const text = node.nodeValue ?? '';
+  const lower = text.toLowerCase();
+  const frag = document.createDocumentFragment();
+  let from = 0;
+  let idx = lower.indexOf(lowerQuery, from);
+  while (idx !== -1) {
+    if (idx > from) {
+      frag.appendChild(document.createTextNode(text.slice(from, idx)));
+    }
+    const mark = document.createElement('mark');
+    mark.className = 'md-find-hit';
+    mark.textContent = text.slice(idx, idx + lowerQuery.length); // 保留原始大小寫。
+    frag.appendChild(mark);
+    from = idx + lowerQuery.length;
+    idx = lower.indexOf(lowerQuery, from);
+  }
+  if (from < text.length) {
+    frag.appendChild(document.createTextNode(text.slice(from)));
+  }
+  node.parentNode?.replaceChild(frag, node);
+}
+
+function updateFindCount(): void {
+  if (!findInput.value.trim()) {
+    findCount.textContent = '';
+    findCount.classList.remove('no-match');
+    return;
+  }
+  const total = findMatches.length;
+  findCount.textContent = total ? `${findCurrent + 1}/${total}` : 'No results';
+  findCount.classList.toggle('no-match', total === 0);
+}
+
+/** 把目前這一筆命中捲到畫面中央(用 rect 數學,故不受 CSS zoom 影響)。 */
+function scrollFindIntoView(el: HTMLElement): void {
+  const layoutRect = layout.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  const target =
+    layout.scrollTop + (elRect.top - layoutRect.top) - layout.clientHeight / 2 + elRect.height / 2;
+  programmaticScrollUntil = Date.now() + 220; // 別把這次捲動回報給編輯器,免回授。
+  layout.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+}
+
+function setFindCurrent(i: number, opts: { scroll?: boolean } = {}): void {
+  if (!findMatches.length) {
+    findCurrent = -1;
+    updateFindCount();
+    return;
+  }
+  if (findCurrent >= 0) {
+    findMatches[findCurrent]?.classList.remove('current');
+  }
+  findCurrent = ((i % findMatches.length) + findMatches.length) % findMatches.length;
+  const el = findMatches[findCurrent];
+  el.classList.add('current');
+  updateFindCount();
+  if (opts.scroll !== false) {
+    scrollFindIntoView(el);
+  }
+}
+
+function runFind(query: string, opts: { scroll?: boolean } = {}): void {
+  clearFindHighlights();
+  findMatches = [];
+  findCurrent = -1;
+  const lowerQuery = query.trim().toLowerCase();
+  if (!lowerQuery) {
+    updateFindCount();
+    return;
+  }
+  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const value = node.nodeValue;
+      if (!value || !value.toLowerCase().includes(lowerQuery)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      const parent = (node as Text).parentElement;
+      if (!parent || parent.closest('script, style')) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return isWrappableText(node as Text) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    },
+  });
+  const targets: Text[] = [];
+  let n = walker.nextNode();
+  while (n) {
+    targets.push(n as Text);
+    n = walker.nextNode();
+  }
+  // 由後往前處理同一輪收集到的節點,避免切割節點影響尚未處理者(本實作各自獨立,順序其實無妨)。
+  for (const node of targets) {
+    highlightInTextNode(node, lowerQuery);
+  }
+  findMatches = Array.from(content.querySelectorAll<HTMLElement>('mark.md-find-hit'));
+  if (findMatches.length) {
+    setFindCurrent(0, opts);
+  } else {
+    updateFindCount();
+  }
+}
+
+function openFind(): void {
+  findBar.hidden = false;
+  findBtn.classList.add('active');
+  findBtn.setAttribute('aria-pressed', 'true');
+  findInput.focus();
+  findInput.select();
+  if (findInput.value.trim()) {
+    runFind(findInput.value);
+  }
+}
+
+function closeFind(): void {
+  if (findBar.hidden) {
+    return;
+  }
+  findBar.hidden = true;
+  findBtn.classList.remove('active');
+  findBtn.setAttribute('aria-pressed', 'false');
+  clearFindHighlights();
+  findMatches = [];
+  findCurrent = -1;
+  findCount.textContent = '';
+  findCount.classList.remove('no-match');
+}
+
+findBtn.addEventListener('click', () => {
+  if (findBar.hidden) {
+    openFind();
+  } else {
+    closeFind();
+  }
+});
+findInput.addEventListener('input', () => runFind(findInput.value));
+findInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    setFindCurrent(findCurrent + (e.shiftKey ? -1 : 1));
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation(); // 別讓 Esc 冒泡到 document 直接跳回編輯器。
+    closeFind();
+  }
+});
+findPrevBtn.addEventListener('click', () => setFindCurrent(findCurrent - 1));
+findNextBtn.addEventListener('click', () => setFindCurrent(findCurrent + 1));
+findCloseBtn.addEventListener('click', closeFind);
+
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey) {
     if (e.key === '=' || e.key === '+') {
@@ -723,6 +958,9 @@ document.addEventListener('keydown', (e) => {
     } else if (e.key === '0') {
       e.preventDefault();
       setZoom(1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault(); // 接管 Ctrl+F → 自製 Find bar(host 已關掉原生 find widget)。
+      openFind();
     }
     return;
   }
@@ -735,15 +973,24 @@ document.addEventListener('keydown', (e) => {
       setExportMenuOpen(false); // 匯出選單開著時 Esc 先收選單。
       return;
     }
+    if (!findBar.hidden) {
+      closeFind(); // Find bar 開著時 Esc 先收搜尋。
+      return;
+    }
     vscode.postMessage({ type: 'focusEditor' });
   } else if ((e.key === 'o' || e.key === 'w') && !e.ctrlKey && !e.metaKey && !e.altKey) {
     const t = e.target as HTMLElement;
-    if (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA') {
+    // 焦點在表單控制項(含主題 <select> 的 type-ahead)、可編輯區或工具列內時不攔截單鍵快捷,
+    // 否則會劫持原生輸入(例:在 Theme 下拉按 w 會被誤判成切換寬度)。
+    if (
+      !['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) &&
+      !t.isContentEditable &&
+      !t.closest('#md-toolbar')
+    ) {
       if (e.key === 'o') {
         setTocOpen(!tocOpen);
       } else {
-        wide = !wide;
-        applyWide();
+        cycleWidth();
       }
     }
   }

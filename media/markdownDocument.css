@@ -271,9 +271,22 @@ body.md-theme-dark .markdown-body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 全寬模式:撐滿整個預覽寬度,寬表格不再被裁切 / 需要左右捲。 */
-body.md-wide .markdown-body {
+/* ── Content width modes ───────────────────────────────────────────────
+   reading(預設)= 920px 舒適閱讀欄(見上方 .markdown-body);full = 真.全寬;
+   auto = 依視窗寬度自動切換。reading 模式即預設值,故不需額外規則。 */
+
+/* Full:撐滿整個預覽寬度,寬表格不再被裁切 / 需要左右捲。 */
+body.md-width-full .markdown-body {
   max-width: none;
+}
+
+/* Auto:視窗窄時維持 920px 閱讀欄(上方預設),視窗夠寬(≥1200px)時自動全寬,
+   不讓大螢幕被一條細欄浪費掉。媒體查詢吃的是 webview 自身視窗寬度(= 預覽面板寬),
+   面板縮放 / 彈出獨立視窗時即時生效、免 JS。 */
+@media (min-width: 1200px) {
+  body.md-width-auto .markdown-body {
+    max-width: none;
+  }
 }
 
 .markdown-body > *:first-child {
@@ -340,10 +353,17 @@ body.md-wide .markdown-body {
   text-decoration: underline;
 }
 
+/* Callout/blockquote: explicit theme-appropriate fill so it is a light, subtle
+   box in the Light theme (never a dark band) and a subtle raised box in dark
+   themes. --md-code-bg is always tuned to the active theme (rgba(0,0,0,0.05)
+   light / rgba(255,255,255,0.06) dark), so this can never render a black band
+   under a light theme. Text uses full --md-fg for maximum legibility. */
 .markdown-body blockquote {
-  padding: 0.2em 1em;
-  color: var(--md-muted);
-  border-left: 3px solid var(--md-border);
+  padding: 0.6em 1em;
+  color: var(--md-fg);
+  background: var(--md-code-bg);
+  border-left: 3px solid var(--md-accent);
+  border-radius: 0 6px 6px 0;
 }
 
 .markdown-body blockquote > *:last-child {
@@ -465,6 +485,90 @@ body.md-wide .markdown-body {
 
 #md-zoom-level:hover {
   color: var(--md-link);
+}
+
+/* ── Find bar (floating, top-right under toolbar) ──────────────────── */
+#md-find {
+  position: fixed;
+  top: 50px;
+  right: 16px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--md-border);
+  background: var(--md-bg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.36);
+}
+
+#md-find[hidden] {
+  display: none;
+}
+
+#md-find-input {
+  font: inherit;
+  font-size: 12.5px;
+  width: 190px;
+  padding: 3px 7px;
+  color: var(--md-fg);
+  background: var(--md-code-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  outline: none;
+}
+
+#md-find-input:focus {
+  border-color: var(--md-accent);
+}
+
+#md-find-count {
+  min-width: 44px;
+  text-align: center;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-muted);
+  white-space: nowrap;
+}
+
+#md-find-count.no-match {
+  color: var(--vscode-errorForeground, #f14c4c);
+}
+
+#md-find button {
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  width: 24px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-fg);
+  background: transparent;
+  border: 1px solid var(--md-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#md-find button:hover {
+  background: var(--md-hover);
+}
+
+/* Find 標亮:所有命中用半透明琥珀,目前這一筆用實心橘並描邊。inherit 文字色確保亮 / 暗皆可讀;
+   也吃進 mermaid foreignObject 內的節點文字(SVG <text> 不標,避免破壞向量)。 */
+mark.md-find-hit {
+  background: rgba(255, 202, 128, 0.45);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+mark.md-find-hit.current {
+  background: #ff9580;
+  color: #1f1f1f;
+  box-shadow: 0 0 0 2px rgba(255, 149, 128, 0.55);
 }
 
 /* ── Right-click menu (Go to source line) ──────────────────────────── */

@@ -16,22 +16,29 @@ type WebviewMessage =
   | { type: 'revealLine'; line: number }
   | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
   | { type: 'exportError'; message: string }
-  | { type: 'persist'; theme: string; zoom: number; wide: boolean };
+  | { type: 'persist'; theme: string; zoom: number; width: string };
 
 const EXPORT_FILTERS: Record<ExportFormat, Record<string, string[]>> = {
   png: { 'PNG Image': ['png'] },
   pdf: { 'PDF Document': ['pdf'] },
 };
 
-/** webview 端把畫面轉成 base64(PNG 為 data URL、PDF 為 base64 字串);剝掉 data: 前綴後解碼成位元組。 */
+/**
+ * webview 端把畫面轉成 base64(PNG 為 data URL、PDF 為 data URL);剝掉 data: 前綴後解碼成位元組。
+ * 注意:jsPDF 的 datauristring 會多塞一段檔名(`data:application/pdf;filename=generated.pdf;base64,…`),
+ * 故不能只比對單一 `;mime;base64,`,要一路剝到第一個逗號(base64 內容不含逗號)為止,PNG / PDF 通用。
+ */
 function decodeExportData(data: string): Buffer {
-  return Buffer.from(data.replace(/^data:[^;]+;base64,/, ''), 'base64');
+  return Buffer.from(data.replace(/^data:[^,]+,/, ''), 'base64');
 }
 
 // v2:之前版本會在開啟時自動把預設值寫進 globalState,導致改預設無效;換 key 讓舊值失效。
 const THEME_KEY = 'superMermaid.markdownPreview.theme.v2';
 const ZOOM_KEY = 'superMermaid.markdownPreview.zoom.v2';
-const WIDE_KEY = 'superMermaid.markdownPreview.wide.v2';
+const WIDTH_KEY = 'superMermaid.markdownPreview.width.v2';
+/** 舊版只有 boolean 全寬偏好;沒有新 width 設定時用它推導預設(true→full)。 */
+const LEGACY_WIDE_KEY = 'superMermaid.markdownPreview.wide.v2';
+const WIDTH_MODES = ['auto', 'full', 'reading'];
 
 /** 只有 Markdown 文件支援整份預覽(.mmd 走 Mermaid 圖預覽,不是文件)。 */
 function isMarkdownDoc(doc: vscode.TextDocument): boolean {
@@ -86,6 +93,9 @@ export class MarkdownPreviewPanel {
       { viewColumn: vscode.ViewColumn.Beside, preserveFocus: !forceNewWindow },
       {
         enableScripts: true,
+        // 不用 VSCode 原生 find widget:改用 webview 自製 Find bar(工具列有可見入口、能搭配自訂縮放 /
+        // 捲動容器,且能標亮 mermaid 節點文字)。兩者都綁 Ctrl+F,留一個避免衝突。
+        enableFindWidget: false,
         retainContextWhenHidden: true,
         localResourceRoots: MarkdownPreviewPanel.resourceRoots(context, doc),
       },
@@ -296,10 +306,10 @@ export class MarkdownPreviewPanel {
         this.revealEditorLine(msg.line, true);
         break;
       case 'persist':
-        // 記住使用者的主題 / 縮放 / 全寬偏好(跨開關預覽、跨 VSCode 重啟)。
+        // 記住使用者的主題 / 縮放 / 寬度模式偏好(跨開關預覽、跨 VSCode 重啟)。
         void this.state.update(THEME_KEY, msg.theme);
         void this.state.update(ZOOM_KEY, msg.zoom);
-        void this.state.update(WIDE_KEY, msg.wide);
+        void this.state.update(WIDTH_KEY, msg.width);
         break;
     }
   }
@@ -469,7 +479,11 @@ export class MarkdownPreviewPanel {
     // 記住的偏好(預設 Dark Purple);只允許安全字元帶進 HTML 屬性。
     const savedTheme = this.state.get<string>(THEME_KEY, 'velvet').replace(/[^\w-]/g, '');
     const savedZoom = Number(this.state.get<number>(ZOOM_KEY, 1)) || 1;
-    const savedWide = this.state.get<boolean>(WIDE_KEY, false) ? '1' : '';
+    // 寬度預設 Auto;若沒有新偏好但有舊 boolean 全寬偏好(true)則沿用 full。
+    const legacyWide = this.state.get<boolean>(LEGACY_WIDE_KEY, false);
+    const rawWidth = this.state.get<string>(WIDTH_KEY, legacyWide ? 'full' : 'auto');
+    const savedWidth = WIDTH_MODES.includes(rawWidth) ? rawWidth : 'auto';
+    const widthLabel = savedWidth === 'full' ? 'Full' : savedWidth === 'reading' ? 'Reading' : 'Auto';
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -478,7 +492,7 @@ export class MarkdownPreviewPanel {
   <link rel="stylesheet" href="${styleUri}" />
   <title>Markdown Preview</title>
 </head>
-<body data-initial-theme="${savedTheme}" data-initial-zoom="${savedZoom}" data-initial-wide="${savedWide}">
+<body data-initial-theme="${savedTheme}" data-initial-zoom="${savedZoom}" data-initial-width="${savedWidth}">
   <div id="md-toolbar">
     <span id="md-filename"></span>
     <span class="md-spacer"></span>
@@ -494,7 +508,8 @@ export class MarkdownPreviewPanel {
       <option value="abyss">Dark Black</option>
     </select>
     <button id="md-toc-toggle" title="Toggle outline (o)" aria-pressed="false">Outline</button>
-    <button id="md-wide" title="Full width — stop wide tables being cut off (w)" aria-pressed="false">Wide</button>
+    <button id="md-find-btn" title="Find in document (Ctrl+F)" aria-pressed="false">Find</button>
+    <button id="md-width" title="Content width — Auto fits the window, Full = 100%, Reading = 920px. Click or press w to cycle.">${widthLabel}</button>
     <button id="md-lock" title="Lock to current file" aria-pressed="false">Lock</button>
     <button id="md-refresh" title="Re-render (the preview also updates as you type)">Refresh</button>
     <div id="md-export-wrap">
@@ -505,6 +520,13 @@ export class MarkdownPreviewPanel {
       </div>
     </div>
     <button id="md-exit" title="Back to editor (Esc)" hidden>&#10005;</button>
+  </div>
+  <div id="md-find" hidden>
+    <input id="md-find-input" type="text" placeholder="Find in document" aria-label="Find in document" spellcheck="false" />
+    <span id="md-find-count" aria-live="polite"></span>
+    <button id="md-find-prev" title="Previous match (Shift+Enter)">&#8593;</button>
+    <button id="md-find-next" title="Next match (Enter)">&#8595;</button>
+    <button id="md-find-close" title="Close (Esc)">&#10005;</button>
   </div>
   <div id="md-layout">
     <aside id="md-toc" hidden></aside>
