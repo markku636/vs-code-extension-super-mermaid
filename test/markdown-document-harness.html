@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- Replicates MarkdownPreviewPanel.getHtml()'s DOM skeleton to drive
+     dist/markdownDocument.js outside VS Code (screenshots / smoke tests).
+     The host normally renders markdown-it HTML and posts it in; here the
+     driver (scripts/genMarkdownDocImage.mjs) posts the same 'update' message.
+     Not packaged. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="../media/markdownDocument.css" />
+  <title>Markdown Document Preview Harness</title>
+</head>
+<body class="vscode-dark" data-initial-theme="velvet" data-initial-zoom="1" data-initial-width="auto">
+  <div id="md-toolbar">
+    <span id="md-filename"></span>
+    <span class="md-spacer"></span>
+    <label id="md-theme-label" for="md-theme">Theme</label>
+    <select id="md-theme" title="Preview theme">
+      <option value="editor">Follow VS Code</option>
+      <option value="daylight">Light</option>
+      <option value="velvet">Dark Purple</option>
+      <option value="jade">Dark Green</option>
+      <option value="orchid">Dark Pink</option>
+      <option value="amber">Dark Yellow</option>
+      <option value="ember">Dark Red</option>
+      <option value="abyss">Dark Black</option>
+    </select>
+    <button id="md-toc-toggle" title="Toggle outline (o)" aria-pressed="false">Outline</button>
+    <button id="md-find-btn" title="Find in document (Ctrl+F)" aria-pressed="false">Find</button>
+    <button id="md-width" title="Content width — Auto fits the window, Full = 100%, Reading = 920px. Click or press w to cycle.">Auto</button>
+    <button id="md-lock" title="Lock to current file" aria-pressed="false">Lock</button>
+    <button id="md-refresh" title="Re-render (the preview also updates as you type)">Refresh</button>
+    <div id="md-export-wrap">
+      <button id="md-export" title="Export the document as PNG or PDF" aria-haspopup="true" aria-expanded="false">Export &#9662;</button>
+      <div id="md-export-menu" hidden>
+        <button class="md-export-item" data-format="png">Export PNG</button>
+        <button class="md-export-item" data-format="pdf">Export PDF</button>
+      </div>
+    </div>
+    <button id="md-exit" title="Back to editor (Esc)" hidden>&#10005;</button>
+  </div>
+  <div id="md-find" hidden>
+    <input id="md-find-input" type="text" placeholder="Find in document" aria-label="Find in document" spellcheck="false" />
+    <span id="md-find-count" aria-live="polite"></span>
+    <button id="md-find-prev" title="Previous match (Shift+Enter)">&#8593;</button>
+    <button id="md-find-next" title="Next match (Enter)">&#8595;</button>
+    <button id="md-find-close" title="Close (Esc)">&#10005;</button>
+  </div>
+  <div id="md-layout">
+    <aside id="md-toc" hidden></aside>
+    <div id="md-content" class="markdown-body"></div>
+  </div>
+  <div id="md-zoom" title="Ctrl + mouse wheel to zoom">
+    <button id="md-zoom-out" title="Zoom out (Ctrl -)">&#8722;</button>
+    <span id="md-zoom-level" title="Reset to 100% (Ctrl 0)">100%</span>
+    <button id="md-zoom-in" title="Zoom in (Ctrl +)">+</button>
+  </div>
+  <div id="md-context-menu" hidden>
+    <button id="md-ctx-goto">Go to source line</button>
+    <button id="md-ctx-copy" hidden>Copy</button>
+  </div>
+  <div id="md-export-overlay" hidden><div class="md-export-spinner">Exporting…</div></div>
+  <script>
+    // Mock of VS Code's webview API: record outbound messages for the driver.
+    window.__messages = [];
+    window.acquireVsCodeApi = () => ({
+      postMessage(msg) { window.__messages.push(msg); },
+      getState() { return undefined; },
+      setState() {},
+    });
+  </script>
+  <script src="../dist/markdownDocument.js"></script>
+</body>
+</html>

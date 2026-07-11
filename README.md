@@ -25,6 +25,12 @@ Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` `
 
 ![Draw diagrams visually](docs/images/draw-editor.png)
 
+## 📄 New: right-click → preview the whole Markdown document
+
+Right-click any `.md` file (in the editor or the Explorer) → **Open Markdown Preview to the Side** — and the **entire document** renders as one scrollable page: headings, tables, highlighted code, and every ```` ```mermaid ```` block auto-colored. Pick **Open Markdown Preview in New Window** instead to pop it onto a second monitor. Scroll sync, a clickable **Outline**, **find in document** (`Ctrl+F` — highlights reach even the text inside diagrams), reading themes, zoom, three content-width modes, and **PNG / PDF export** are all built in.
+
+![Full Markdown document preview](docs/images/markdown-preview.png)
+
 ## Install
 
 1. Open the Extensions view (`Ctrl+Shift+X`), search **"Super Mermaid"**, click **Install** — or [grab it from the Marketplace](https://marketplace.visualstudio.com/items?itemName=mark-ku.super-mermaid).
@@ -45,7 +51,7 @@ Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` `
 - 🔗 **Share to mermaid.live** — one click builds a link that opens the diagram in the mermaid.live editor. The code lives only in the URL fragment — nothing is uploaded until someone opens the link.
 - 🪟 **Pop out** — open the preview in its own floating window via the **Open in New Window** CodeLens above each diagram (or set `superMermaid.previewLocation` to `newWindow`), so you can park it on a second monitor while you keep editing.
 - 📝 **Both sources, plus the built-in preview** — works with ```` ```mermaid ```` blocks in Markdown, standalone `.mmd` / `.mermaid` files, **and** the built-in Markdown preview (`Ctrl+Shift+V`) renders mermaid blocks with the same auto coloring.
-- 📄 **Full Markdown document preview** — beyond just the diagrams, render the **whole `.md` file** (headings, text, tables **and** auto-colored Mermaid) in a dedicated Super Mermaid preview. Right-click → **Open Markdown Preview to the Side** to split it beside the editor, or **Open Markdown Preview in New Window** to pop it onto a second monitor. It updates live as you type and follows your editor theme. Use the toolbar **Export** button to save the rendered document — exactly as you see it, including the chosen theme and diagrams — as a **PNG** image or a multi-page **PDF**.
+- 📄 **Full Markdown document preview** — beyond just the diagrams, render the **whole `.md` file** (headings, text, tables **and** auto-colored Mermaid) in a dedicated Super Mermaid preview. Right-click → **Open Markdown Preview to the Side** to split it beside the editor, or **Open Markdown Preview in New Window** to pop it onto a second monitor. It updates live as you type and follows your editor theme. **Find in document** with `Ctrl+F` (the highlights reach even the label text inside diagrams), cycle the **content width** (Auto / Full / Reading) when wide tables need room, and use the toolbar **Export** button to save the rendered document — exactly as you see it, including the chosen theme and diagrams — as a **PNG** image or a multi-page **PDF**.
 - 🧠 **Editor smarts** — mermaid syntax highlighting, `%%` comment toggle with `Ctrl+/`, keyword completion, and red squiggles on syntax errors while the preview is open.
 - 📚 **Template library** — the `Super Mermaid: Insert Diagram Template` command offers 21 ready-made templates, plus `mmd-*` snippets.
 - 🌐 **Every diagram type, fully offline** — flowchart, sequenceDiagram, erDiagram, classDiagram, gantt, pie, mindmap, timeline, journey, C4, architecture… The mermaid engine is bundled inside the extension, so there's no network call and **your code never leaves your machine**.
@@ -76,6 +82,8 @@ The full-document preview is built for reading long docs:
 - **Scroll sync** — scroll the editor and the preview follows to the same place, and vice-versa. **Right-click** anything in the preview → **Go to source line** to jump the editor to the line that produced it.
 - **Flicker-free live edits** — as you type, unchanged diagrams are reused from cache and the new content is swapped in atomically, so diagrams don't blink on every keystroke.
 - **Outline** — click **Outline** in the toolbar (or press `o`) for a clickable table of contents down the side that tracks your position as you scroll.
+- **Find in document** — `Ctrl+F` or the toolbar **Find** button: type to see a live match count, `Enter` / `Shift+Enter` steps through matches, `Esc` closes. Highlights reach even the label text **inside mermaid diagrams**, so you can find a node by name.
+- **Content width** — the toolbar width button (or `w`) cycles **Auto / Full / Reading**: Auto keeps a comfortable 920px reading column on narrow panels and goes full-width on large ones, Full always uses 100%, Reading always keeps the column — so wide tables aren't cut off and huge monitors aren't wasted.
 - **Syntax highlighting** — non-Mermaid code blocks (C#, SQL, JSON, TypeScript…) are highlighted with colors that match your light/dark theme.
 - **Zoom** — **`Ctrl` + mouse wheel** zooms the whole document (text and diagrams together); a floating `−` / `%` / `+` pill in the bottom-right shows the level. `Ctrl` `+` / `-` / `0` work too, and clicking the `%` resets to 100%.
 - **Reading themes** — a **Theme** dropdown in the toolbar restyles the whole preview (background, text, code highlighting, and diagram colors) independently of your VS Code theme: **Follow VS Code**, **Light** (default), and dark presets **Dark Purple · Dark Green · Dark Pink · Dark Yellow · Dark Red · Dark Black**. Your choice (and zoom level) is remembered across reopen and restart. Chinese/CJK text uses a dedicated reading font so it stays crisp.
