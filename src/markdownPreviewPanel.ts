@@ -517,6 +517,10 @@ export class MarkdownPreviewPanel {
       <div id="md-export-menu" hidden>
         <button class="md-export-item" data-format="png">Export PNG</button>
         <button class="md-export-item" data-format="pdf">Export PDF</button>
+        <div class="md-export-sep"></div>
+        <div class="md-export-label">Appearance</div>
+        <button class="md-export-item md-export-look" data-look="paper" role="menuitemradio" aria-checked="true" title="White page, high-contrast text and light diagrams — best for printing and sharing">Paper (light)</button>
+        <button class="md-export-item md-export-look" data-look="screen" role="menuitemradio" aria-checked="false" title="Keep the colors currently shown in the preview">Match preview theme</button>
       </div>
     </div>
     <button id="md-exit" title="Back to editor (Esc)" hidden>&#10005;</button>

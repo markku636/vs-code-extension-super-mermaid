@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.9.6 — Markdown preview: readable, print-quality PNG / PDF export
+
+Export used to be a screenshot of the preview: whatever dark theme was on screen
+became the exported page, rasterized at 1–2x (≈100–200 DPI once scaled onto A4)
+and sliced at fixed page heights. The result was muddy colors and soft text. The
+exporter now builds its own document instead of photographing the screen.
+
+- **Feature**: exports default to a new **Paper (light)** appearance — white page,
+  near-black text, high-contrast syntax colors, solid table / code borders, and
+  mermaid diagrams re-rendered in the light palette — regardless of which preview
+  theme is on screen. **Export ▾ → Appearance** switches back to **Match preview
+  theme** if you want the dark look; the choice is remembered.
+- **Fix**: text is no longer blurry. Capture runs at **3x** (≈340 DPI at A4 width
+  instead of 99–198 DPI), automatically stepping down only if a document is long
+  enough to hit the browser's canvas limits. Fonts and images are awaited before
+  capture so nothing is rasterized half-loaded.
+- **Fix**: PDF page breaks land on **line and block boundaries** — measured from
+  real line boxes, table rows and block starts — instead of slicing at a fixed
+  page height, which used to cut lines of text in half.
+- **Fix**: PDF pages get **36pt margins**; content no longer runs into the paper
+  edge.
+- **Fix**: long code lines and wide tables **wrap into the page** instead of being
+  clipped at the scroll edge (a scrollbar has no meaning on paper).
+- **Fix**: export renders off-screen from the document source, so the preview no
+  longer flickers mid-export and search highlights never leak into the output.
+
 ## 0.9.5 — Markdown preview: find bar, content width modes, stable export
 
 - **Feature**: **Find in document** (`Ctrl+F`, or the toolbar **Find** button) —

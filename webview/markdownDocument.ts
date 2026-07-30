@@ -85,7 +85,7 @@ const HL_LIGHT = { keyword: '#A3144D', string: '#846E15', number: '#0550AE', tit
 const ds = document.body.dataset;
 // 優先序:webview 自己的 state(本 panel 最新)→ host 由 globalState 帶進的 data-initial(跨 panel/重啟)→ 預設。
 const savedState = vscode.getState() as
-  | { zoom?: number; theme?: string; width?: string }
+  | { zoom?: number; theme?: string; width?: string; exportLook?: string }
   | undefined;
 const initialZoom = parseFloat(ds.initialZoom ?? '');
 let zoom =
@@ -106,6 +106,9 @@ function asWidthMode(v: unknown): WidthMode {
   return v === 'full' || v === 'reading' ? v : 'auto';
 }
 let widthMode: WidthMode = asWidthMode(savedState?.width ?? ds.initialWidth);
+/** 匯出外觀:paper=白底文件版(預設,適合列印 / 分享);screen=沿用目前預覽主題。 */
+type ExportLook = 'paper' | 'screen';
+let exportLook: ExportLook = savedState?.exportLook === 'screen' ? 'screen' : 'paper';
 
 /** 已渲染的 mermaid SVG 快取(source → 上色後的 innerHTML),source 沒變就直接重用,打字不閃。 */
 const mermaidCache = new Map<string, string>();
@@ -133,11 +136,11 @@ function effectiveDark(): boolean {
   return isDarkTheme();
 }
 
-function initMermaid(): void {
+function initMermaid(dark = effectiveDark()): void {
   ensureLegibilityStyles();
   mermaid.initialize({
     startOnLoad: false,
-    theme: effectiveDark() ? 'dark' : 'default',
+    theme: dark ? 'dark' : 'default',
     fontFamily:
       getComputedStyle(document.body).getPropertyValue('--vscode-font-family').trim() ||
       'sans-serif',
@@ -156,9 +159,13 @@ function makeBlock(svgHtml: string, dataLine: string | null): HTMLElement {
   return container;
 }
 
-/** 在指定容器(可離屏)內把 mermaid 區塊渲染成 SVG;source 命中快取就秒換,沒命中才 async 渲染。 */
-async function renderMermaidInto(root: ParentNode): Promise<void> {
-  initMermaid();
+/**
+ * 在指定容器(可離屏)內把 mermaid 區塊渲染成 SVG;source 命中快取就秒換,沒命中才 async 渲染。
+ * dark 可覆寫明暗(匯出時強制走亮色紙張配色);快取鍵帶明暗,避免兩種配色互相污染。
+ */
+async function renderMermaidInto(root: ParentNode, opts: { dark?: boolean } = {}): Promise<void> {
+  const dark = opts.dark ?? effectiveDark();
+  initMermaid(dark);
   const codes = Array.from(
     root.querySelectorAll<HTMLElement>('pre > code.language-mermaid, pre > code.language-mmd'),
   );
@@ -169,7 +176,8 @@ async function renderMermaidInto(root: ParentNode): Promise<void> {
       continue;
     }
     const dataLine = pre.getAttribute('data-line');
-    const cached = mermaidCache.get(source);
+    const cacheKey = `${dark ? 'd' : 'l'}|${source}`;
+    const cached = mermaidCache.get(cacheKey);
     if (cached) {
       pre.replaceWith(makeBlock(cached, dataLine));
       continue;
@@ -180,15 +188,19 @@ async function renderMermaidInto(root: ParentNode): Promise<void> {
       const container = makeBlock(svg, dataLine);
       const svgEl = container.querySelector('svg');
       if (svgEl) {
-        colorizeDiagram(svgEl, { dark: effectiveDark() });
+        colorizeDiagram(svgEl, { dark });
         boostLegibility(svgEl);
       }
-      mermaidCache.set(source, container.innerHTML);
+      mermaidCache.set(cacheKey, container.innerHTML);
       pre.replaceWith(container);
     } catch {
       // 不完整 / 語法錯誤的圖:清掉 mermaid 暫存節點,保留原始碼區塊。
       document.getElementById('d' + id)?.remove();
     }
+  }
+  // 匯出用亮色渲染完後,把 mermaid 全域設定還原成畫面上的明暗,否則下一次畫面渲染會拿錯配色。
+  if (dark !== effectiveDark()) {
+    initMermaid();
   }
 }
 
@@ -466,7 +478,8 @@ function persistState(immediate = false): void {
   if (booting) {
     return; // 初始套用(套用記住的/預設值)不回寫,否則會把預設值固化、之後改預設無效。
   }
-  vscode.setState({ zoom, theme: currentTheme, width: widthMode }); // webview 內部即時記住(reload 用)。
+  // webview 內部即時記住(reload 用);exportLook 只存這裡,不進 host globalState。
+  vscode.setState({ zoom, theme: currentTheme, width: widthMode, exportLook });
   if (persistTimer) {
     clearTimeout(persistTimer);
     persistTimer = undefined;
@@ -642,19 +655,16 @@ refreshBtn.addEventListener('click', () => vscode.postMessage({ type: 'refresh' 
 exitBtn.addEventListener('click', () => vscode.postMessage({ type: 'focusEditor' }));
 
 // ── 匯出 PNG / PDF ──────────────────────────────────────────────────────
-// 在 webview 端把整份 #md-content rasterize 成點陣圖(html2canvas 會原生渲染內嵌的 mermaid SVG、
-// 表格、程式碼高亮),PNG 直接送出;PDF 用 jsPDF 把這張長圖依 A4 切頁。算好的位元組丟回 host 存檔。
+// 匯出不直接擷取畫面上的 #md-content,而是用原始 HTML 在離屏容器重排一份「文件版」:
+//  * 配色走 Paper(白底黑字、深色高對比語法色、mermaid 亮色重繪),不會把螢幕上的深色主題印成一張黑紙;
+//  * 版面鎖固定文件寬,程式碼/表格改成換行不裁切,長行不會被切掉;
+//  * rasterize 走高倍率(依 A4 目標 DPI 反推),字才不糊;
+//  * PDF 依「行框 / 區塊起點」挑分頁點,不會把一行字從中間切成兩半。
 let exporting = false;
 
 function setExportMenuOpen(open: boolean): void {
   exportMenu.hidden = !open;
   exportBtn.setAttribute('aria-expanded', String(open));
-}
-
-/** 取得目前生效的底色(內建主題的 --md-bg 或跟隨 VSCode),作為匯出背景。 */
-function exportBackground(): string {
-  const bg = getComputedStyle(document.body).backgroundColor;
-  return bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' ? bg : '#ffffff';
 }
 
 /** 去掉副檔名後接上目標格式,作為存檔預設檔名。 */
@@ -669,57 +679,203 @@ function suggestedName(ext: string): string {
  * 縮放到頁面後幾乎 1:1,字級舒適、表格也排得整齊。
  */
 const EXPORT_WIDTH = 820;
+/** A4 直印尺寸與四邊留白(pt)。 */
+const A4_WIDTH_PT = 595.28;
+const A4_HEIGHT_PT = 841.89;
+const PDF_MARGIN = 36;
+/**
+ * 目標倍率:820px 的內容寬貼到 A4 內文寬(523pt ≈ 7.26in)時,3x → 約 340 DPI,
+ * 字邊緣才夠銳利(原本 1–2x 只有 99–198 DPI,縮到 A4 後就是使用者看到的「糊」)。
+ */
+const EXPORT_SCALE = 3;
+/** canvas 上限保護:超長文件降倍率,避免瀏覽器直接回傳空白 canvas。 */
+const MAX_CANVAS_PIXELS = 120_000_000;
+const MAX_CANVAS_DIM = 32_000;
 
-async function captureContent(): Promise<HTMLCanvasElement> {
-  // zoom 會干擾 html2canvas 的尺寸量測 → 暫時還原成 100% 再擷取,完成後復原(遮罩蓋住閃動)。
-  // 同時把寬度鎖成固定文件寬(蓋過 Auto/Full/Reading 的 max-width),確保匯出版面一致、不被面板寬度影響。
-  const prevZoom = content.style.getPropertyValue('zoom');
-  const prevWidth = content.style.width;
-  const prevMaxWidth = content.style.maxWidth;
-  content.style.setProperty('zoom', '1');
-  content.style.width = `${EXPORT_WIDTH}px`;
-  content.style.maxWidth = `${EXPORT_WIDTH}px`;
-  try {
-    // 在量測到的自然高度下,把 scale 壓在合理上限,避免超長文件撐爆 canvas 尺寸限制。
-    const naturalHeight = content.scrollHeight || 1;
-    const scale = Math.max(1, Math.min(2, 14000 / naturalHeight));
-    return await html2canvas(content, {
-      backgroundColor: exportBackground(),
-      scale,
-      useCORS: true,
-      logging: false,
-      width: EXPORT_WIDTH,
-      windowWidth: EXPORT_WIDTH,
-    });
-  } finally {
-    if (prevZoom) {
-      content.style.setProperty('zoom', prevZoom);
-    } else {
-      content.style.removeProperty('zoom');
-    }
-    content.style.width = prevWidth;
-    content.style.maxWidth = prevMaxWidth;
-  }
+/** 依文件高度把倍率壓在瀏覽器 canvas 容量內(仍不低於 1x)。 */
+function safeScale(heightPx: number): number {
+  const byArea = Math.sqrt(MAX_CANVAS_PIXELS / Math.max(1, EXPORT_WIDTH * heightPx));
+  const byDim = MAX_CANVAS_DIM / Math.max(EXPORT_WIDTH, heightPx);
+  return Math.max(1, Math.min(EXPORT_SCALE, byArea, byDim));
 }
 
-function canvasToPdf(canvas: HTMLCanvasElement): string {
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+/** 等字型與圖片就緒:少了這步,html2canvas 會用 fallback 字型量測 / 畫出半載入的圖。 */
+async function waitForAssets(root: HTMLElement): Promise<void> {
+  try {
+    await (document as Document & { fonts?: FontFaceSet }).fonts?.ready;
+  } catch {
+    /* 沒有 Font Loading API 就跳過。 */
+  }
+  const pending = Array.from(root.querySelectorAll('img')).map((img) =>
+    img.complete
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+          img.addEventListener('load', () => resolve(), { once: true });
+          img.addEventListener('error', () => resolve(), { once: true });
+        }),
+  );
+  await Promise.all(pending);
+}
+
+/**
+ * 建一份離屏的匯出用文件:同一份原始 HTML,但套匯出樣式、mermaid 依匯出配色重畫。
+ * 用複製件而不是動畫面上的節點 → 匯出期間畫面零閃動,也不會把搜尋標亮 / 捲動狀態帶進成品。
+ */
+async function buildExportDoc(look: ExportLook): Promise<HTMLElement> {
+  const root = document.createElement('div');
+  root.id = 'md-export-root';
+  root.className = `markdown-body md-export-doc md-export-${look}`;
+  root.style.width = `${EXPORT_WIDTH}px`;
+  root.innerHTML = lastHtml;
+  document.body.appendChild(root);
+  await renderMermaidInto(root, { dark: look === 'paper' ? false : effectiveDark() });
+  await waitForAssets(root);
+  return root;
+}
+
+/** 匯出底色:paper 固定白底;screen 取目前主題底色。 */
+function exportBackground(look: ExportLook): string {
+  if (look === 'paper') {
+    return '#ffffff';
+  }
+  const bg = getComputedStyle(document.body).backgroundColor;
+  return bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' ? bg : '#ffffff';
+}
+
+async function captureDoc(
+  root: HTMLElement,
+  look: ExportLook,
+): Promise<{ canvas: HTMLCanvasElement; scale: number; heightPx: number }> {
+  const heightPx = root.scrollHeight || 1;
+  const scale = safeScale(heightPx);
+  const canvas = await html2canvas(root, {
+    backgroundColor: exportBackground(look),
+    scale,
+    useCORS: true,
+    logging: false,
+    width: EXPORT_WIDTH,
+    height: heightPx,
+    windowWidth: EXPORT_WIDTH,
+  });
+  return { canvas, scale, heightPx };
+}
+
+/**
+ * 蒐集可以安全分頁的 y 座標(相對於文件頂端,CSS px):
+ * 每個區塊元素的起點,加上葉節點的「每一行行框」起點 —— 有行框座標,分頁就永遠落在兩行之間,
+ * 不會像固定切頁那樣把一行字攔腰切斷。表格只取列(tr)起點,避免從儲存格中間斷開。
+ */
+function collectBreakYs(root: HTMLElement): number[] {
+  const rootTop = root.getBoundingClientRect().top;
+  const ys = new Set<number>([0]);
+  const ATOMIC = /^(IMG|SVG|CANVAS|HR|BR)$/;
+  const walk = (el: Element, inTable: boolean): void => {
+    for (const child of Array.from(el.children)) {
+      const tag = child.tagName;
+      if (ATOMIC.test(tag)) {
+        continue;
+      }
+      const rect = child.getBoundingClientRect();
+      if (rect.height <= 0) {
+        continue;
+      }
+      ys.add(rect.top - rootTop);
+      if (tag === 'TABLE' || inTable) {
+        // 表格內只認列邊界(往下找 tbody/tr),不拆儲存格內的行。
+        walk(child, true);
+        continue;
+      }
+      const hasBlockChild = Array.from(child.children).some(
+        (c) => !ATOMIC.test(c.tagName) && getComputedStyle(c).display !== 'inline',
+      );
+      if (hasBlockChild) {
+        walk(child, false);
+      } else {
+        // 葉節點:用 Range 量出每一行行框的頂端當分頁點。
+        const range = document.createRange();
+        range.selectNodeContents(child);
+        for (const r of Array.from(range.getClientRects())) {
+          if (r.height > 0) {
+            ys.add(r.top - rootTop);
+          }
+        }
+      }
+    }
+  };
+  walk(root, false);
+  return Array.from(ys).sort((a, b) => a - b);
+}
+
+/** 依可用頁高與分頁候選點,算出每頁的起點 y(CSS px)。 */
+function planPages(breaks: number[], totalH: number, usableH: number): number[] {
+  const starts = [0];
+  let y = 0;
+  let guard = 0;
+  while (y + usableH < totalH && guard++ < 2000) {
+    const limit = y + usableH;
+    const minFill = y + usableH * 0.5; // 別為了對齊就留下半頁以上的空白。
+    let next = -1;
+    for (const b of breaks) {
+      if (b > minFill && b <= limit) {
+        next = b;
+      } else if (b > limit) {
+        break;
+      }
+    }
+    if (next <= y) {
+      next = limit; // 找不到合適斷點(例如一張比整頁還高的圖)就硬切。
+    }
+    starts.push(next);
+    y = next;
+  }
+  return starts;
+}
+
+/** 把長圖依 starts 切成一頁一張貼進 A4;每頁只放該頁內容,頁尾留白而不是硬切一行。 */
+function canvasToPdf(
+  canvas: HTMLCanvasElement,
+  scale: number,
+  totalH: number,
+  starts: number[],
+  look: ExportLook,
+): string {
+  const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4', compress: true });
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
-  const imgW = pageW;
-  const imgH = (canvas.height * imgW) / canvas.width;
-  // 同一張長圖以負位移逐頁貼上(共用 alias 'doc',影像只內嵌一次,PDF 不會膨脹)。
-  let position = 0;
-  let heightLeft = imgH;
-  pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH, 'doc', 'FAST');
-  heightLeft -= pageH;
-  while (heightLeft > 0) {
-    position -= pageH;
-    pdf.addPage();
-    pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH, 'doc', 'FAST');
-    heightLeft -= pageH;
+  const contentW = pageW - PDF_MARGIN * 2;
+  const ptPerPx = contentW / EXPORT_WIDTH;
+  const bg = exportBackground(look);
+  const slice = document.createElement('canvas');
+  const ctx = slice.getContext('2d');
+  if (!ctx) {
+    throw new Error('Canvas 2D context unavailable.');
   }
+  starts.forEach((startY, i) => {
+    const endY = i + 1 < starts.length ? starts[i + 1] : totalH;
+    const sliceH = Math.max(1, Math.round((endY - startY) * scale));
+    if (i > 0) {
+      pdf.addPage();
+    }
+    if (look !== 'paper') {
+      pdf.setFillColor(bg);
+      pdf.rect(0, 0, pageW, pageH, 'F'); // 深色版連留白也要染色,否則四周是白框。
+    }
+    slice.width = canvas.width;
+    slice.height = sliceH;
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, slice.width, slice.height);
+    ctx.drawImage(canvas, 0, -Math.round(startY * scale));
+    pdf.addImage(
+      slice.toDataURL('image/png'),
+      'PNG',
+      PDF_MARGIN,
+      PDF_MARGIN,
+      contentW,
+      (endY - startY) * ptPerPx,
+      `p${i}`,
+      'FAST',
+    );
+  });
   return pdf.output('datauristring');
 }
 
@@ -731,9 +887,21 @@ async function runExport(format: 'png' | 'pdf'): Promise<void> {
   exportOverlay.hidden = false;
   // 讓遮罩先上畫面再開始重運算(html2canvas 同步段會卡 UI)。
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const look = exportLook;
+  let root: HTMLElement | undefined;
   try {
-    const canvas = await captureContent();
-    const data = format === 'png' ? canvas.toDataURL('image/png') : canvasToPdf(canvas);
+    root = await buildExportDoc(look);
+    const { canvas, scale, heightPx } = await captureDoc(root, look);
+    let data: string;
+    if (format === 'png') {
+      data = canvas.toDataURL('image/png');
+    } else {
+      // 一頁能放多少 CSS px 的內容:A4 內文高 ÷ (內文寬 / 匯出寬)。
+      const usableH =
+        ((A4_HEIGHT_PT - PDF_MARGIN * 2) * EXPORT_WIDTH) / (A4_WIDTH_PT - PDF_MARGIN * 2);
+      const starts = planPages(collectBreakYs(root), heightPx, usableH);
+      data = canvasToPdf(canvas, scale, heightPx, starts, look);
+    }
     vscode.postMessage({ type: 'export', format, data, suggestedName: suggestedName(format) });
   } catch (err) {
     vscode.postMessage({
@@ -741,9 +909,21 @@ async function runExport(format: 'png' | 'pdf'): Promise<void> {
       message: err instanceof Error ? err.message : String(err),
     });
   } finally {
+    root?.remove();
     exporting = false;
     exportOverlay.hidden = true;
   }
+}
+
+/** 匯出外觀切換:更新選單上的勾選狀態並記住選擇。 */
+function applyExportLook(look: ExportLook): void {
+  exportLook = look;
+  for (const btn of Array.from(exportMenu.querySelectorAll<HTMLElement>('.md-export-look'))) {
+    const on = btn.getAttribute('data-look') === look;
+    btn.setAttribute('aria-checked', String(on));
+    btn.classList.toggle('checked', on);
+  }
+  persistState(true);
 }
 
 exportBtn.addEventListener('click', (e) => {
@@ -751,14 +931,21 @@ exportBtn.addEventListener('click', (e) => {
   setExportMenuOpen(exportMenu.hidden);
 });
 exportMenu.addEventListener('click', (e) => {
-  const item = (e.target as HTMLElement)?.closest('.md-export-item');
-  const format = item?.getAttribute('data-format');
+  const target = e.target as HTMLElement | null;
+  const look = target?.closest('.md-export-look')?.getAttribute('data-look');
+  if (look === 'paper' || look === 'screen') {
+    e.stopPropagation(); // 選外觀不關選單,方便接著按匯出。
+    applyExportLook(look);
+    return;
+  }
+  const format = target?.closest('.md-export-item')?.getAttribute('data-format');
   if (format === 'png' || format === 'pdf') {
     setExportMenuOpen(false);
     void runExport(format);
   }
 });
 window.addEventListener('click', () => setExportMenuOpen(false));
+applyExportLook(exportLook);
 
 // ── 文件內搜尋(Find bar)─────────────────────────────────────────────
 // 把命中的文字節點切開、包進 <mark>,跨整份文件(含 mermaid 節點的 foreignObject HTML 文字)標亮,

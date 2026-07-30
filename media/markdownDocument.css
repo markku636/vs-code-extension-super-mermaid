@@ -163,6 +163,32 @@ body {
   color: var(--md-bg);
 }
 
+/* 匯出外觀選擇(Paper / 目前主題):選單內的單選列,勾選用左側 ✓ 佔位,不會左右跳動。 */
+.md-export-sep {
+  margin: 4px 6px;
+  border-top: 1px solid var(--md-border);
+}
+
+.md-export-label {
+  padding: 2px 12px 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--md-muted);
+  white-space: nowrap;
+}
+
+.md-export-look::before {
+  content: '\2713';
+  display: inline-block;
+  width: 12px;
+  opacity: 0;
+}
+
+.md-export-look.checked::before {
+  opacity: 1;
+}
+
 /* 匯出進行中:全螢幕半透明遮罩 + 提示,避免使用者在 rasterize 期間誤動。 */
 #md-export-overlay {
   position: fixed;
@@ -682,4 +708,92 @@ mark.md-find-hit.current {
 }
 .hljs-strong {
   font-weight: 600;
+}
+
+/* ── 匯出用離屏文件(PNG / PDF)────────────────────────────────────────
+   匯出時另外排一份文件版:固定文件寬、字級略放大、所有會「裁切」的容器改成換行,
+   讓 A4 上的成品是一份完整可讀的文件,而不是螢幕截圖。選擇器一律以 #md-export-root 起頭
+   (id 權重最高),才蓋得過 body.md-theme-dark .markdown-body 等既有規則。 */
+#md-export-root {
+  position: absolute;
+  top: 0;
+  left: -20000px; /* 離屏但仍有版面,html2canvas 才量得到尺寸。 */
+  z-index: -1;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 8px;
+  zoom: 1;
+  font-size: 16px; /* 貼到 A4 內文寬後約 10.2pt,列印字級剛好。 */
+  line-height: 1.7;
+  -webkit-font-smoothing: auto; /* 高倍率 rasterize 下 antialiased 會讓筆畫變細變淡。 */
+  color: var(--md-fg);
+  background: var(--md-bg);
+}
+
+/* 螢幕上會出捲軸的容器(表格 / 程式碼 / 圖),在紙上是看不到捲軸的 ——
+   一律改成換行或縮放,長行才不會被切掉半截。 */
+#md-export-root pre {
+  overflow: visible;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#md-export-root table {
+  display: table;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  table-layout: auto;
+}
+
+#md-export-root .mermaid-preview-block {
+  overflow: visible;
+  page-break-inside: avoid;
+}
+
+#md-export-root .mermaid-preview-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Paper:不管螢幕上選了哪個主題,匯出都走白底黑字 + 高對比語法色。
+   自訂屬性寫在這個元素上,直接蓋掉從 <body> inline 繼承下來的主題變數。 */
+#md-export-root.md-export-paper {
+  --md-bg: #ffffff;
+  --md-fg: #1a1a1a;
+  --md-border: #d0d7de;
+  --md-muted: #57606a;
+  --md-code-bg: #f6f8fa;
+  --md-link: #0550ae;
+  --md-link-active: #0550ae;
+  --md-accent: #0550ae;
+  --md-table-stripe: #f6f8fa;
+  --md-hover: rgba(0, 0, 0, 0.06);
+  --md-hl-comment: #5c6370;
+  --md-hl-keyword: #a3144d;
+  --md-hl-string: #0a5d24;
+  --md-hl-number: #0550ae;
+  --md-hl-title: #6639ba;
+  --md-hl-type: #8a4300;
+}
+
+/* 標題 / 分隔線在紙上用實線,深色主題的半透明框線印出來會近乎消失。 */
+#md-export-root.md-export-paper h1,
+#md-export-root.md-export-paper h2 {
+  border-bottom-color: #d0d7de;
+}
+
+#md-export-root.md-export-paper hr {
+  background: #d0d7de;
+}
+
+#md-export-root.md-export-paper pre,
+#md-export-root.md-export-paper th,
+#md-export-root.md-export-paper td,
+#md-export-root.md-export-paper .mermaid-preview-block {
+  border-color: #d0d7de;
+}
+
+#md-export-root.md-export-paper blockquote {
+  border-left-color: #0550ae;
 }
