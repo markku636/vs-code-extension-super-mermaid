@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.10.0 — hover tooltips in the preview + hover hints in the editor
+
+Hovering now answers "what is this node?" on both sides of the split.
+
+- **Feature**: resting the mouse on a node / subgraph / actor in the **preview** shows a
+  theme-aware tooltip: the node's **full label** (long labels get squeezed once a diagram is
+  fitted to the panel), plus a muted meta line with the author id, the source line (`L12`),
+  and the click-to-open-source hint. It follows the cursor, flips near the panel edges,
+  hides while you drag-pan, and never intercepts the pointer.
+- **Feature**: author tooltip text **inside the diagram** with `%% @tip` comments —
+  `%% @tip NodeId shown on hover`, indented `%%` lines continue the note, and a quoted
+  target (`%% @tip "Node label" …`) matches by label instead of id. Same syntax as the
+  react-super-mermaid library, so one diagram carries its tips across both. Directives are
+  plain mermaid comments — nothing to strip, older versions simply ignore them.
+- **Feature**: a real **editor hover provider** — hovering a node id in a ```` ```mermaid ````
+  block or a `.mmd` file pops the node's label, shape (rectangle / decision / database /
+  participant…), how many statements connect it, and any `%% @tip` / `%% @check` notes for
+  that node. The hover only fires on words that demonstrably are nodes (a definition, an
+  edge, or an authored note), so prose in Markdown never triggers it.
+- **Internal**: the node-id / label extraction used by click-to-source is now shared with the
+  hover tooltip (`authorIdFor` / `nodeLabelFor`), so both features resolve nodes identically.
+
 ## 0.9.6 — Markdown preview: readable, print-quality PNG / PDF export
 
 Export used to be a screenshot of the preview: whatever dark theme was on screen

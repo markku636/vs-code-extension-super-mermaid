@@ -1,6 +1,7 @@
 import mermaid from 'mermaid';
 import svgPanZoom from 'svg-pan-zoom';
 import { boostLegibility, colorizeDiagram, enhanceContrast, ensureLegibilityStyles } from './colorize';
+import { attachNodeTips, parseTipDirectives, type TipContent, type TipEntry } from './nodeTip';
 
 type PanZoomInstance = ReturnType<typeof svgPanZoom>;
 
@@ -410,6 +411,7 @@ async function render(opts: { keepView?: boolean } = {}): Promise<void> {
   const previousView =
     opts.keepView && panZoom ? { zoom: panZoom.getZoom(), pan: panZoom.getPan() } : undefined;
   destroyPanZoom();
+  nodeTip.hide(); // the hovered node is about to be replaced
   diagramEl.innerHTML = svgText;
   const svgEl = diagramEl.querySelector('svg');
   if (!svgEl) {
@@ -460,6 +462,7 @@ function enterGallery(): void {
     return;
   }
   closeSearch();
+  nodeTip.hide();
   galleryMode = true;
   destroyPanZoom();
   diagramEl.replaceChildren();
@@ -601,18 +604,32 @@ function clickableGroupFor(target: Element): Element | undefined {
 }
 
 /**
- * Best-effort lookup of the source line a rendered node came from. Mermaid
- * embeds the author's identifier in the element id ("flowchart-NodeId-12" →
- * "NodeId"); diagram types without such ids fall back to the label text.
+ * The author's identifier a rendered node came from. Mermaid embeds it in the
+ * element id ("flowchart-NodeId-12" → "NodeId"); clusters carry it verbatim.
+ * Shared by click-to-source and the hover tooltip.
  */
-function sourceLineFor(group: Element, source: string): number | undefined {
-  const lines = source.split('\n');
+function authorIdFor(group: Element): string | undefined {
   // Strip our own render id ("mmd-12-flowchart-A-0" → "flowchart-A-0"); some
   // renderers (e.g. handDrawn) prepend it, others don't.
   const rawId = group.id.replace(/^mmd-\d+-/, '');
   const idMatch = rawId.match(/^[A-Za-z]\w*-(.+)-\d+$/);
-  // Clusters carry the author's id verbatim (e.g. "TPS") instead.
-  const identifier = idMatch?.[1] ?? (group.classList.contains('cluster') ? rawId : undefined);
+  return idMatch?.[1] ?? (group.classList.contains('cluster') ? rawId : undefined);
+}
+
+/** The node's visible label text, whitespace-collapsed. */
+function nodeLabelFor(group: Element): string {
+  return (
+    group.querySelector('.nodeLabel, .label, text')?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+  );
+}
+
+/**
+ * Best-effort lookup of the source line a rendered node came from, by author
+ * id first, falling back to the label text for diagram types without ids.
+ */
+function sourceLineFor(group: Element, source: string): number | undefined {
+  const lines = source.split('\n');
+  const identifier = authorIdFor(group);
   if (identifier) {
     const re = new RegExp(`(^|[^\\w])${escapeRegExp(identifier)}([^\\w]|$)`);
     const byId = lines.findIndex((l) => re.test(l));
@@ -661,6 +678,58 @@ diagramEl.addEventListener('click', (e) => {
   } else {
     vscodeApi.postMessage({ type: 'revealBlock', index: activeIndex });
   }
+});
+
+// ─── Node hover tooltip ─────────────────────────────────────────────────────
+
+/** `%% @tip` parse results, cached per block source (parsing is line-regex work). */
+let tipCache: { source: string; tips: TipEntry[] } | undefined;
+
+function tipsFor(source: string): TipEntry[] {
+  if (!tipCache || tipCache.source !== source) {
+    tipCache = { source, tips: parseTipDirectives(source) };
+  }
+  return tipCache.tips;
+}
+
+/**
+ * Tooltip content: authored `%% @tip` text when present, otherwise the node's
+ * full label (long labels get squeezed in fitted diagrams) — plus an id / L%d /
+ * click-to-source meta line so hover doubles as a "where is this defined" hint.
+ */
+function nodeTipContentFor(group: Element): TipContent | undefined {
+  const block = blocks[activeIndex];
+  if (!block) {
+    return undefined;
+  }
+  const id = authorIdFor(group);
+  const label = nodeLabelFor(group);
+  const tips = tipsFor(block.source);
+  const lower = label.toLowerCase();
+  const authored = tips.find((t) =>
+    t.matchLabel ? t.target.toLowerCase() === lower : t.target === id || t.target.toLowerCase() === lower,
+  );
+  const line = sourceLineFor(group, block.source);
+  const metaParts: string[] = [];
+  if (id) {
+    metaParts.push(id);
+  }
+  if (line !== undefined) {
+    metaParts.push(`L${line + 1} · click to open source`);
+  }
+  const title = label || id || '';
+  if (!title && !authored) {
+    return undefined;
+  }
+  return { title, body: authored?.text ?? '', meta: metaParts.join(' · ') };
+}
+
+const nodeTip = attachNodeTips({
+  canvas: canvasEl,
+  diagram: diagramEl,
+  groupFor: (t) => (t instanceof Element ? clickableGroupFor(t) : undefined),
+  contentFor: nodeTipContentFor,
+  enabled: () => !presentationMode && !galleryMode,
 });
 
 // ─── Find in diagram ────────────────────────────────────────────────────────
@@ -836,6 +905,7 @@ function enterPresentation(): void {
   exitGallery();
   closeSearch();
   closeMenus();
+  nodeTip.hide(); // presentation clicks advance slides; no tips over them
   presentationMode = true;
   document.body.classList.add('presentation');
   presCounterEl.hidden = false;

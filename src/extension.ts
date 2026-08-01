@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { MermaidCodeLensProvider } from './codeLensProvider';
 import { MermaidCompletionProvider } from './completionProvider';
+import { MermaidHoverProvider } from './hoverProvider';
 import { MermaidDiagnostics } from './diagnostics';
 import { EditorPanel } from './editorPanel';
 import { registerInsertTemplateCommand } from './insertTemplate';
@@ -57,6 +58,7 @@ export function activate(context: vscode.ExtensionContext): void {
       '>',
       ':',
     ),
+    vscode.languages.registerHoverProvider(SUPPORTED_SELECTOR, new MermaidHoverProvider()),
     registerInsertTemplateCommand(context),
     vscode.commands.registerCommand(
       'superMermaid.editDiagram',
