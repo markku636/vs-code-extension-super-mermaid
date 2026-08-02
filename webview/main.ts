@@ -1443,7 +1443,12 @@ lockBtn.addEventListener('click', () => {
   showToast(locked ? 'Locked to current file' : 'Following the active editor');
   vscodeApi.postMessage({ type: 'setLocked', locked });
 });
-/** Closest mermaid.live theme for the current preview style. */
+/**
+ * Closest built-in mermaid theme for the current preview style — colorful /
+ * sketch / auto have no mermaid equivalent, so they fall back to dark or light.
+ * The real style rides along separately as `rsmTheme`, which the share page
+ * uses to restore the preview exactly.
+ */
 function liveTheme(): string {
   if (themePref === 'colorful' || themePref === 'auto' || themePref === 'sketch') {
     return darkTheme ? 'dark' : 'default';
@@ -1456,7 +1461,12 @@ document.getElementById('share-live-btn')!.addEventListener('click', () => {
   if (!block) {
     return;
   }
-  vscodeApi.postMessage({ type: 'shareLive', code: block.source, theme: liveTheme() });
+  vscodeApi.postMessage({
+    type: 'shareLive',
+    code: block.source,
+    theme: liveTheme(),
+    rsmTheme: themePref,
+  });
 });
 document.getElementById('refresh-btn')!.addEventListener('click', () => {
   closeMenus();

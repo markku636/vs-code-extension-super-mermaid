@@ -49,13 +49,13 @@ Right-click any `.md` file (in the editor or the Explorer) → **Open Markdown P
 - 🔍 **Find in diagram** — press `/` (or `Ctrl+F`): everything else dims, matches stay lit, `Enter` cycles through them and the view centers on each.
 - 📽️ **Presentation mode** — press `p` for a full-screen slideshow of every diagram in the document. Arrow keys to switch, `Esc` to leave. Perfect for walking through architecture in a meeting.
 - 🗂️ **Gallery view** — see every diagram in the document on one page; click a thumbnail to open it.
-- 🔗 **Share to mermaid.live** — one click builds a link that opens the diagram in the mermaid.live editor. The code lives only in the URL fragment — nothing is uploaded until someone opens the link.
+- 🔗 **Share as a link** — one click builds a link that opens the diagram in the [Super Mermaid live preview](https://blog.markkulab.net/tools/mermaid-preview), where the recipient can view, edit and export it. The code lives only in the URL fragment — nothing is uploaded, ever. The format is mermaid.live-compatible, so the same link opens there too.
 - 🪟 **Pop out** — open the preview in its own floating window via the **Open in New Window** CodeLens above each diagram (or set `superMermaid.previewLocation` to `newWindow`), so you can park it on a second monitor while you keep editing.
 - 📝 **Both sources, plus the built-in preview** — works with ```` ```mermaid ```` blocks in Markdown, standalone `.mmd` / `.mermaid` files, **and** the built-in Markdown preview (`Ctrl+Shift+V`) renders mermaid blocks with the same auto coloring.
 - 📄 **Full Markdown document preview** — beyond just the diagrams, render the **whole `.md` file** (headings, text, tables **and** auto-colored Mermaid) in a dedicated Super Mermaid preview. Right-click → **Open Markdown Preview to the Side** to split it beside the editor, or **Open Markdown Preview in New Window** to pop it onto a second monitor. It updates live as you type and follows your editor theme. **Find in document** with `Ctrl+F` (the highlights reach even the label text inside diagrams), cycle the **content width** (Auto / Full / Reading) when wide tables need room, and use the toolbar **Export** button to save the rendered document as a **PNG** image or a multi-page **PDF**. Exports are laid out for paper, not screenshotted: a white **Paper** page with high-contrast text and light diagrams (switch to **Match preview theme** in the Export menu for the dark look), captured at 3x so text stays sharp, with long code lines and wide tables wrapped into the page and PDF page breaks landing between lines instead of through them.
 - 🧠 **Editor smarts** — mermaid syntax highlighting, `%%` comment toggle with `Ctrl+/`, keyword completion, hover hints on node ids (label, shape, connections, `%% @tip` / `%% @check` notes), and red squiggles on syntax errors while the preview is open.
 - 📚 **Template library** — the `Super Mermaid: Insert Diagram Template` command offers 21 ready-made templates, plus `mmd-*` snippets.
-- 🌐 **Every diagram type, fully offline** — flowchart, sequenceDiagram, erDiagram, classDiagram, gantt, pie, mindmap, timeline, journey, C4, architecture… The mermaid engine is bundled inside the extension, so there's no network call and **your code never leaves your machine**.
+- 🌐 **Every diagram type, fully offline** — flowchart, sequenceDiagram, erDiagram, classDiagram, gantt, pie, mindmap, timeline, journey, C4, architecture… The mermaid engine is bundled inside the extension, so rendering makes **no network call** and your code stays on your machine — the one exception being the share link above, which you build and send yourself.
 
 ## How to use
 
@@ -99,7 +99,7 @@ The full-document preview is built for reading long docs:
 | 🔍 | Find in diagram: type to dim everything except matches, `Enter` cycles through them |
 | Theme dropdown | Colorful (default) / Sketch / Auto / Light / Dark / Neutral / Forest — remembers your choice |
 | Background swatch | A color well next to the theme dropdown. Opens a menu to pick the canvas **surface** (preset colors or follow-editor) and an independent **pattern** (None / Dots / Grid) — the dot/grid ink adapts to the surface color so it stays visible on any background. Surface + pattern also apply to exports |
-| 🔗 | Share to mermaid.live: opens or copies a link with the diagram encoded in the URL |
+| 🔗 | Share link: opens or copies a link with the diagram encoded in the URL (Super Mermaid live preview) |
 | ⬇ Export menu | Copy as image, Export SVG / PNG / JPG / WebP, Export all (whole document at once), resolution 1x/2x/4x, transparent background |
 | ⋯ More | Gallery (thumbnail overview of all diagrams), Lock to current file, Re-render, Fit Width |
 

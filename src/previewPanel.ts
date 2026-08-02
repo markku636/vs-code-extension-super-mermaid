@@ -6,6 +6,12 @@ import { deflateSync } from 'zlib';
 import { BlockError, MermaidDiagnostics } from './diagnostics';
 import { extractMermaidBlocks, isMermaidFileDoc, MermaidBlock } from './mermaidExtract';
 
+/**
+ * Where share links point. The page reads the same `#pako:` fragment this
+ * extension writes; keep it in sync with the blog's `MERMAID_PREVIEW_PATH`.
+ */
+const SHARE_BASE_URL = 'https://blog.markkulab.net/tools/mermaid-preview';
+
 type PreviewLocation = 'newWindow' | 'beside';
 
 /** 讀取使用者設定的預覽開啟位置（預設：右側分割，與內建 Markdown 預覽一致）。 */
@@ -24,7 +30,7 @@ type WebviewMessage =
   | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
   | { type: 'copyText'; text: string; what: string }
   | { type: 'copyImageFallback'; data: string }
-  | { type: 'shareLive'; code: string; theme: string }
+  | { type: 'shareLive'; code: string; theme: string; rsmTheme: string }
   | { type: 'setLocked'; locked: boolean }
   | { type: 'diagnostics'; uri: string; version: number; errors: BlockError[] }
   | { type: 'exportAllRequest'; format: ExportFormat; count: number }
@@ -285,7 +291,7 @@ export class PreviewPanel {
         await this.copyImageViaOs(msg.data);
         break;
       case 'shareLive':
-        await this.shareToMermaidLive(msg.code, msg.theme);
+        await this.shareDiagram(msg.code, msg.theme, msg.rsmTheme);
         break;
       case 'setLocked':
         this.locked = msg.locked;
@@ -395,19 +401,30 @@ export class PreviewPanel {
   }
 
   /**
-   * mermaid.live keeps the whole editor state in the URL fragment as
-   * pako-deflated base64url JSON — nothing is sent to a server until the
-   * link is opened. Node's zlib emits the same zlib stream pako expects.
+   * Build a share link for the Super Mermaid live preview.
+   *
+   * The whole editor state travels in the URL fragment as pako-deflated
+   * base64url JSON — nothing is sent to a server until the link is opened, and
+   * the fragment never reaches one even then. Node's zlib emits the same zlib
+   * stream pako expects, so the encoding is byte-identical to what the Jira app
+   * and the web page produce.
+   *
+   * The payload keeps mermaid.live's field shape on purpose: the same link also
+   * opens there if anyone prefers it. `rsmTheme` is our own addition (mermaid
+   * has no "colorful"/"sketch"), and unknown fields are ignored by both sides.
    */
-  private async shareToMermaidLive(code: string, theme: string): Promise<void> {
+  private async shareDiagram(code: string, theme: string, rsmTheme: string): Promise<void> {
     const state = JSON.stringify({
       code,
       mermaid: JSON.stringify({ theme }),
       autoSync: true,
       updateDiagram: true,
+      panZoom: true,
+      rough: rsmTheme === 'sketch',
+      rsmTheme,
     });
     const encoded = deflateSync(Buffer.from(state, 'utf8'), { level: 9 }).toString('base64url');
-    const url = `https://mermaid.live/edit#pako:${encoded}`;
+    const url = `${SHARE_BASE_URL}#pako:${encoded}`;
     const warning =
       url.length > 8000 ? ' (very long link — some chat apps may truncate it)' : '';
     const action = await vscode.window.showInformationMessage(
@@ -419,7 +436,9 @@ export class PreviewPanel {
       await vscode.env.openExternal(vscode.Uri.parse(url));
     } else if (action === 'Copy URL') {
       await vscode.env.clipboard.writeText(url);
-      void vscode.window.showInformationMessage('Super Mermaid: share URL copied to clipboard');
+      void vscode.window.showInformationMessage(
+        'Super Mermaid: share URL copied — it opens the diagram on an external preview page (blog.markkulab.net)',
+      );
     }
   }
 
@@ -626,7 +645,7 @@ export class PreviewPanel {
     <div class="sep"></div>
     <button id="export-menu-btn" title="Export diagram…">${ICON_DOWNLOAD}</button>
     <div class="sep"></div>
-    <button id="share-live-btn" title="Share to mermaid.live">${ICON_SHARE}</button>
+    <button id="share-live-btn" title="Copy a share link — the diagram travels in the URL and opens on an external preview page">${ICON_SHARE}</button>
     <button id="more-btn" title="More…">${ICON_MORE}</button>
   </div>
   <div id="zoom-controls">

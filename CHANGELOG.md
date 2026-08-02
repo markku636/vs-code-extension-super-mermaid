@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.11.0 — share links open in the Super Mermaid live preview
+
+- **Change**: the 🔗 share button now builds a link to the
+  [Super Mermaid live preview](https://blog.markkulab.net/tools/mermaid-preview) instead of
+  mermaid.live. The recipient lands on a page that renders the diagram with the same engine
+  this extension uses — the colorful and sketch themes included — and can edit, re-theme and
+  export it from there.
+- **Change**: the link now carries the theme you actually had on screen (`rsmTheme`), so
+  Colorful / Sketch survive the round trip. Previously they were flattened to mermaid's
+  light / dark because that was all mermaid.live could express.
+- **Unchanged**: the encoding is still pako-deflated base64url JSON in the URL **fragment** —
+  nothing is uploaded, and the payload keeps mermaid.live's field shape, so swapping the
+  domain still opens the same diagram there.
+
 ## 0.10.0 — hover tooltips in the preview + hover hints in the editor
 
 Hovering now answers "what is this node?" on both sides of the split.
