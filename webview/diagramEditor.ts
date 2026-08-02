@@ -247,6 +247,11 @@ function wireToolbar(h: DiagramEditorHandle): void {
   byId('btn-copy-src')?.addEventListener('click', () => {
     void navigator.clipboard?.writeText(lastCode).catch(() => {});
   });
+  // 面板自己的關閉鈕。工具列那顆 </> 原始碼 的 active 狀態要一起收掉。
+  byId('btn-close-src')?.addEventListener('click', () => {
+    byId('source-panel')?.toggleAttribute('hidden', true);
+    byId('btn-source')?.classList.remove('active');
+  });
   const applySrc = (): void => {
     const ta = byId<HTMLTextAreaElement>('source-ta');
     if (!ta) return;
