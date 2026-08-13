@@ -139,13 +139,27 @@ try {
         res[name] = `ERR ${err.message}`;
       }
     }
-    return res;
+    // 回傳字串而非物件:有些 DB 的值帶著不可序列化的東西(函式 / DOM / 循環參照),
+    // 直接回物件會讓 puppeteer 靜默地把整包變成 undefined。
+    try {
+      return JSON.stringify(res);
+    } catch (err) {
+      return JSON.stringify({ __error: String(err) });
+    }
   }, source);
-  for (const [k, v] of Object.entries(out)) {
+  const parsed = JSON.parse(out ?? '{}');
+  const empty = [];
+  for (const [k, v] of Object.entries(parsed)) {
     const s = JSON.stringify(v);
-    if (s === '{}' || s === '[]' || s === 'null' || s === undefined) continue;
+    if (s === '{}' || s === '[]' || s === 'null' || s === undefined) {
+      empty.push(k);
+      continue;
+    }
     console.log(`── ${k} ──\n${JSON.stringify(v, null, 1).slice(0, 4000)}`);
   }
+  // 空的也列出來:知道「這個 getter 存在但這張圖沒東西」跟「根本沒有這個 getter」是兩回事。
+  if (empty.length) console.log(`\n(空:${empty.join(', ')})`);
+  if (!Object.keys(parsed).length) console.log('(這個 DB 沒有任何 getXxx() 可讀)');
 } finally {
   await browser.close();
   server.close();

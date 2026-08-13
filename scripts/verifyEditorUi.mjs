@@ -94,6 +94,13 @@ const CASES = [
     expect: ['point'],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'sankey',
+    // 刻意用 ASCII:mermaid 11 的 sankey lexer 不接受非 ASCII 名稱(見 round-trip/sankey 的註解)。
+    source: 'sankey-beta\n\nGrid,Homes,30\nGrid,Industry,45\nIndustry,Waste heat,20\nIndustry,Product,25\n',
+    expect: ['sankeyNode'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

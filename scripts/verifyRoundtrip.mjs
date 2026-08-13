@@ -57,6 +57,8 @@ const CASES = [
       '  quadrant-1 該做\n  quadrant-2 快贏\n  quadrant-3 別做\n  quadrant-4 再想想\n  A: [0.3, 0.6]\n',
     edge: false,
   },
+  // 刻意用 ASCII:mermaid 11 的 sankey lexer 不接受非 ASCII 名稱。
+  { type: 'sankey', source: 'sankey-beta\n\nGrid,Homes,30\nGrid,Industry,45\n', edge: true },
 ];
 
 // ─── 靜態伺服器 ──────────────────────────────────────────────────────────────
@@ -105,6 +107,7 @@ editor.registerRequirementAdapter();
 editor.registerQuadrantAdapter();
 editor.registerC4Adapter();
 editor.registerKanbanAdapter();
+editor.registerSankeyAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;

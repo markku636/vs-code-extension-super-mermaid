@@ -12,6 +12,7 @@ import {
   registerC4Adapter,
   registerKanbanAdapter,
   registerQuadrantAdapter,
+  registerSankeyAdapter,
   registerRequirementAdapter,
   registerSequenceAdapter,
   shapeIconMarkup,
@@ -34,6 +35,7 @@ registerRequirementAdapter();
 registerQuadrantAdapter();
 registerC4Adapter();
 registerKanbanAdapter();
+registerSankeyAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
