@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.12.0 — the visual editor covers thirteen diagram types
+
+The **✏ Draw** editor went from six drawable diagram types to thirteen, and dragging now *means*
+something on the new ones instead of only tidying the layout.
+
+- **New — requirement diagrams**: drop 需求 / 元素 boxes, drag to relate them, double-click for a
+  structured editor (`id:` / `text:` / `risk:` / `verify:`), right-click an arrow to pick among the
+  seven trace relations. Note that mermaid only accepts `[A-Za-z0-9_]` in a requirement **name**, so
+  a Chinese name is slugged and reported — put the Chinese in `text:`.
+- **New — C4 diagrams** (Context / Container / Component / Dynamic / Deployment): people, systems,
+  containers, components, databases and queues, with `*_Boundary(…) { }` blocks preserved as nested
+  groups and `Rel` / `BiRel` as edges.
+- **New — kanban boards**: drag a card into another column to change its status, drag up/down to
+  reorder. Right-click empty space to add a column, right-click a column to rename or delete it.
+- **New — user journeys**: sections become lanes, tasks become cards showing the mood score and the
+  actors — moving a task between stages is a drag.
+- **New — quadrant charts**: a point's position *is* its value, so dragging it rewrites
+  `[0.30, 0.60]`. The chart frame, both axes and the four quadrant names are drawn on the canvas.
+- **New — sankey flows**: each link's width is its value; double-click a link to type a new one.
+  (mermaid's sankey parser rejects non-ASCII names — the editor warns rather than mangling them.)
+- **Fix**: the shape toolbar was hardcoded to *flowchart* shapes, so a class diagram offered
+  「菱形 / 圓柱 / 梯形」 — shapes that type cannot serialize. Every diagram type now offers exactly its
+  own shapes, and the buttons draw a real icon instead of a text glyph (`⬭ ⬡ ⛁` have no glyph in most
+  system UI fonts, so 「圓角 / 橢圓 / 六角」 all rendered as the same circle).
+- **Fix**: class boxes and ER entities were drawn much taller than their contents, leaving a slab of
+  blank space under the last row; ER cardinality marks floated away from the entity; state
+  start/end/fork markers were coloured from the node palette instead of ink.
+- **Fix**: renaming an ER entity was silently discarded, a class with a label but no members lost the
+  label, and `fork` / `choice` state nodes created in the editor lost their shape on reload.
+- **Fix**: a mindmap node created by dragging became a second root, which mermaid rejects outright;
+  dragging a connection on a mindmap now re-parents (mindmap has no edge syntax).
+- The blank canvas now offers a starter template for all thirteen drawable types.
+
 ## 0.11.0 — share links open in the Super Mermaid live preview
 
 - **Change**: the 🔗 share button now builds a link to the

@@ -21,7 +21,25 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 
 ## ✏️ New: draw diagrams visually → get Mermaid
 
-Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **six diagram types: flowchart, state, ER, class, mindmap, and sequence**. Drag to place shapes, drag from a node edge to connect (or to empty space to spawn a connected node), double-click to rename or edit cell content (ER attributes, class members, sequence messages), right-click for shape / colour / align / group / type-specific actions, build sequences from scratch, **reconnect edges**, toggle direction, auto-tidy, **edit the Mermaid source two-way** (套用 / Ctrl+Enter re-renders), **copy the diagram to the clipboard as an image**, and export SVG/PNG. Start from a **template** on the empty canvas and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). Data charts (pie / gantt / journey / timeline / etc.) aren't drawn by dragging — use the live preview for those.
+Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **thirteen diagram types**:
+
+| | |
+| --- | --- |
+| **Node & edge** | flowchart · state · class · ER · mindmap · **requirement** · **C4** (Context / Container / Component) · **sankey** |
+| **Time-ordered** | sequence |
+| **Lanes & cards** | **kanban** · **user journey** |
+| **Positional** | **quadrant chart** |
+| **Form** | timeline |
+
+The toolbar offers **only the shapes the diagram type can actually serialize** — a class diagram gets 「類別」, a state diagram gets 狀態 / 起始 / 結束 / 選擇 / 分岔, a C4 diagram gets 人員 / 系統 / 資料庫 / 佇列. Drag to place shapes, drag from a node edge to connect (or to empty space to spawn a connected node), double-click to rename or edit cell content (ER attributes, class members, sequence messages, requirement fields), right-click for shape / colour / align / group / type-specific actions, build sequences from scratch, **reconnect edges**, toggle direction, auto-tidy, **edit the Mermaid source two-way** (套用 / Ctrl+Enter re-renders), **copy the diagram to the clipboard as an image**, and export SVG/PNG.
+
+Several of the newer types make dragging *mean* something rather than just tidying the layout:
+
+- **kanban / user journey** — drag a card into another column to change its status or stage; drag up and down to reorder. Which column a card is in is read from where it sits, so what you see is exactly what gets written.
+- **quadrant chart** — a point's position *is* its value: drag it and `[0.30, 0.60]` follows.
+- **sankey** — every link's width is its flow; double-click a link to type a new number.
+
+Start from a **template** on the empty canvas (all thirteen types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). The remaining data charts (pie / gantt / xychart / gitGraph / block / packet / architecture) still open read-only — use the live preview for those.
 
 ![Draw diagrams visually](docs/images/draw-editor.png)
 
