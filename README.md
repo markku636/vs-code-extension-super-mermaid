@@ -21,25 +21,30 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 
 ## ✏️ New: draw diagrams visually → get Mermaid
 
-Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **thirteen diagram types**:
+Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **nineteen diagram types**, which is every type Mermaid has except `gitGraph`:
 
 | | |
 | --- | --- |
-| **Node & edge** | flowchart · state · class · ER · mindmap · **requirement** · **C4** (Context / Container / Component) · **sankey** |
-| **Time-ordered** | sequence |
+| **Node & edge** | flowchart · state · class · ER · mindmap · **requirement** · **C4** (Context / Container / Component) · **architecture** · **sankey** |
+| **Time-ordered** | sequence · **gantt** |
 | **Lanes & cards** | **kanban** · **user journey** |
-| **Positional** | **quadrant chart** |
+| **Grid** | **block** · **packet** |
+| **Charts** | **quadrant** · **pie** · **xychart** |
 | **Form** | timeline |
 
 The toolbar offers **only the shapes the diagram type can actually serialize** — a class diagram gets 「類別」, a state diagram gets 狀態 / 起始 / 結束 / 選擇 / 分岔, a C4 diagram gets 人員 / 系統 / 資料庫 / 佇列. Drag to place shapes, drag from a node edge to connect (or to empty space to spawn a connected node), double-click to rename or edit cell content (ER attributes, class members, sequence messages, requirement fields), right-click for shape / colour / align / group / type-specific actions, build sequences from scratch, **reconnect edges**, toggle direction, auto-tidy, **edit the Mermaid source two-way** (套用 / Ctrl+Enter re-renders), **copy the diagram to the clipboard as an image**, and export SVG/PNG.
 
-Several of the newer types make dragging *mean* something rather than just tidying the layout:
+On many of the newer types, dragging *means* something rather than just tidying the layout:
 
 - **kanban / user journey** — drag a card into another column to change its status or stage; drag up and down to reorder. Which column a card is in is read from where it sits, so what you see is exactly what gets written.
-- **quadrant chart** — a point's position *is* its value: drag it and `[0.30, 0.60]` follows.
+- **gantt** — a bar's x is its start date and its width is its duration: drag it to reschedule, drag its edge to change the duration, drag it into another band to change section. A task written as `after a1` keeps that dependency until you actually drag it away.
+- **quadrant** — a point's position *is* its value: drag it and `[0.30, 0.60]` follows.
+- **xychart** — drag a data point up and the number goes up.
+- **packet** — a field's width is how many bits it takes; the bit numbers renumber themselves.
+- **block** — the cell a block sits in is its place in the source.
 - **sankey** — every link's width is its flow; double-click a link to type a new number.
 
-Start from a **template** on the empty canvas (all thirteen types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). The remaining data charts (pie / gantt / xychart / gitGraph / block / packet / architecture) still open read-only — use the live preview for those.
+Start from a **template** on the empty canvas (all nineteen types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). `gitGraph` still opens read-only: it's a sequence of commands rather than a spatial diagram, so there's nothing meaningful to drag. Anything the editor doesn't fully understand — an unusual gantt `dateFormat`, a nested `block:… end` — is passed through **verbatim** and marked read-only rather than half-rewritten.
 
 ![Draw diagrams visually](docs/images/draw-editor.png)
 

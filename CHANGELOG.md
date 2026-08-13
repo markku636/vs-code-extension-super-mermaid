@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.13.0 — the visual editor covers nineteen diagram types
+
+Everything Mermaid can draw except `gitGraph` now opens in the **✏ Draw** editor, and on the chart
+types dragging edits the *data* rather than the layout.
+
+- **New — gantt**: a bar's x is its start date, its width is its duration and its row is its section,
+  so drag to reschedule, drag the edge to change duration, drag into another band to change section.
+  The canvas draws a real time axis with `done` / `active` / `crit` styling and milestones as
+  diamonds. A task written as `after a1` keeps that dependency until you drag it away, and `2w` comes
+  back as weeks rather than `14d`.
+- **New — pie**: the pie is drawn on the canvas with a percentage per slice; drag a slice handle
+  around the circle to reorder, double-click to edit its label and value.
+- **New — xychart**: each data point's vertical position is its value — drag it up and the number
+  goes up, with bars and lines redrawn as you move.
+- **New — architecture**: services, junctions and nested `group`s, with `a:L -- R:b` edges keeping
+  the side they attach to.
+- **New — block**: blocks flow into the `columns N` grid, so dragging one to another cell reorders
+  the source; 「整理」 snaps everything back onto the grid.
+- **New — packet**: a field's width is how many bits it takes and its order is its order; the bit
+  numbers renumber themselves on save, so they can't drift the way hand-edited ranges do.
+- **Fix**: quadrant chart points could not be dragged **at all** — the connect-anchor dots blanket a
+  26px node, so every press started an edge instead of a move. Diagram types with no edge syntax now
+  skip anchors entirely, and small nodes never surrender their whole hit area to anchors.
+- **Fix**: on a dark theme, C4 boxes, requirement boxes and pie slices drew light text on their own
+  light fill — effectively invisible — and the quadrant chart's four tints turned into indistinct
+  grey-brown. Both are fixed, and the UI test suite now runs the whole matrix in dark mode too.
+- Anything the editor doesn't fully understand is passed through **verbatim** and marked read-only
+  rather than half-rewritten: an unusual gantt `dateFormat`, a nested `block:… end`, a horizontal
+  xychart.
+
 ## 0.12.0 — the visual editor covers thirteen diagram types
 
 The **✏ Draw** editor went from six drawable diagram types to thirteen, and dragging now *means*
