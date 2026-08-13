@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.3 — a gantt `done` bar's label was invisible in dark mode
+
+Moving the label inside the bar (0.15.0) also gave it the theme's text colour, and a `done` bar is
+filled with a pale colour that never follows the theme — so on a dark canvas the label disappeared.
+
 ## 0.15.2 — mindmap branches curve
 
 - Mindmap branches are drawn as smooth curves instead of straight lines, so they read as branches
