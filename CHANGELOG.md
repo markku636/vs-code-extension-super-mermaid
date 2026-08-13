@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0 — you can see where a drag will land
+
+- **New**: dragging a card, a commit or a block now outlines the column / lane / cell it will drop
+  into, and the outline follows the pointer. On these types letting go rewrites the source, so
+  previously the only way to find out where it would land was to drop it and look.
+- The drag test asserts the outline shows during the gesture and clears after it.
+
 ## 0.15.4 — the UI check now measures whether text on a node is readable
 
 Twice now, text drawn on a node has taken the theme's colour and disappeared on a dark canvas

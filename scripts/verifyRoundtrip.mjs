@@ -115,6 +115,7 @@ const DRAG_CASES = [
     dx: 300,
     dy: 0,
     expectChange: true,
+    dropHint: true,
   },
   {
     type: 'journey 任務換階段',
@@ -122,6 +123,7 @@ const DRAG_CASES = [
     dx: 300,
     dy: 0,
     expectChange: true,
+    dropHint: true,
   },
   {
     type: 'quadrant 點改值',
@@ -158,6 +160,7 @@ const DRAG_CASES = [
     dx: 400,
     dy: 0,
     expectChange: true,
+    dropHint: true,
   },
   {
     // 往下拖到第二條泳道 = 換分支;輸出要多一個 checkout。
@@ -168,6 +171,7 @@ const DRAG_CASES = [
     dx: 0,
     dy: 120,
     expectChange: true,
+    dropHint: true,
   },
   {
     type: 'flowchart 位置不入原始碼',
@@ -387,18 +391,32 @@ try {
     for (let i = 1; i <= 6; i += 1) {
       await page.mouse.move(before.x + (c.dx * i) / 6, before.y + (c.dy * i) / 6);
     }
+    // 手還按著的這一刻:位置即資料的圖種要看得到「放開會落在這一格」的提示。
+    const dropHint = await page.evaluate(() => document.querySelectorAll('.rsm-drop-target').length);
     await page.mouse.up();
+    const hintLeft = await page.evaluate(() => document.querySelectorAll('.rsm-drop-target').length);
     const after = await page.evaluate(() => ({
       text: window.__h.toMermaid(),
       sel: window.__h.getSelection(),
       nodes: window.__h.getScene().nodes.map((n) => `${n.id}@${Math.round(n.x)},${Math.round(n.y)}`),
     }));
     const changed = after.text !== before.text;
+    const hintProblem =
+      c.dropHint && dropHint === 0
+        ? '拖曳中沒有顯示落點提示'
+        : hintLeft > 0
+          ? '放開後落點提示沒有收掉'
+          : undefined;
     results.push({
       group: 'drag',
       type: c.type,
       text: `${after.text}\n  [選取 ${JSON.stringify(after.sel)} / 節點 ${after.nodes.join(' ')}]`,
-      fatal: changed === c.expectChange ? undefined : c.expectChange ? '拖曳後輸出沒有變化' : '拖曳不該改變輸出但改了',
+      fatal:
+        changed === c.expectChange
+          ? hintProblem
+          : c.expectChange
+            ? '拖曳後輸出沒有變化'
+            : '拖曳不該改變輸出但改了',
     });
   }
 } finally {
