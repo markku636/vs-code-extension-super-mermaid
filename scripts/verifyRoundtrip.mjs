@@ -96,6 +96,13 @@ const CASES = [
     source: 'packet-beta\ntitle TCP 封包\n0-15: "來源埠"\n16-31: "目的埠"\n32-63: "序號"\n',
     edge: false,
   },
+  {
+    type: 'gitgraph',
+    source:
+      'gitGraph\n   commit id: "初始"\n   branch feature\n   commit id: "開發"\n' +
+      '   checkout main\n   commit id: "修正"\n   merge feature tag: "v1.0"\n',
+    edge: false,
+  },
 ];
 
 // ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
@@ -139,6 +146,27 @@ const DRAG_CASES = [
       'xychart-beta\n    title "營收"\n    x-axis [一月, 二月, 三月]\n    y-axis "萬元" 0 --> 100\n    bar [30, 55, 80]\n',
     dx: 0,
     dy: -80,
+    expectChange: true,
+  },
+  {
+    // 第一個提交往右拖過後面幾個 → 順序改變 → 指令流跟著重排。
+    // 提交要夠多:圖太小時畫布會自動放大到 3 倍以上,320px 的手勢在世界座標裡連一格都跨不過去。
+    type: 'gitgraph 提交改順序',
+    source:
+      'gitGraph\n   commit id: "A"\n   commit id: "B"\n   commit id: "C"\n   commit id: "D"\n' +
+      '   commit id: "E"\n   commit id: "F"\n   commit id: "G"\n   commit id: "H"\n',
+    dx: 400,
+    dy: 0,
+    expectChange: true,
+  },
+  {
+    // 往下拖到第二條泳道 = 換分支;輸出要多一個 checkout。
+    type: 'gitgraph 提交換分支',
+    source:
+      'gitGraph\n   commit id: "A"\n   branch feature\n   commit id: "B"\n   commit id: "C"\n' +
+      '   commit id: "D"\n   commit id: "E"\n   commit id: "F"\n   commit id: "G"\n',
+    dx: 0,
+    dy: 120,
     expectChange: true,
   },
   {
@@ -204,6 +232,7 @@ editor.registerXychartAdapter();
 editor.registerArchitectureAdapter();
 editor.registerBlockAdapter();
 editor.registerPacketAdapter();
+editor.registerGitgraphAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;
@@ -270,7 +299,16 @@ try {
         } catch (err) {
           parseError = String(err && err.message ? err.message : err).split(/\r?\n/)[0];
         }
-        out.push({ type: c.type, shapes: (caps?.shapes ?? []).length, text, parseError });
+        // 型別要真的被認出來:少註冊一個 adapter 會靜靜退回 flowchart,建出來的圖照樣
+        // 通得過 mermaid.parse —— 沒有這一行,漏註冊就是一次「全綠的假通過」。
+        const got = h.getScene().diagramType;
+        out.push({
+          type: c.type,
+          shapes: (caps?.shapes ?? []).length,
+          text,
+          parseError,
+          typeError: got === c.type ? null : `圖種被判成 ${got}(adapter 沒註冊?)`,
+        });
       } catch (err) {
         // 連文字都一起帶回來:例外多半就是序列化出了 mermaid 不吃的東西,看不到文字很難查。
         let text = '';
@@ -373,7 +411,15 @@ try {
 const verbose = process.argv.includes('--verbose');
 let failed = 0;
 for (const r of results) {
-  const reason = r.fatal ? `爆例外:${r.fatal}` : r.parseError ? `mermaid 不吃:${r.parseError}` : r.empty ? '輸出被清空' : null;
+  const reason = r.fatal
+    ? `爆例外:${r.fatal}`
+    : r.typeError
+      ? r.typeError
+      : r.parseError
+        ? `mermaid 不吃:${r.parseError}`
+        : r.empty
+          ? '輸出被清空'
+          : null;
   if (reason) failed += 1;
   console.log(`[${reason ? 'FAIL' : ' OK '}] ${r.group.padEnd(9)} ${r.type.padEnd(20)}${reason ?? ''}`);
   if (reason && verbose && r.text) console.log(r.text.replace(/^/gm, '        '));

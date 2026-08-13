@@ -17,6 +17,7 @@ import {
   registerArchitectureAdapter,
   registerBlockAdapter,
   registerPacketAdapter,
+  registerGitgraphAdapter,
   registerXychartAdapter,
   registerJourneyAdapter,
   registerSankeyAdapter,
@@ -50,6 +51,7 @@ registerXychartAdapter();
 registerArchitectureAdapter();
 registerBlockAdapter();
 registerPacketAdapter();
+registerGitgraphAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;

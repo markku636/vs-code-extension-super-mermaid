@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.0 — gitGraph closes the set: every Mermaid diagram type is drawable
+
+- **New — gitGraph**: a commit's parents are never written in the source; they come from the order of
+  the commands. So the entire diagram is recoverable from *which lane a commit is on and where it
+  sits left-to-right* — drag sideways to reorder history, drag onto another lane to move a commit to
+  that branch, and the `branch` / `checkout` / `commit` / `merge` stream is rebuilt from what you see.
+  Right-click a commit to rename it, mark it highlight / reverse, or attach a tag; right-click a lane
+  to rename, delete or add a branch. `cherry-pick` is still passed through read-only.
+- The draw check now asserts that each case was **recognised as the type it claims to be**. A missing
+  adapter registration used to fall back to flowchart silently and still pass every parse — this
+  found exactly that, on the type being added.
+
 ## 0.13.0 — the visual editor covers nineteen diagram types
 
 Everything Mermaid can draw except `gitGraph` now opens in the **✏ Draw** editor, and on the chart

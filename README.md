@@ -21,7 +21,7 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 
 ## ✏️ New: draw diagrams visually → get Mermaid
 
-Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **nineteen diagram types**, which is every type Mermaid has except `gitGraph`:
+Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **all twenty diagram types Mermaid has**:
 
 | | |
 | --- | --- |
@@ -29,6 +29,7 @@ Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` `
 | **Time-ordered** | sequence · **gantt** |
 | **Lanes & cards** | **kanban** · **user journey** |
 | **Grid** | **block** · **packet** |
+| **Branch lanes** | **gitGraph** |
 | **Charts** | **quadrant** · **pie** · **xychart** |
 | **Form** | timeline |
 
@@ -43,8 +44,9 @@ On many of the newer types, dragging *means* something rather than just tidying 
 - **packet** — a field's width is how many bits it takes; the bit numbers renumber themselves.
 - **block** — the cell a block sits in is its place in the source.
 - **sankey** — every link's width is its flow; double-click a link to type a new number.
+- **gitGraph** — a commit's parents are never written in the source, they come from the order of the commands. So drag a commit sideways to reorder history, or onto another lane to move it to that branch; the whole command stream is rebuilt from what you see.
 
-Start from a **template** on the empty canvas (all nineteen types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). `gitGraph` still opens read-only: it's a sequence of commands rather than a spatial diagram, so there's nothing meaningful to drag. Anything the editor doesn't fully understand — an unusual gantt `dateFormat`, a nested `block:… end` — is passed through **verbatim** and marked read-only rather than half-rewritten.
+Start from a **template** on the empty canvas (all twenty types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). Anything the editor doesn't fully understand — an unusual gantt `dateFormat`, a nested `block:… end` — is passed through **verbatim** and marked read-only rather than half-rewritten.
 
 ![Draw diagrams visually](docs/images/draw-editor.png)
 

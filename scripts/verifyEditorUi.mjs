@@ -157,6 +157,14 @@ const CASES = [
     expect: ['packetField'],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'gitgraph',
+    source:
+      'gitGraph\n   commit id: "初始"\n   branch feature\n   commit id: "開發"\n' +
+      '   checkout main\n   commit id: "修正"\n   merge feature tag: "v1.0"\n',
+    expect: ['gitCommit'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
