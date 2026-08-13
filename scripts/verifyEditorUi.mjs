@@ -18,6 +18,8 @@ import puppeteer from 'puppeteer-core';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const WORK = join(ROOT, '.verify-ui');
 const SHOTS = process.argv.includes('--shots');
+/** --dark:以深色主題跑一輪。webview 會跟著 VS Code 主題走,深色壞掉等於一半使用者看到壞的。 */
+const DARK = process.argv.includes('--dark');
 
 // 每個圖種:載入原始碼後,工具列**應該**出現哪些外形按鈕(= adapter 能力),以及絕不該出現哪些。
 const CASES = [
@@ -190,7 +192,7 @@ async function buildPage() {
     join(WORK, 'index.html'),
     `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
 <link rel="stylesheet" href="/media/editor.css">
-<style>html,body{margin:0;height:100%}</style></head>
+<style>html,body{margin:0;height:100%}${DARK ? "body{background:#1e1e1e}" : ""}</style></head>
 <body data-font-uri="/media/Excalifont.woff2">
 <script>window.acquireVsCodeApi = () => ({ postMessage: (m) => { (window.__posted ||= []).push(m); } });</script>
 ${EDITOR_BODY_HTML}
@@ -207,7 +209,7 @@ const results = [];
 let shotDir = null;
 if (SHOTS) {
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  shotDir = join(ROOT, 'outputs', `editor-ui_${stamp}`);
+  shotDir = join(ROOT, 'outputs', `editor-ui${DARK ? '-dark' : ''}_${stamp}`);
   mkdirSync(shotDir, { recursive: true });
 }
 try {
@@ -217,9 +219,12 @@ try {
   for (const c of CASES) {
     await page.goto(`http://127.0.0.1:${port}/.verify-ui/index.html`, { waitUntil: 'load' });
     // webview 是靠 host 的 'load' 訊息啟動的,這裡自己送一份。
-    await page.evaluate((source) => {
-      window.postMessage({ type: 'load', source, dark: false }, '*');
-    }, c.source);
+    await page.evaluate(
+      ({ source, dark }) => {
+        window.postMessage({ type: 'load', source, dark }, '*');
+      },
+      { source: c.source, dark: DARK },
+    );
     await page.waitForFunction(
       () => document.querySelectorAll('#app .rsm-editor-svg [data-node-id], #app .rsm-editor-svg path').length > 0,
       { timeout: 20000 },
