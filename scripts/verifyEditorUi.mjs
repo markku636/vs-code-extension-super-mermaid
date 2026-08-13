@@ -118,6 +118,12 @@ const CASES = [
     expect: ['ganttBar'],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'pie',
+    source: 'pie showData title 語言使用比例\n    "TypeScript" : 55\n    "Python" : 30\n    "Rust" : 15\n',
+    expect: ['pieSlice'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

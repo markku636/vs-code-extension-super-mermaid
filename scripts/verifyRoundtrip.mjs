@@ -71,6 +71,7 @@ const CASES = [
       '    需求 :a1, 2026-01-01, 7d\n    UI :after a1, 5d\n  section 開發\n    後端 :b1, 2026-01-10, 2026-01-25\n',
     edge: false,
   },
+  { type: 'pie', source: 'pie showData title 語言\n    "TypeScript" : 55\n    "Python" : 30\n', edge: false },
 ];
 
 // ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
@@ -166,6 +167,7 @@ editor.registerKanbanAdapter();
 editor.registerSankeyAdapter();
 editor.registerJourneyAdapter();
 editor.registerGanttAdapter();
+editor.registerPieAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;
