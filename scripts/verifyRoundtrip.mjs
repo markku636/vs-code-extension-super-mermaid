@@ -37,6 +37,13 @@ const CASES = [
       'requirementDiagram\n  requirement login_req {\n    id: 1\n    text: Users must log in.\n    risk: medium\n    verifymethod: test\n  }\n',
     edge: true,
   },
+  {
+    type: 'quadrant',
+    source:
+      'quadrantChart\n  title 專案評估\n  x-axis 低成本 --> 高成本\n  y-axis 低效益 --> 高效益\n' +
+      '  quadrant-1 該做\n  quadrant-2 快贏\n  quadrant-3 別做\n  quadrant-4 再想想\n  A: [0.3, 0.6]\n',
+    edge: false,
+  },
 ];
 
 // ─── 靜態伺服器 ──────────────────────────────────────────────────────────────
@@ -82,6 +89,7 @@ editor.registerClassAdapter();
 editor.registerMindmapAdapter();
 editor.registerSequenceAdapter();
 editor.registerRequirementAdapter();
+editor.registerQuadrantAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;

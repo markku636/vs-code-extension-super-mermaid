@@ -9,6 +9,7 @@ import {
   registerErAdapter,
   registerClassAdapter,
   registerMindmapAdapter,
+  registerQuadrantAdapter,
   registerRequirementAdapter,
   registerSequenceAdapter,
   shapeIconMarkup,
@@ -28,6 +29,7 @@ registerClassAdapter();
 registerMindmapAdapter();
 registerSequenceAdapter();
 registerRequirementAdapter();
+registerQuadrantAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
@@ -169,6 +171,8 @@ function applyTypeUI(type: string): void {
   const hasDir = canvas && ['flowchart', 'graph', 'state', 'class', 'er', 'requirement'].includes(type);
   // 需求圖的連線意義由「關係種類」決定(右鍵切換),沒有線型 / 箭頭可調。
   const req = type === 'requirement';
+  // 象限圖沒有連線,而且點的位置就是資料 → 自動排版會竄改數值,「連線 / 整理」都不給。
+  const quadrant = type === 'quadrant';
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
@@ -177,7 +181,7 @@ function applyTypeUI(type: string): void {
   // 建立工具:sequence 與 timeline 都不用外形/連線(timeline 用左側表單)。
   rebuildShapeButtons(!seq && !timeline ? caps : null);
   show(byId('shape-group'), !seq && !timeline);
-  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline);
+  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline && !quadrant);
   show(document.querySelector('[data-tool="select"]'), canvas);
   show(document.querySelector('[data-tool="pan"]'), canvas);
   show(document.querySelector('.tlabel'), !seq && !timeline);
@@ -187,7 +191,7 @@ function applyTypeUI(type: string): void {
 
   const lineKinds = caps?.lineKinds ?? [];
   const arrowHeads = caps?.arrowHeads ?? [];
-  const edgeOk = canvas && !seq && !req && caps !== null;
+  const edgeOk = canvas && !seq && !req && !quadrant && caps !== null;
   const showLine = edgeOk && lineKinds.length > 1;
   const showArrow = edgeOk && arrowHeads.length > 1;
   show(byId('edge-style'), showLine || showArrow);
@@ -204,9 +208,10 @@ function applyTypeUI(type: string): void {
   if (handle) syncEdgeControls(handle.getEdgeStyleDefault());
 
   // 純畫布操作(選取刪除 / 縮放 / 符合視窗 / 整理 / 手繪 / 快捷鍵說明):timeline 無畫布,一律隱藏。
-  for (const id of ['btn-delete', 'btn-zoom-out', 'zoom-level', 'btn-zoom-in', 'btn-fit', 'btn-tidy', 'btn-look', 'btn-help']) {
+  for (const id of ['btn-delete', 'btn-zoom-out', 'zoom-level', 'btn-zoom-in', 'btn-fit', 'btn-look', 'btn-help']) {
     show(byId(id), canvas);
   }
+  show(byId('btn-tidy'), canvas && !quadrant);
   const hint = byId('seq-hint');
   if (hint) (hint as HTMLElement).hidden = !seq;
 }

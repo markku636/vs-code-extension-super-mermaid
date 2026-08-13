@@ -67,6 +67,15 @@ const CASES = [
     expect: ['requirementBox', 'elementBox'],
     forbid: ['diamond', 'cylinder', 'classBox'],
   },
+  {
+    type: 'quadrant',
+    source:
+      'quadrantChart\n  title 專案評估\n  x-axis 低成本 --> 高成本\n  y-axis 低效益 --> 高效益\n' +
+      '  quadrant-1 該做\n  quadrant-2 快贏\n  quadrant-3 別做\n  quadrant-4 再想想\n' +
+      '  改版首頁: [0.3, 0.6]\n  導入 AI 客服: [0.75, 0.8]\n  換 logo: [0.2, 0.2]\n',
+    expect: ['point'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
