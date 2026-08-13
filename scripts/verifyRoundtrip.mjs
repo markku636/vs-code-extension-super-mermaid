@@ -66,6 +66,42 @@ const CASES = [
   },
 ];
 
+// ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
+// 這些圖種的位置**就是資料**,所以拖完文字必須跟著變;流程圖則相反 —— 位置只是排版,
+// 拖動它不可以改動任何一個字(否則就是把版面資訊污染進使用者的原始碼了)。
+const DRAG_CASES = [
+  {
+    type: 'kanban 卡片換欄',
+    source: 'kanban\n  todo[待辦]\n    [設計稿]\n  doing[進行中]\n  done[完成]\n',
+    dx: 300,
+    dy: 0,
+    expectChange: true,
+  },
+  {
+    type: 'journey 任務換階段',
+    source: 'journey\n  title 我的一天\n  section 早上\n    起床: 3: 我\n  section 下午\n',
+    dx: 300,
+    dy: 0,
+    expectChange: true,
+  },
+  {
+    type: 'quadrant 點改值',
+    source:
+      'quadrantChart\n  x-axis 低 --> 高\n  y-axis 低 --> 高\n  quadrant-1 一\n  quadrant-2 二\n' +
+      '  quadrant-3 三\n  quadrant-4 四\n  A: [0.3, 0.6]\n',
+    dx: 120,
+    dy: 0,
+    expectChange: true,
+  },
+  {
+    type: 'flowchart 位置不入原始碼',
+    source: 'flowchart TD\n  A[開始] --> B[結束]\n',
+    dx: 140,
+    dy: 90,
+    expectChange: false,
+  },
+];
+
 // ─── 靜態伺服器 ──────────────────────────────────────────────────────────────
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css' };
 async function serve() {
@@ -130,9 +166,12 @@ async function bundle() {
     outfile: join(WORK, 'bundle.js'),
     logLevel: 'warning',
   });
+  // #app 必須有實際尺寸:編輯器的 fit() 是依容器大小算縮放的,高度 0 會讓節點縮到量不到,
+  // 拖曳測試就會拖了個寂寞。
   writeFileSync(
     join(WORK, 'index.html'),
-    '<!doctype html><meta charset="utf-8"><body><div id="app"></div><script src="bundle.js"></script></body>',
+    '<!doctype html><meta charset="utf-8"><style>html,body{margin:0}#app{width:1200px;height:760px}</style>' +
+      '<body><div id="app"></div><script src="bundle.js"></script></body>',
   );
 }
 
@@ -144,6 +183,7 @@ const browser = await puppeteer.launch({ executablePath: findChrome(), headless:
 const results = [];
 try {
   const page = await browser.newPage();
+  await page.setViewport({ width: 1280, height: 860 });
   page.on('pageerror', (e) => console.error('[page error]', e.message));
   await page.goto(`http://127.0.0.1:${port}/.verify/index.html`, { waitUntil: 'load' });
   await page.waitForFunction('window.__ready === true', { timeout: 30000 });
@@ -215,6 +255,53 @@ try {
     return out;
   }, templates);
   results.push(...round.map((r) => ({ group: 'roundtrip', ...r })));
+
+  // C. 拖曳:用**真的**滑鼠事件把節點拖到別的地方,再看序列化出來的文字有沒有跟著變。
+  //    A / B 兩組只證明「序列化正確」,證明不了「拖得動」—— 而拖得動正是這些圖種的重點。
+  for (const c of DRAG_CASES) {
+    const rect = await page.evaluate(async (src) => {
+      const host = document.getElementById('app');
+      host.innerHTML = '';
+      // 存到 window:拖曳要跨好幾次 evaluate(量位置 → 移動滑鼠 → 讀結果)。
+      window.__h?.destroy?.();
+      window.__h = window.__editor.createDiagramEditor(host, { mermaid: { instance: window.__mermaid } });
+      await window.__h.loadSource(src);
+      return null;
+    }, c.source);
+    void rect;
+    const before = await page.evaluate(() => {
+      const el = document.querySelector('#app [data-node-id]');
+      if (!el) return null;
+      // 量「命中矩形」而不是整個群組:象限圖的點會把標籤畫在圓點下方(pointer-events:none),
+      // 群組 bbox 的中心因此落在標籤上,對著那裡按下去等於點到空白處。
+      const hit = el.querySelector('rect') ?? el;
+      const b = hit.getBoundingClientRect();
+      return { x: b.x + b.width / 2, y: b.y + b.height / 2, text: window.__h.toMermaid() };
+    });
+    if (!before) {
+      results.push({ group: 'drag', type: c.type, fatal: '找不到可拖曳的節點' });
+      continue;
+    }
+    await page.mouse.move(before.x, before.y);
+    await page.mouse.down();
+    // 分段移動:一步到位的話有些狀態機看不到 move 事件。
+    for (let i = 1; i <= 6; i += 1) {
+      await page.mouse.move(before.x + (c.dx * i) / 6, before.y + (c.dy * i) / 6);
+    }
+    await page.mouse.up();
+    const after = await page.evaluate(() => ({
+      text: window.__h.toMermaid(),
+      sel: window.__h.getSelection(),
+      nodes: window.__h.getScene().nodes.map((n) => `${n.id}@${Math.round(n.x)},${Math.round(n.y)}`),
+    }));
+    const changed = after.text !== before.text;
+    results.push({
+      group: 'drag',
+      type: c.type,
+      text: `${after.text}\n  [選取 ${JSON.stringify(after.sel)} / 節點 ${after.nodes.join(' ')}]`,
+      fatal: changed === c.expectChange ? undefined : c.expectChange ? '拖曳後輸出沒有變化' : '拖曳不該改變輸出但改了',
+    });
+  }
 } finally {
   await browser.close();
   server.close();

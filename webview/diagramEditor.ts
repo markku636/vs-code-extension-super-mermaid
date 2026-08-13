@@ -179,10 +179,8 @@ function applyTypeUI(type: string): void {
   const hasDir = canvas && ['flowchart', 'graph', 'state', 'class', 'er', 'requirement'].includes(type);
   // 需求圖的連線意義由「關係種類」決定(右鍵切換),沒有線型 / 箭頭可調。
   const req = type === 'requirement';
-  // 象限圖沒有連線,而且點的位置就是資料 → 自動排版會竄改數值,「連線 / 整理」都不給。
+  // 象限圖的點位置就是資料 → 自動排版會竄改數值,不給「整理」。
   const quadrant = type === 'quadrant';
-  // 看板也沒有連線(卡片在哪一欄由位置決定),但「整理」有用:把卡片重新對齊貼齊。
-  const kanban = type === 'kanban' || type === 'journey';
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
@@ -191,7 +189,9 @@ function applyTypeUI(type: string): void {
   // 建立工具:sequence 與 timeline 都不用外形/連線(timeline 用左側表單)。
   rebuildShapeButtons(!seq && !timeline ? caps : null);
   show(byId('shape-group'), !seq && !timeline);
-  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline && !quadrant && !kanban);
+  // 有沒有連線這回事由 adapter 能力決定(而不是在這裡列圖種名單)。
+  const hasEdges = caps?.supportsEdges !== false;
+  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline && hasEdges);
   show(document.querySelector('[data-tool="select"]'), canvas);
   show(document.querySelector('[data-tool="pan"]'), canvas);
   show(document.querySelector('.tlabel'), !seq && !timeline);
@@ -202,7 +202,7 @@ function applyTypeUI(type: string): void {
   const lineKinds = caps?.lineKinds ?? [];
   const arrowHeads = caps?.arrowHeads ?? [];
   // C4 的關係也只有 Rel / BiRel 與方向變體,不吃線型 / 箭頭。
-  const edgeOk = canvas && !seq && !req && !quadrant && !kanban && type !== 'c4' && caps !== null;
+  const edgeOk = canvas && !seq && !req && hasEdges && type !== 'c4' && caps !== null;
   const showLine = edgeOk && lineKinds.length > 1;
   const showArrow = edgeOk && arrowHeads.length > 1;
   show(byId('edge-style'), showLine || showArrow);
