@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.1 — the chart types read better
+
+- **pie**: the slice percentage was being drawn twice, a few pixels apart, so the name and the
+  percentage overlapped. One label per slice now — `name / value · share%` — on a small card that
+  hugs its text.
+- **sankey**: link width was compressed so hard that a flow of 30 and a flow of 45 looked the same,
+  which is the one thing a sankey exists to show. Width is now proportional to the largest flow in
+  the chart, and each link takes the colour of the node it flows out of.
+- **xychart**: axis titles were parsed and never drawn. Both are drawn now, and a CJK y-axis title
+  stacks upright instead of lying on its side.
+
 ## 0.14.0 — gitGraph closes the set: every Mermaid diagram type is drawable
 
 - **New — gitGraph**: a commit's parents are never written in the source; they come from the order of
