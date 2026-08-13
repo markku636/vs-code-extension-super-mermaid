@@ -132,6 +132,15 @@ const CASES = [
     expect: ['xyPoint'],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'architecture',
+    source:
+      'architecture-beta\n    group api(cloud)[API 區]\n    service db(database)[資料庫] in api\n' +
+      '    service server(server)[伺服器] in api\n    service disk(disk)[儲存] in api\n' +
+      '    db:L -- R:server\n    disk:T -- B:server\n',
+    expect: ['archNode'],
+    forbid: ['diamond', 'classBox', 'entity'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

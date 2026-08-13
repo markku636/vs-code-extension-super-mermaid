@@ -79,6 +79,13 @@ const CASES = [
       '    bar [30, 55, 80]\n    line [30, 55, 80]\n',
     edge: false,
   },
+  {
+    type: 'architecture',
+    source:
+      'architecture-beta\n    group api(cloud)[API]\n    service db(database)[資料庫] in api\n' +
+      '    service server(server)[伺服器] in api\n    db:L -- R:server\n',
+    edge: true,
+  },
 ];
 
 // ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
@@ -184,6 +191,7 @@ editor.registerJourneyAdapter();
 editor.registerGanttAdapter();
 editor.registerPieAdapter();
 editor.registerXychartAdapter();
+editor.registerArchitectureAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;
@@ -252,7 +260,14 @@ try {
         }
         out.push({ type: c.type, shapes: (caps?.shapes ?? []).length, text, parseError });
       } catch (err) {
-        out.push({ type: c.type, fatal: String(err && err.message ? err.message : err) });
+        // 連文字都一起帶回來:例外多半就是序列化出了 mermaid 不吃的東西,看不到文字很難查。
+        let text = '';
+        try {
+          text = h.toMermaid();
+        } catch {
+          /* ignore */
+        }
+        out.push({ type: c.type, text, fatal: String(err && err.message ? err.message : err) });
       } finally {
         h.destroy();
       }

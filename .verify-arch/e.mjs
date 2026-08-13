@@ -1,0 +1,1 @@
+import mermaid from 'mermaid';mermaid.initialize({startOnLoad:false});window.__m=mermaid;window.__r=1;
