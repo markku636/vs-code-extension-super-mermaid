@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.2 — cards, bars and people
+
+- Kanban cards, journey cards and gantt bars showed a small torn notch at each corner: a hand-drawn
+  rectangle was being painted underneath the card's own box. Gone.
+- A gantt task name is written inside its bar when it fits, instead of hanging off the right edge
+  into the next bar along.
+- A C4 `Person` drew its head in the same colour as the box beneath it, which read as an empty ring.
+  It's a filled head and shoulders now.
+
 ## 0.14.1 — the chart types read better
 
 - **pie**: the slice percentage was being drawn twice, a few pixels apart, so the name and the
