@@ -101,6 +101,14 @@ const CASES = [
     expect: ['sankeyNode'],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'journey',
+    source:
+      'journey\n  title 我的一天\n  section 早上\n    起床: 3: 我\n    通勤: 2: 我, 同事\n' +
+      '  section 下午\n    寫程式: 5: 我\n    開會: 1: 我, 主管\n',
+    expect: ['journeyTask'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

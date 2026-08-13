@@ -12,6 +12,7 @@ import {
   registerC4Adapter,
   registerKanbanAdapter,
   registerQuadrantAdapter,
+  registerJourneyAdapter,
   registerSankeyAdapter,
   registerRequirementAdapter,
   registerSequenceAdapter,
@@ -36,6 +37,7 @@ registerQuadrantAdapter();
 registerC4Adapter();
 registerKanbanAdapter();
 registerSankeyAdapter();
+registerJourneyAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
@@ -180,7 +182,7 @@ function applyTypeUI(type: string): void {
   // 象限圖沒有連線,而且點的位置就是資料 → 自動排版會竄改數值,「連線 / 整理」都不給。
   const quadrant = type === 'quadrant';
   // 看板也沒有連線(卡片在哪一欄由位置決定),但「整理」有用:把卡片重新對齊貼齊。
-  const kanban = type === 'kanban';
+  const kanban = type === 'kanban' || type === 'journey';
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
