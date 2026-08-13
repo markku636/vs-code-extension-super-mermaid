@@ -38,6 +38,13 @@ const CASES = [
     edge: true,
   },
   {
+    type: 'c4',
+    source:
+      'C4Context\n  title 系統情境圖\n  Person(customer, "顧客", "使用網站的人")\n' +
+      '  System(shop, "購物系統", "線上商店")\n  Rel(customer, shop, "瀏覽與下單", "HTTPS")\n',
+    edge: true,
+  },
+  {
     type: 'quadrant',
     source:
       'quadrantChart\n  title 專案評估\n  x-axis 低成本 --> 高成本\n  y-axis 低效益 --> 高效益\n' +
@@ -90,6 +97,7 @@ editor.registerMindmapAdapter();
 editor.registerSequenceAdapter();
 editor.registerRequirementAdapter();
 editor.registerQuadrantAdapter();
+editor.registerC4Adapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;

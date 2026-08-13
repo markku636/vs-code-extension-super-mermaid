@@ -68,6 +68,16 @@ const CASES = [
     forbid: ['diamond', 'cylinder', 'classBox'],
   },
   {
+    type: 'c4',
+    source:
+      'C4Context\n  title 系統情境圖\n  Person(customer, "顧客", "使用網站的人")\n' +
+      '  System_Boundary(sb, "內部系統") {\n    System(shop, "購物系統", "線上商店")\n  }\n' +
+      '  System_Ext(bank, "金流", "外部支付")\n  Rel(customer, shop, "瀏覽與下單", "HTTPS")\n' +
+      '  Rel(shop, bank, "請款", "API")\n',
+    expect: ['c4Person', 'c4Box', 'c4Db', 'c4Queue'],
+    forbid: ['diamond', 'classBox', 'entity'],
+  },
+  {
     type: 'quadrant',
     source:
       'quadrantChart\n  title 專案評估\n  x-axis 低成本 --> 高成本\n  y-axis 低效益 --> 高效益\n' +

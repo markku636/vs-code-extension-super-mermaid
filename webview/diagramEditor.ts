@@ -9,6 +9,7 @@ import {
   registerErAdapter,
   registerClassAdapter,
   registerMindmapAdapter,
+  registerC4Adapter,
   registerQuadrantAdapter,
   registerRequirementAdapter,
   registerSequenceAdapter,
@@ -30,6 +31,7 @@ registerMindmapAdapter();
 registerSequenceAdapter();
 registerRequirementAdapter();
 registerQuadrantAdapter();
+registerC4Adapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
@@ -191,7 +193,8 @@ function applyTypeUI(type: string): void {
 
   const lineKinds = caps?.lineKinds ?? [];
   const arrowHeads = caps?.arrowHeads ?? [];
-  const edgeOk = canvas && !seq && !req && !quadrant && caps !== null;
+  // C4 的關係也只有 Rel / BiRel 與方向變體,不吃線型 / 箭頭。
+  const edgeOk = canvas && !seq && !req && !quadrant && type !== 'c4' && caps !== null;
   const showLine = edgeOk && lineKinds.length > 1;
   const showArrow = edgeOk && arrowHeads.length > 1;
   show(byId('edge-style'), showLine || showArrow);
