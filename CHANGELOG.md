@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.2 — mindmap branches curve
+
+- Mindmap branches are drawn as smooth curves instead of straight lines, so they read as branches
+  growing out of the parent rather than as flowchart arrows.
+
 ## 0.15.1 — the grid-shaped types get their grid back
 
 - **block**: the `columns N` grid is drawn as a faint backdrop, so you can see which cell you're
