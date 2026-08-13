@@ -64,6 +64,13 @@ const CASES = [
     source: 'journey\n  title 我的一天\n  section 早上\n    起床: 3: 我\n    通勤: 2: 我, 同事\n  section 下午\n    寫程式: 5: 我\n',
     edge: false,
   },
+  {
+    type: 'gantt',
+    source:
+      'gantt\n  title 專案\n  dateFormat YYYY-MM-DD\n  section 設計\n' +
+      '    需求 :a1, 2026-01-01, 7d\n    UI :after a1, 5d\n  section 開發\n    後端 :b1, 2026-01-10, 2026-01-25\n',
+    edge: false,
+  },
 ];
 
 // ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
@@ -89,6 +96,14 @@ const DRAG_CASES = [
     source:
       'quadrantChart\n  x-axis 低 --> 高\n  y-axis 低 --> 高\n  quadrant-1 一\n  quadrant-2 二\n' +
       '  quadrant-3 三\n  quadrant-4 四\n  A: [0.3, 0.6]\n',
+    dx: 120,
+    dy: 0,
+    expectChange: true,
+  },
+  {
+    type: 'gantt 長條改日期',
+    source:
+      'gantt\n  title 專案\n  dateFormat YYYY-MM-DD\n  section 設計\n    需求 :a1, 2026-01-01, 7d\n    UI :b1, 2026-01-10, 5d\n',
     dx: 120,
     dy: 0,
     expectChange: true,
@@ -150,6 +165,7 @@ editor.registerC4Adapter();
 editor.registerKanbanAdapter();
 editor.registerSankeyAdapter();
 editor.registerJourneyAdapter();
+editor.registerGanttAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;

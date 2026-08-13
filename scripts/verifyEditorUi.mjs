@@ -109,6 +109,15 @@ const CASES = [
     expect: ['journeyTask'],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'gantt',
+    source:
+      'gantt\n  title 專案時程\n  dateFormat YYYY-MM-DD\n  section 設計\n' +
+      '    需求訪談 :done, a1, 2026-01-01, 7d\n    介面設計 :active, a2, after a1, 5d\n' +
+      '  section 開發\n    後端 :b1, 2026-01-10, 2026-01-25\n    上線 :milestone, m1, 2026-01-26, 0d\n',
+    expect: ['ganttBar'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
