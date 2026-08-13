@@ -10,7 +10,9 @@ import {
   registerClassAdapter,
   registerMindmapAdapter,
   registerSequenceAdapter,
+  shapeMeta,
   type ArrowHead,
+  type DiagramCapabilities,
   type DiagramEditorHandle,
   type LineKind,
   type NodeShape,
@@ -111,6 +113,48 @@ function populateDiagramSelect(blocks?: Array<{ index: number; label: string }>,
   sel.value = String(activeIndex ?? 0);
 }
 
+/**
+ * 依目前圖種的 adapter 能力重建「新增外形」按鈕列 + 「更多外形」下拉。
+ *
+ * 這些按鈕以前是寫死在 HTML 裡的七顆 flowchart 外形,於是在類別圖 / ER 圖 / 狀態圖上
+ * 按下去會建出該圖種序列化不出來的外形。改成 quickShapes / 其餘進下拉,兩邊(React 工具列
+ * 與本 webview)共用 core 的 shapeMeta 字形表。
+ */
+function rebuildShapeButtons(caps: DiagramCapabilities | null): void {
+  const group = byId('shape-group');
+  const sel = byId<HTMLSelectElement>('shape-select');
+  const all = caps?.shapes ?? [];
+  const quick = caps?.quickShapes ?? all;
+  const more = all.filter((s) => !quick.includes(s));
+  if (group) {
+    group.textContent = '';
+    for (const shape of quick) {
+      const m = shapeMeta(shape);
+      const btn = document.createElement('button');
+      btn.className = 'tbtn';
+      btn.setAttribute('data-shape', shape);
+      btn.title = `新增${m.label}節點`;
+      btn.textContent = `${m.glyph} ${m.label}`;
+      group.appendChild(btn);
+    }
+  }
+  if (sel) {
+    sel.textContent = '';
+    const head = document.createElement('option');
+    head.value = '';
+    head.textContent = '＋ 更多外形…';
+    sel.appendChild(head);
+    for (const shape of more) {
+      const m = shapeMeta(shape);
+      const opt = document.createElement('option');
+      opt.value = shape;
+      opt.textContent = `${m.glyph} ${m.label}`;
+      sel.appendChild(opt);
+    }
+    sel.dataset.hasMore = more.length ? '1' : '';
+  }
+}
+
 /** 依圖種顯示/隱藏建立控制項:sequence 用右鍵新增參與者/訊息(隱藏外形與連線);
  *  只有 flowchart/state/class/er 有流程方向;timeline 走表單,隱藏所有畫布工具。 */
 function applyTypeUI(type: string): void {
@@ -121,18 +165,19 @@ function applyTypeUI(type: string): void {
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
+  // 連線樣式(線型 / 箭頭):依目前圖種能力顯示;sequence 走右鍵、timeline 無畫布。
+  const caps = handle?.getCapabilities() ?? null;
   // 建立工具:sequence 與 timeline 都不用外形/連線(timeline 用左側表單)。
-  document.querySelectorAll('[data-shape]').forEach((el) => show(el, !seq && !timeline));
+  rebuildShapeButtons(!seq && !timeline ? caps : null);
+  show(byId('shape-group'), !seq && !timeline);
   show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline);
   show(document.querySelector('[data-tool="select"]'), canvas);
   show(document.querySelector('[data-tool="pan"]'), canvas);
   show(document.querySelector('.tlabel'), !seq && !timeline);
   show(byId('dir-select'), hasDir);
-  // 「更多外形」下拉:與一鍵外形同進退。
-  show(byId('shape-select'), !seq && !timeline);
+  // 「更多外形」下拉:只有真的還有其他外形時才出現(class / er 只有一種,出現只會是顆空殼)。
+  show(byId('shape-select'), !seq && !timeline && Boolean(byId<HTMLSelectElement>('shape-select')?.dataset.hasMore));
 
-  // 連線樣式(線型 / 箭頭):依目前圖種能力顯示;sequence 走右鍵、timeline 無畫布。
-  const caps = handle?.getCapabilities() ?? null;
   const lineKinds = caps?.lineKinds ?? [];
   const arrowHeads = caps?.arrowHeads ?? [];
   const edgeOk = canvas && !seq && caps !== null;
@@ -170,8 +215,10 @@ function wireToolbar(h: DiagramEditorHandle): void {
     el.addEventListener('click', () => h.setTool(el.getAttribute('data-tool') as Tool));
   });
   // 常用外形按鈕:點一下直接在畫布中央放節點(免下拉選單、免再點畫布)。
-  document.querySelectorAll('[data-shape]').forEach((el) => {
-    el.addEventListener('click', () => h.addNode(el.getAttribute('data-shape') as NodeShape));
+  // 用事件委派 —— 按鈕會隨圖種重建(rebuildShapeButtons),逐顆綁定會在重建後全部失效。
+  byId('shape-group')?.addEventListener('click', (e) => {
+    const btn = (e.target as Element).closest('[data-shape]');
+    if (btn) h.addNode(btn.getAttribute('data-shape') as NodeShape);
   });
   // 「更多外形」下拉:選一個就新增該外形,再重設回提示。
   byId('shape-select')?.addEventListener('change', (e) => {

@@ -200,7 +200,8 @@
     "watch": "node esbuild.mjs --watch",
     "type:check": "tsc --noEmit",
     "sync:lib": "node scripts/syncLib.mjs --build",
-    "verify:roundtrip": "node scripts/verifyRoundtrip.mjs"
+    "verify:roundtrip": "node scripts/verifyRoundtrip.mjs",
+    "verify:ui": "node scripts/verifyEditorUi.mjs"
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",
