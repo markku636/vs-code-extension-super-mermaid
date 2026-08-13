@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.4 — the UI check now measures whether text on a node is readable
+
+Twice now, text drawn on a node has taken the theme's colour and disappeared on a dark canvas
+(0.13.0 for C4 / requirement / pie, 0.15.3 for gantt) — node fills come from a fixed light palette
+and never follow the theme. Both times it was caught by a human looking at a screenshot.
+
+`verify:ui` now measures it: every text element **drawn inside a node's own fill** is checked for
+contrast against that fill, in both themes. Text placed outside the node is exempt, since the canvas
+is behind it. Confirmed to fail on the 0.15.3 bug (contrast 1.03) and pass once fixed.
+
 ## 0.15.3 — a gantt `done` bar's label was invisible in dark mode
 
 Moving the label inside the bar (0.15.0) also gave it the theme's text colour, and a `done` bar is

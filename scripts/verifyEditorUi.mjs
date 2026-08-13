@@ -197,6 +197,83 @@ function findChrome() {
   return found;
 }
 
+/**
+ * 節點內文字的對比檢查(在頁面裡跑,必須自給自足、不能引用外部變數)。
+ *
+ * 為什麼要有這條:節點的底色來自一組**固定的淺色盤**,不跟主題翻面。所以寫在節點上的字
+ * 一旦用了「主題墨色」,深色模式就會變成淺字寫在淺底上 —— 字整個消失。這個錯誤在 0.19.1
+ * 修過一次(C4 / 需求 / 圓餅),0.23.3 又因為甘特長條新增的字重演一次。兩次都是靠人眼看
+ * 截圖才發現的,所以改成量出來:凡是**畫在節點框內**的文字,與該節點底色的對比低於門檻就報錯。
+ *
+ * 門檻取 2.0:足以抓到「淺灰寫在淺粉彩上」(約 1.2)與「白寫在白上」(1.0),
+ * 又不會誤殺刻意壓低透明度的次要說明文字(深墨 0.65 透明度仍有 5 以上)。
+ */
+function checkNodeTextContrast() {
+  const rgb = (s) => {
+    const m = /rgba?\(([^)]+)\)/.exec(s || '');
+    if (!m) return null;
+    const p = m[1].split(',').map((v) => parseFloat(v));
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+  };
+  const lum = (c) => {
+    const f = (v) => {
+      const x = v / 255;
+      return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  };
+  const over = (fg, bg, alpha) => ({
+    r: fg.r * alpha + bg.r * (1 - alpha),
+    g: fg.g * alpha + bg.g * (1 - alpha),
+    b: fg.b * alpha + bg.b * (1 - alpha),
+  });
+  const ratio = (a, b) => {
+    const la = lum(a);
+    const lb = lum(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  };
+  const inside = (a, b) =>
+    a.left >= b.left - 1 && a.right <= b.right + 1 && a.top >= b.top - 1 && a.bottom <= b.bottom + 1;
+
+  const out = [];
+  for (const g of document.querySelectorAll('#app [data-node-id]')) {
+    // 節點自己畫出來的底:取第一個有實色填充、且大小接近整個節點的圖形。
+    const box = g.getBoundingClientRect();
+    let fill = null;
+    let fillRect = null;
+    for (const el of g.querySelectorAll('rect,circle,ellipse,path,polygon')) {
+      const f = getComputedStyle(el).fill;
+      const c = rgb(f);
+      if (!c || c.a === 0) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < box.width * 0.5 || r.height < box.height * 0.5) continue;
+      fill = c;
+      fillRect = r;
+      break;
+    }
+    if (!fill || !fillRect) continue;
+    for (const t of g.querySelectorAll('text,foreignObject div')) {
+      const txt = (t.textContent || '').trim();
+      if (!txt || t.children.length > 0) continue;
+      const r = t.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      // 只檢查真的疊在節點底色上的字;掛在節點外面的(甘特外掛標籤、架構圖服務名、
+      // git 提交 id)背後是畫布,不適用這條規則。
+      if (!inside(r, fillRect)) continue;
+      const cs = getComputedStyle(t);
+      const fg = rgb(cs.color);
+      if (!fg) continue;
+      const alpha = fg.a * parseFloat(cs.opacity || '1');
+      const eff = over(fg, fill, alpha);
+      const cr = ratio(eff, fill);
+      if (cr < 2.0) {
+        out.push({ id: g.getAttribute('data-node-id'), text: txt.slice(0, 12), ratio: Math.round(cr * 100) / 100 });
+      }
+    }
+  }
+  return out;
+}
+
 /** 用同一份 EDITOR_BODY_HTML 組出頁面;acquireVsCodeApi 用假的頂替(webview 才有)。 */
 async function buildPage() {
   mkdirSync(WORK, { recursive: true });
@@ -276,7 +353,16 @@ try {
     const offered = [...ui.shapes, ...(ui.moreVisible ? ui.more : [])];
     const missing = c.expect.filter((s) => !offered.includes(s));
     const leaked = c.forbid.filter((s) => offered.includes(s));
-    results.push({ type: c.type, offered, missing, leaked, nodes: ui.nodes, dirVisible: ui.dirVisible });
+    const faint = await page.evaluate(checkNodeTextContrast);
+    results.push({
+      type: c.type,
+      offered,
+      missing,
+      leaked,
+      nodes: ui.nodes,
+      dirVisible: ui.dirVisible,
+      faint,
+    });
     if (shotDir) {
       await page.screenshot({ path: join(shotDir, `${c.type}.png`) });
     }
@@ -293,6 +379,11 @@ for (const r of results) {
   if (r.missing.length) problems.push(`少了外形 ${r.missing.join(',')}`);
   if (r.leaked.length) problems.push(`跑出不該有的外形 ${r.leaked.join(',')}`);
   if (r.nodes === 0) problems.push('畫布上沒有任何節點');
+  if (r.faint?.length) {
+    problems.push(
+      `節點上的字看不見(對比 ${r.faint.map((f) => `${f.text}=${f.ratio}`).join(' ')})`,
+    );
+  }
   if (problems.length) failed += 1;
   console.log(
     `[${problems.length ? 'FAIL' : ' OK '}] ${r.type.padEnd(10)} 外形=${r.offered.join(',') || '(無)'} 節點=${r.nodes}` +
