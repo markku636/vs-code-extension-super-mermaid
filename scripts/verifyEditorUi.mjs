@@ -68,6 +68,14 @@ const CASES = [
     forbid: ['diamond', 'cylinder', 'classBox'],
   },
   {
+    type: 'kanban',
+    source:
+      'kanban\n  todo[待辦]\n    [設計稿]\n    [寫規格]\n  doing[進行中]\n' +
+      '    slice[切版]@{ assigned: \'mark\', priority: \'High\' }\n  done[完成]\n    [需求訪談]\n',
+    expect: ['kanbanCard'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
+  {
     type: 'c4',
     source:
       'C4Context\n  title 系統情境圖\n  Person(customer, "顧客", "使用網站的人")\n' +

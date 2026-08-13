@@ -10,6 +10,7 @@ import {
   registerClassAdapter,
   registerMindmapAdapter,
   registerC4Adapter,
+  registerKanbanAdapter,
   registerQuadrantAdapter,
   registerRequirementAdapter,
   registerSequenceAdapter,
@@ -32,6 +33,7 @@ registerSequenceAdapter();
 registerRequirementAdapter();
 registerQuadrantAdapter();
 registerC4Adapter();
+registerKanbanAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
@@ -175,6 +177,8 @@ function applyTypeUI(type: string): void {
   const req = type === 'requirement';
   // 象限圖沒有連線,而且點的位置就是資料 → 自動排版會竄改數值,「連線 / 整理」都不給。
   const quadrant = type === 'quadrant';
+  // 看板也沒有連線(卡片在哪一欄由位置決定),但「整理」有用:把卡片重新對齊貼齊。
+  const kanban = type === 'kanban';
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
@@ -183,7 +187,7 @@ function applyTypeUI(type: string): void {
   // 建立工具:sequence 與 timeline 都不用外形/連線(timeline 用左側表單)。
   rebuildShapeButtons(!seq && !timeline ? caps : null);
   show(byId('shape-group'), !seq && !timeline);
-  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline && !quadrant);
+  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline && !quadrant && !kanban);
   show(document.querySelector('[data-tool="select"]'), canvas);
   show(document.querySelector('[data-tool="pan"]'), canvas);
   show(document.querySelector('.tlabel'), !seq && !timeline);
@@ -194,7 +198,7 @@ function applyTypeUI(type: string): void {
   const lineKinds = caps?.lineKinds ?? [];
   const arrowHeads = caps?.arrowHeads ?? [];
   // C4 的關係也只有 Rel / BiRel 與方向變體,不吃線型 / 箭頭。
-  const edgeOk = canvas && !seq && !req && !quadrant && type !== 'c4' && caps !== null;
+  const edgeOk = canvas && !seq && !req && !quadrant && !kanban && type !== 'c4' && caps !== null;
   const showLine = edgeOk && lineKinds.length > 1;
   const showArrow = edgeOk && arrowHeads.length > 1;
   show(byId('edge-style'), showLine || showArrow);

@@ -38,6 +38,12 @@ const CASES = [
     edge: true,
   },
   {
+    type: 'kanban',
+    source:
+      'kanban\n  todo[待辦]\n    [設計稿]\n  doing[進行中]\n    slice[切版]@{ assigned: \'mark\', priority: \'High\' }\n  done[完成]\n    [需求訪談]\n',
+    edge: false,
+  },
+  {
     type: 'c4',
     source:
       'C4Context\n  title 系統情境圖\n  Person(customer, "顧客", "使用網站的人")\n' +
@@ -98,6 +104,7 @@ editor.registerSequenceAdapter();
 editor.registerRequirementAdapter();
 editor.registerQuadrantAdapter();
 editor.registerC4Adapter();
+editor.registerKanbanAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;
