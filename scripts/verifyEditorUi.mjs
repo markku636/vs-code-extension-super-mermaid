@@ -151,6 +151,12 @@ const CASES = [
     expect: ['rectangle', 'circle', 'diamond'],
     forbid: ['classBox', 'entity', 'state'],
   },
+  {
+    type: 'packet',
+    source: 'packet-beta\ntitle TCP 封包\n0-15: "來源埠"\n16-31: "目的埠"\n32-63: "序號"\n64-95: "確認號"\n',
+    expect: ['packetField'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

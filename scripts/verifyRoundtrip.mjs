@@ -91,6 +91,11 @@ const CASES = [
     source: 'block-beta\n  columns 3\n  前端["前端"] 後端["後端"] db[("資料庫")]\n  前端 --> 後端\n',
     edge: false,
   },
+  {
+    type: 'packet',
+    source: 'packet-beta\ntitle TCP 封包\n0-15: "來源埠"\n16-31: "目的埠"\n32-63: "序號"\n',
+    edge: false,
+  },
 ];
 
 // ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
@@ -198,6 +203,7 @@ editor.registerPieAdapter();
 editor.registerXychartAdapter();
 editor.registerArchitectureAdapter();
 editor.registerBlockAdapter();
+editor.registerPacketAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;
