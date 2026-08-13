@@ -50,6 +50,22 @@ body {
   opacity: 0.4;
   cursor: default;
 }
+/* 外形按鈕:左邊一個自畫的迷你外形圖示 + 名稱(字形縮圖在多數系統字型下畫不出來)。 */
+.tbtn.shape-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tbtn.shape-btn .rsm-shape-icon {
+  display: block;
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+#shape-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
 #shape-select {
   border: 1px solid var(--vscode-panel-border, #3a3a40);
 }

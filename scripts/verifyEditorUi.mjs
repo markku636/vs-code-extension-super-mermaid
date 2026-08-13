@@ -142,6 +142,17 @@ try {
     );
     // applyTypeUI 在 loadSource 的 finally 才跑,等工具列安定。
     await new Promise((ok) => setTimeout(ok, 700));
+    if (process.argv.includes('--dump-scene')) {
+      const scene = await page.evaluate(() => {
+        const svg = document.querySelector('#app .rsm-editor-svg');
+        const boxes = [...(svg?.querySelectorAll('[data-node-id]') ?? [])].map((g) => {
+          const b = g.getBBox ? g.getBBox() : { width: 0, height: 0 };
+          return { id: g.getAttribute('data-node-id'), w: Math.round(b.width), h: Math.round(b.height) };
+        });
+        return boxes;
+      });
+      console.log(`  scene[${c.type}]`, JSON.stringify(scene));
+    }
     const ui = await page.evaluate(() => ({
       shapes: [...document.querySelectorAll('#shape-group [data-shape]')]
         .filter((el) => el.offsetParent !== null)

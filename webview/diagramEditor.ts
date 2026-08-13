@@ -10,6 +10,7 @@ import {
   registerClassAdapter,
   registerMindmapAdapter,
   registerSequenceAdapter,
+  shapeIconMarkup,
   shapeMeta,
   type ArrowHead,
   type DiagramCapabilities,
@@ -131,10 +132,12 @@ function rebuildShapeButtons(caps: DiagramCapabilities | null): void {
     for (const shape of quick) {
       const m = shapeMeta(shape);
       const btn = document.createElement('button');
-      btn.className = 'tbtn';
+      btn.className = 'tbtn shape-btn';
       btn.setAttribute('data-shape', shape);
       btn.title = `新增${m.label}節點`;
-      btn.textContent = `${m.glyph} ${m.label}`;
+      // 圖示是 core 產的常數 SVG(無使用者輸入);字形縮圖在多數系統字型下畫不出來。
+      btn.innerHTML = shapeIconMarkup(shape);
+      btn.appendChild(document.createTextNode(m.label));
       group.appendChild(btn);
     }
   }
