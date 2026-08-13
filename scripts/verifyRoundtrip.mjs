@@ -86,6 +86,11 @@ const CASES = [
       '    service server(server)[伺服器] in api\n    db:L -- R:server\n',
     edge: true,
   },
+  {
+    type: 'block',
+    source: 'block-beta\n  columns 3\n  前端["前端"] 後端["後端"] db[("資料庫")]\n  前端 --> 後端\n',
+    edge: false,
+  },
 ];
 
 // ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
@@ -192,6 +197,7 @@ editor.registerGanttAdapter();
 editor.registerPieAdapter();
 editor.registerXychartAdapter();
 editor.registerArchitectureAdapter();
+editor.registerBlockAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;

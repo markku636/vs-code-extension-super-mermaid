@@ -143,6 +143,14 @@ const CASES = [
     expect: ['archNode'],
     forbid: ['diamond', 'classBox', 'entity'],
   },
+  {
+    type: 'block',
+    source:
+      'block-beta\n  columns 3\n  前端["前端"] 後端["後端"] db[("資料庫")]\n' +
+      '  快取(("快取")):2 佇列{"佇列"}\n  前端 --> 後端\n',
+    expect: ['rectangle', 'circle', 'diamond'],
+    forbid: ['classBox', 'entity', 'state'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

@@ -15,6 +15,7 @@ import {
   registerGanttAdapter,
   registerPieAdapter,
   registerArchitectureAdapter,
+  registerBlockAdapter,
   registerXychartAdapter,
   registerJourneyAdapter,
   registerSankeyAdapter,
@@ -46,6 +47,7 @@ registerGanttAdapter();
 registerPieAdapter();
 registerXychartAdapter();
 registerArchitectureAdapter();
+registerBlockAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
