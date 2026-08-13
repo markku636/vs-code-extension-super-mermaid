@@ -124,6 +124,14 @@ const CASES = [
     expect: ['pieSlice'],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'xychart',
+    source:
+      'xychart-beta\n    title "季度營收"\n    x-axis [Q1, Q2, Q3, Q4]\n    y-axis "萬元" 0 --> 100\n' +
+      '    bar [30, 55, 80, 62]\n    line [30, 55, 80, 62]\n',
+    expect: ['xyPoint'],
+    forbid: ['rectangle', 'diamond', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

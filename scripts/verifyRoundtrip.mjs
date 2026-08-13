@@ -72,6 +72,13 @@ const CASES = [
     edge: false,
   },
   { type: 'pie', source: 'pie showData title 語言\n    "TypeScript" : 55\n    "Python" : 30\n', edge: false },
+  {
+    type: 'xychart',
+    source:
+      'xychart-beta\n    title "營收"\n    x-axis [一月, 二月, 三月]\n    y-axis "萬元" 0 --> 100\n' +
+      '    bar [30, 55, 80]\n    line [30, 55, 80]\n',
+    edge: false,
+  },
 ];
 
 // ─── 拖曳劇本:把第一個節點往某方向拖,檢查輸出「該變 / 不該變」───────────────────────
@@ -107,6 +114,14 @@ const DRAG_CASES = [
       'gantt\n  title 專案\n  dateFormat YYYY-MM-DD\n  section 設計\n    需求 :a1, 2026-01-01, 7d\n    UI :b1, 2026-01-10, 5d\n',
     dx: 120,
     dy: 0,
+    expectChange: true,
+  },
+  {
+    type: 'xychart 點改數值',
+    source:
+      'xychart-beta\n    title "營收"\n    x-axis [一月, 二月, 三月]\n    y-axis "萬元" 0 --> 100\n    bar [30, 55, 80]\n',
+    dx: 0,
+    dy: -80,
     expectChange: true,
   },
   {
@@ -168,6 +183,7 @@ editor.registerSankeyAdapter();
 editor.registerJourneyAdapter();
 editor.registerGanttAdapter();
 editor.registerPieAdapter();
+editor.registerXychartAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;
