@@ -4,3 +4,4 @@ dist/
 outputs/
 .verify/
 .verify-ui/
+.verify-db/

@@ -31,6 +31,12 @@ const CASES = [
   { type: 'er', source: 'erDiagram\n  客戶 ||--o{ 訂單 : 下單\n', edge: true },
   { type: 'mindmap', source: 'mindmap\n  root((主題))\n    分支A\n', edge: false },
   { type: 'sequence', source: 'sequenceDiagram\n  使用者->>系統: 請求\n', edge: false },
+  {
+    type: 'requirement',
+    source:
+      'requirementDiagram\n  requirement login_req {\n    id: 1\n    text: Users must log in.\n    risk: medium\n    verifymethod: test\n  }\n',
+    edge: true,
+  },
 ];
 
 // ─── 靜態伺服器 ──────────────────────────────────────────────────────────────
@@ -75,6 +81,7 @@ editor.registerErAdapter();
 editor.registerClassAdapter();
 editor.registerMindmapAdapter();
 editor.registerSequenceAdapter();
+editor.registerRequirementAdapter();
 window.__editor = editor;
 window.__mermaid = mermaid;
 window.__ready = true;

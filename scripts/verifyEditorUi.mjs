@@ -57,6 +57,16 @@ const CASES = [
     expect: [],
     forbid: ['rectangle', 'diamond', 'classBox'],
   },
+  {
+    type: 'requirement',
+    source:
+      'requirementDiagram\n' +
+      '  requirement login_req {\n    id: 1\n    text: Users must be able to log in.\n    risk: medium\n    verifymethod: test\n  }\n' +
+      '  element auth_service {\n    type: service\n  }\n' +
+      '  auth_service - satisfies -> login_req\n',
+    expect: ['requirementBox', 'elementBox'],
+    forbid: ['diamond', 'cylinder', 'classBox'],
+  },
 ];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };

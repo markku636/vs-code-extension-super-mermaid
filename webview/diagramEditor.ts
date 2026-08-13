@@ -9,6 +9,7 @@ import {
   registerErAdapter,
   registerClassAdapter,
   registerMindmapAdapter,
+  registerRequirementAdapter,
   registerSequenceAdapter,
   shapeIconMarkup,
   shapeMeta,
@@ -26,6 +27,7 @@ registerErAdapter();
 registerClassAdapter();
 registerMindmapAdapter();
 registerSequenceAdapter();
+registerRequirementAdapter();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
@@ -164,7 +166,9 @@ function applyTypeUI(type: string): void {
   const seq = type === 'sequence';
   const timeline = type === 'timeline';
   const canvas = !timeline; // 畫布工具(選取/平移/縮放/整理/手繪)只在畫布圖種顯示
-  const hasDir = canvas && ['flowchart', 'graph', 'state', 'class', 'er'].includes(type);
+  const hasDir = canvas && ['flowchart', 'graph', 'state', 'class', 'er', 'requirement'].includes(type);
+  // 需求圖的連線意義由「關係種類」決定(右鍵切換),沒有線型 / 箭頭可調。
+  const req = type === 'requirement';
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
@@ -183,7 +187,7 @@ function applyTypeUI(type: string): void {
 
   const lineKinds = caps?.lineKinds ?? [];
   const arrowHeads = caps?.arrowHeads ?? [];
-  const edgeOk = canvas && !seq && caps !== null;
+  const edgeOk = canvas && !seq && !req && caps !== null;
   const showLine = edgeOk && lineKinds.length > 1;
   const showArrow = edgeOk && arrowHeads.length > 1;
   show(byId('edge-style'), showLine || showArrow);
