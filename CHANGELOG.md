@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.1 — the grid-shaped types get their grid back
+
+- **block**: the `columns N` grid is drawn as a faint backdrop, so you can see which cell you're
+  dragging a block into — previously there were no cell boundaries on the canvas at all.
+- **packet**: a 96-bit packet was so long and thin that 「符合畫面」 shrank it to half size. It now fits
+  at around 90%, with readable field names.
+- **quadrant**: CJK y-axis labels stack upright instead of lying on their side.
+
 ## 0.15.0 — architecture diagrams get real icons
 
 - **architecture**: connections stopped a visible distance short of the boxes they pointed at — the
