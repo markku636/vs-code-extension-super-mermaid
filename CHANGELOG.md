@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.0 — architecture diagrams get real icons
+
+- **architecture**: connections stopped a visible distance short of the boxes they pointed at — the
+  drawn box was much smaller than the node the line attached to. The box is the node now.
+- **architecture**: `cloud` / `database` / `disk` / `server` / `internet` are drawn as real icons
+  instead of the first letter of the icon name (which made `database` and `disk` both a large "D").
+  Still no icon library in the bundle — the glyphs are hand-drawn paths.
+- **Fix**: 「符合畫面」 cropped group and lane names off the top of the canvas, because it measured the
+  nodes but not the boxes drawn around them.
+
 ## 0.14.2 — cards, bars and people
 
 - Kanban cards, journey cards and gantt bars showed a small torn notch at each corner: a hand-drawn
