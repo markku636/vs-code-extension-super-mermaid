@@ -198,7 +198,9 @@
     "gen:markdown-image": "node scripts/genMarkdownDocImage.mjs",
     "build": "tsc --noEmit && node scripts/genSnippets.mjs && node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
-    "type:check": "tsc --noEmit"
+    "type:check": "tsc --noEmit",
+    "sync:lib": "node scripts/syncLib.mjs --build",
+    "verify:roundtrip": "node scripts/verifyRoundtrip.mjs"
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",
