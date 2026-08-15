@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.18.0 — sequence messages can be selected, deleted, and found
+
+Clicking a message on a sequence diagram did nothing visible, and Delete had nothing to act on:
+messages and notes are not nodes, so they never entered the selection at all. Meanwhile every action
+for building a sequence diagram lived in the context menu, which made this the emptiest toolbar of
+any diagram type — you had to know to right-click.
+
+- **New**: click a message or a note to select it — you get a selection box — and press Delete to
+  remove it.
+- **New**: the toolbar has **＋參與者 / ＋訊息 / ＋筆記**, and, when a message is selected,
+  **✎ 文字** and **⇢ 實／虛**. All of them already existed behind the right-click menu.
+- **New**: hovering a message outlines it, and the cursor is `ns-resize` instead of a text caret, so
+  it looks like something you can pick up. The line that shows where a dragged message will land is
+  now solid with end caps rather than a faint dashed guide.
+- `verify:ui` gained a click-then-Delete case alongside the drag cases. Confirmed to fail on the old
+  engine: no selection box, and the message count unchanged after Delete.
+
+## 0.17.0 — the canvas answers you again while you drag
+
+Rendering a sequence diagram cleared the overlay layer, and that layer belongs to the drawing
+engine's `Overlay` — its groups are built once and held by reference, so clearing them took them out
+of the document permanently. Every selection box, insertion line, snap guide, resize handle and
+rubber band after that was drawn where nobody could see it. The drags themselves still applied, so
+the source changed while the canvas sat there looking frozen. It was not confined to the diagram
+that caused it: once a sequence had rendered, switching to a flowchart cleared the layer a second
+time and the feedback stayed invisible for the rest of the session.
+
+- **New**: in a sequence diagram, drag a message or a note up and down to change where it sits in
+  time. Pressing one used to do nothing at all — not even pan the canvas — because the press was
+  consumed by the double-click-to-edit path. An insertion line now spans the lifelines at the landing
+  position while you drag. Dragging a `loop` / `alt` / `opt` header carries the whole block with it.
+- **New**: dragging a *lifeline* reorders its participant. Participants were matched by hit-testing
+  the DOM, and a lifeline does not take pointer events, so dragging one panned the canvas instead.
+  The space between lifelines still pans.
+- `verify:ui` now drives real mouse drags and asserts two separate things per gesture: that the state
+  actually changed, and that the overlay drew something mid-gesture. A test that only checked the
+  first would have passed straight through this bug. Confirmed to fail on the three affected cases
+  with the old engine, including a flowchart drag performed after a sequence has been opened.
+
 ## 0.16.0 — you can see where a drag will land
 
 - **New**: dragging a card, a commit or a block now outlines the column / lane / cell it will drop

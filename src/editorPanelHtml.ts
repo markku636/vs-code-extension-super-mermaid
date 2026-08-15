@@ -14,7 +14,19 @@ export const EDITOR_BODY_HTML = `  <div id="toolbar">
     <!-- 外形按鈕由 webview 依目前圖種的 adapter 能力生成(類別圖不該看到「菱形 / 圓柱」)。 -->
     <span id="shape-group"></span>
     <select id="shape-select" class="tbtn" title="更多外形（新增節點）"></select>
-    <span id="seq-hint" class="tlabel" hidden>右鍵空白處：新增參與者 / 訊息</span>
+    <!-- sequence 的建立動作。以前只在右鍵選單裡,不右鍵就發現不了,序列圖因此是工具列最空的圖種。 -->
+    <span id="seq-group" hidden>
+      <button class="tbtn" id="btn-seq-participant" title="新增一位參與者（新增後直接改名）">＋ 參與者</button>
+      <button class="tbtn" id="btn-seq-message" title="附加一則訊息（新增後直接編輯文字）">＋ 訊息</button>
+      <button class="tbtn" id="btn-seq-note" title="附加一則筆記（新增後直接編輯文字）">＋ 筆記</button>
+    </span>
+    <!-- 作用在「選到的那則訊息」上,沒選就整組隱藏 —— 按不動的按鈕比沒有更擾人。 -->
+    <span id="seq-sel-group" hidden>
+      <span class="spacer"></span>
+      <button class="tbtn" id="btn-seq-edit" title="編輯這則的文字（也可以直接雙擊）">✎ 文字</button>
+      <button class="tbtn" id="btn-seq-arrow" title="切換實線 / 虛線箭頭">⇢ 實／虛</button>
+    </span>
+    <span id="seq-hint" class="tlabel" hidden>拖參與者換序、上下拖訊息改順序 · Delete 刪除選取</span>
     <span id="edge-style">
       <span class="spacer"></span>
       <span id="line-label" class="tlabel">線：</span>

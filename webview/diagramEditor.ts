@@ -239,6 +239,23 @@ function applyTypeUI(type: string): void {
   show(byId('btn-tidy'), canvas && !quadrant);
   const hint = byId('seq-hint');
   if (hint) (hint as HTMLElement).hidden = !seq;
+  const seqGroup = byId('seq-group');
+  if (seqGroup) (seqGroup as HTMLElement).hidden = !seq;
+  syncSeqSelectionUI();
+}
+
+/**
+ * 「作用在選取的那則訊息」的按鈕:有選才出現。
+ *
+ * 訊息 / 筆記不是 node,引擎以 `seq:{index}` 這個假 id 放進選取集合(見 lib 的 refreshOverlay),
+ * 所以這裡用前綴判斷,而不是去 scene.nodes 裡找。
+ */
+function syncSeqSelectionUI(): void {
+  const group = byId('seq-sel-group');
+  if (!group) return;
+  const isSeq = handle?.getScene().diagramType === 'sequence';
+  const picked = (handle?.getSelection() ?? []).some((id) => id.startsWith('seq:'));
+  (group as HTMLElement).hidden = !isSeq || !picked;
 }
 
 function setActiveTool(tool: Tool): void {
@@ -281,6 +298,7 @@ function wireToolbar(h: DiagramEditorHandle): void {
   // 選到單一連線 → 控制項反映該連線目前的樣式。
   h.on('selectionchange', (ids) => {
     const sel = ids as string[];
+    syncSeqSelectionUI();
     if (sel.length !== 1) return;
     const e = h.getScene().edges.find((x) => x.id === sel[0]);
     if (e) syncEdgeControls({ lineKind: e.lineKind, arrowStart: e.arrowStart, arrowEnd: e.arrowEnd });
@@ -292,6 +310,12 @@ function wireToolbar(h: DiagramEditorHandle): void {
   byId('btn-zoom-out')?.addEventListener('click', () => h.zoomOut());
   byId('btn-fit')?.addEventListener('click', () => h.fit());
   byId('btn-tidy')?.addEventListener('click', () => void h.tidy());
+  // sequence 建立動作 —— 與右鍵選單同一組指令,只是搬到看得見的地方。
+  byId('btn-seq-participant')?.addEventListener('click', () => h.addSeqParticipant());
+  byId('btn-seq-message')?.addEventListener('click', () => h.addSeqMessage());
+  byId('btn-seq-note')?.addEventListener('click', () => h.addSeqNote());
+  byId('btn-seq-edit')?.addEventListener('click', () => h.editSelection());
+  byId('btn-seq-arrow')?.addEventListener('click', () => h.toggleSeqArrow());
   // webview 無法直接觸發 <a download>;改把資料 postMessage 給 host,由 host 開儲存對話框寫檔。
   byId('btn-svg')?.addEventListener('click', () => {
     vscodeApi.postMessage({ type: 'export', format: 'svg', data: h.exportSvg(), suggestedName: 'diagram.svg' });

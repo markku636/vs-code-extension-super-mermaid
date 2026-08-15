@@ -167,6 +167,98 @@ const CASES = [
   },
 ];
 
+/**
+ * 拖曳手勢的驗證。
+ *
+ * 上面那組驗的是「工具列給的按鈕對不對」,這組驗的是「拖得動嗎、而且拖的時候看得見嗎」——
+ * 兩件會各自壞掉的事。0.25.1 修的正是後者:renderer 把 Overlay 的圖層一起清掉,
+ * 於是拖曳照常生效、原始碼照常改變,但選取框與插入指示線全畫進脫離 DOM 的節點,
+ * 使用者看到的是一張凍住的圖。只斷言「原始碼有變」的測試會全綠地放它過去。
+ *
+ * 所以每個案例兩個條件都要成立:放手後**狀態真的變了**(手勢接上了),且拖曳中 overlay 真的有東西
+ * (回饋看得見)。pick 與 probe 都在頁面裡跑,必須自給自足、不能引用外部變數。
+ * probe 拿什麼當「狀態」依圖種而定:序列圖改的是順序,看得到原始碼變;
+ * 流程圖的節點座標不進 mermaid 文字,只能看節點在畫面上有沒有真的移動。
+ */
+const DRAG_CASES = [
+  {
+    name: 'sequence 訊息換序',
+    source:
+      'sequenceDiagram\n  participant U as 使用者\n  participant F as 前端\n  participant A as API\n' +
+      '  U->>F: 點擊登入\n  F->>A: POST /login\n  A->>F: 回傳結果\n',
+    pick: () => {
+      const msgs = [...document.querySelectorAll('#app [data-seq-msg]')];
+      if (msgs.length < 3) return null;
+      const last = msgs[msgs.length - 1].getBoundingClientRect();
+      const first = msgs[0].getBoundingClientRect();
+      return {
+        from: { x: last.x + last.width / 2, y: last.y + last.height / 2 },
+        to: { x: last.x + last.width / 2, y: first.y - 6 },
+      };
+    },
+    probe: () => {
+      const p = window.__posted ?? [];
+      for (let i = p.length - 1; i >= 0; i -= 1) if (p[i]?.type === 'mermaidchange') return p[i].text;
+      return null;
+    },
+  },
+  {
+    name: 'sequence 生命線換序',
+    source:
+      'sequenceDiagram\n  participant U as 使用者\n  participant F as 前端\n  participant A as API\n' +
+      '  U->>F: 點擊登入\n  F->>A: POST /login\n',
+    pick: () => {
+      const boxes = [...document.querySelectorAll('#app [data-node-id]')].map((g) => g.getBoundingClientRect());
+      const msg = document.querySelector('#app [data-seq-msg]')?.getBoundingClientRect();
+      if (boxes.length < 4 || !msg) return null;
+      // 上排參與者框(y 最小的那排);生命線的可抓處 = 框正下方、第一則訊息上方那道空檔。
+      const top = Math.min(...boxes.map((b) => b.y));
+      const row = boxes.filter((b) => Math.abs(b.y - top) < 4).sort((a, b) => a.x - b.x);
+      const y = (row[0].bottom + msg.y) / 2;
+      return {
+        from: { x: row[0].x + row[0].width / 2, y },
+        to: { x: row[row.length - 1].x + row[row.length - 1].width / 2 + 8, y },
+      };
+    },
+    probe: () => {
+      const p = window.__posted ?? [];
+      for (let i = p.length - 1; i >= 0; i -= 1) if (p[i]?.type === 'mermaidchange') return p[i].text;
+      return null;
+    },
+  },
+  {
+    // 這個案例存在的唯一理由:overlay 圖層被清掉時,傷害會跨圖種延續。
+    // 序列圖的渲染路徑清過一次、切走時的還原路徑又清一次,所以「先開序列圖再換流程圖」
+    // 才是完整的重現步驟 —— 只測乾淨頁面載入流程圖,那個 bug 會整個測綠。
+    name: 'flowchart 節點位移（先開過序列圖）',
+    preload: 'sequenceDiagram\n  participant U as 使用者\n  participant F as 前端\n  U->>F: 點擊登入\n',
+    source: 'flowchart TD\n  A[開始] --> B{判斷}\n  B --> C[結束]\n',
+    pick: () => {
+      const n = document.querySelector('#app [data-node-id]');
+      if (!n) return null;
+      const r = n.getBoundingClientRect();
+      // 從節點正中央起拖:邊緣附近是連線錨點的地盤,按下去會變成拉線而不是位移。
+      return {
+        from: { x: r.x + r.width / 2, y: r.y + r.height / 2 },
+        to: { x: r.x + r.width / 2 + 90, y: r.y + r.height / 2 + 70 },
+      };
+    },
+    probe: () => {
+      const n = document.querySelector('#app [data-node-id]');
+      if (!n) return null;
+      const r = n.getBoundingClientRect();
+      return `${Math.round(r.x)},${Math.round(r.y)}`;
+    },
+  },
+];
+
+/** 拖曳中 overlay 畫了幾個元素(選取框 / 插入線 / 吸附線 / 橡皮筋加總)。-1 = 連容器都不見了。 */
+function overlayBusy() {
+  const ov = document.querySelector('#app .rsm-overlay');
+  if (!ov) return -1;
+  return [...ov.children].reduce((n, layer) => n + layer.children.length, 0);
+}
+
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
 async function serve() {
   const server = createServer((req, res) => {
@@ -305,6 +397,7 @@ const server = await serve();
 const { port } = server.address();
 const browser = await puppeteer.launch({ executablePath: findChrome(), headless: 'new', args: ['--disable-gpu'] });
 const results = [];
+const dragResults = [];
 let shotDir = null;
 if (SHOTS) {
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -367,6 +460,83 @@ try {
       await page.screenshot({ path: join(shotDir, `${c.type}.png`) });
     }
   }
+
+  // ── 拖曳手勢 ── 用真實滑鼠輸入(page.mouse),不是合成事件:合成事件繞過命中測試,
+  // 會漏掉「這裡其實蓋了別的東西」「這條線是 pointer-events:none」這類真正會擋住使用者的問題。
+  for (const d of DRAG_CASES) {
+    await page.goto(`http://127.0.0.1:${port}/.verify-ui/index.html`, { waitUntil: 'load' });
+    for (const source of [d.preload, d.source].filter(Boolean)) {
+      await page.evaluate(
+        ({ src, dark }) => window.postMessage({ type: 'load', source: src, dark }, '*'),
+        { src: source, dark: DARK },
+      );
+      await page.waitForFunction(
+        () => document.querySelectorAll('#app .rsm-editor-svg [data-node-id], #app .rsm-editor-svg path').length > 0,
+        { timeout: 20000 },
+      );
+      await new Promise((ok) => setTimeout(ok, 700));
+    }
+
+    const pts = await page.evaluate(d.pick);
+    if (!pts) {
+      dragResults.push({ name: d.name, problems: ['找不到可拖曳的目標'] });
+      continue;
+    }
+    const before = await page.evaluate(d.probe);
+    await page.mouse.move(pts.from.x, pts.from.y);
+    await page.mouse.down();
+    const STEPS = 8;
+    let busy = 0;
+    for (let i = 1; i <= STEPS; i += 1) {
+      await page.mouse.move(
+        pts.from.x + ((pts.to.x - pts.from.x) * i) / STEPS,
+        pts.from.y + ((pts.to.y - pts.from.y) * i) / STEPS,
+      );
+      // 過了位移門檻之後才取樣:第一兩步還在「這可能只是點一下」的容差內,本來就不該畫東西。
+      if (i >= 3) busy = Math.max(busy, await page.evaluate(overlayBusy));
+    }
+    await page.mouse.up();
+    await new Promise((ok) => setTimeout(ok, 400));
+    const after = await page.evaluate(d.probe);
+
+    const problems = [];
+    if (before === after) problems.push('放手後狀態沒變(手勢沒接上)');
+    if (busy === -1) problems.push('overlay 容器不見了');
+    else if (busy === 0) problems.push('拖曳中沒有任何視覺回饋');
+    dragResults.push({ name: d.name, busy, problems });
+  }
+
+  // ── 點選 + Delete ── 「點下去要有被選到的感覺」跟「Delete 要刪得掉」是同一件事的兩半:
+  // 選取集合裡沒有它,選取框畫不出來,Delete 也不知道要刪誰。所以一起驗。
+  {
+    const source =
+      'sequenceDiagram\n  participant U as 使用者\n  participant F as 前端\n' +
+      '  U->>F: 第一則\n  F->>U: 第二則\n  U->>F: 第三則\n';
+    await page.goto(`http://127.0.0.1:${port}/.verify-ui/index.html`, { waitUntil: 'load' });
+    await page.evaluate(({ src, dark }) => window.postMessage({ type: 'load', source: src, dark }, '*'), {
+      src: source,
+      dark: DARK,
+    });
+    await page.waitForFunction(() => document.querySelectorAll('#app [data-seq-msg]').length > 0, { timeout: 20000 });
+    await new Promise((ok) => setTimeout(ok, 700));
+
+    const at = await page.evaluate(() => {
+      const els = [...document.querySelectorAll('#app [data-seq-msg]')];
+      const r = els[1].getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2, count: els.length };
+    });
+    await page.mouse.click(at.x, at.y);
+    await new Promise((ok) => setTimeout(ok, 300));
+    const selBoxes = await page.evaluate(() => document.querySelector('#app .rsm-ov-sel')?.children.length ?? -1);
+    await page.keyboard.press('Delete');
+    await new Promise((ok) => setTimeout(ok, 400));
+    const left = await page.evaluate(() => document.querySelectorAll('#app [data-seq-msg]').length);
+
+    const problems = [];
+    if (selBoxes <= 0) problems.push('點到訊息後沒有選取框(感覺不到被選取)');
+    if (left !== at.count - 1) problems.push(`Delete 沒刪掉(${at.count} → ${left})`);
+    dragResults.push({ name: 'sequence 點選 + Delete', busy: selBoxes, problems });
+  }
 } finally {
   await browser.close();
   server.close();
@@ -390,6 +560,14 @@ for (const r of results) {
       (problems.length ? `  ← ${problems.join(' / ')}` : ''),
   );
 }
+for (const r of dragResults) {
+  if (r.problems.length) failed += 1;
+  console.log(
+    `[${r.problems.length ? 'FAIL' : ' OK '}] ${r.name.padEnd(18)} overlay=${r.busy ?? '-'}` +
+      (r.problems.length ? `  ← ${r.problems.join(' / ')}` : ''),
+  );
+}
 if (shotDir) console.log(`\n截圖:${shotDir}`);
-console.log(`\n${results.length - failed}/${results.length} 通過`);
+const total = results.length + dragResults.length;
+console.log(`\n${total - failed}/${total} 通過`);
 process.exit(failed ? 1 : 0);
