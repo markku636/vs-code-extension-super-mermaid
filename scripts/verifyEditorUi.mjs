@@ -203,6 +203,36 @@ const DRAG_CASES = [
     },
   },
   {
+    // 跨水道:抓訊息的箭頭端往別條生命線拖 = 換收件方。垂直不動,所以這個案例同時證明
+    // 位移門檻不是只看 Y —— 純左右的拖曳也必須被當成一次拖曳。
+    name: 'sequence 訊息跨水道',
+    source:
+      'sequenceDiagram\n  participant U as 使用者\n  participant F as 前端\n  participant A as API\n' +
+      '  U->>F: 點擊登入\n',
+    pick: () => {
+      const msg = document.querySelector('#app [data-seq-msg]');
+      const boxes = [...document.querySelectorAll('#app [data-node-id]')].map((g) => g.getBoundingClientRect());
+      if (!msg || boxes.length < 6) return null;
+      const r = msg.getBoundingClientRect();
+      const top = Math.min(...boxes.map((b) => b.y));
+      const row = boxes.filter((b) => Math.abs(b.y - top) < 4).sort((a, b) => a.x - b.x);
+      // 起點取箭頭那一端(訊息由左往右,右緣就是收件方),終點取第三條水道的中心。
+      return {
+        from: { x: r.right - 6, y: r.y + r.height / 2 },
+        to: { x: row[2].x + row[2].width / 2, y: r.y + r.height / 2 },
+      };
+    },
+    probe: () => {
+      const p = window.__posted ?? [];
+      for (let i = p.length - 1; i >= 0; i -= 1) if (p[i]?.type === 'mermaidchange') return p[i].text;
+      return null;
+    },
+    // 「狀態有變」對這個案例不夠:垂直換序也會讓文字變。要指名收件方真的從 F 換成 A,
+    // 否則一個只會上下搬的實作也能把這條測綠。
+    check: (_before, after) =>
+      after?.includes('U->>A') ? null : `收件方沒有換到 A（得到:${(after ?? '').trim().split('\n').pop()}）`,
+  },
+  {
     name: 'sequence 生命線換序',
     source:
       'sequenceDiagram\n  participant U as 使用者\n  participant F as 前端\n  participant A as API\n' +
@@ -503,6 +533,9 @@ try {
     if (before === after) problems.push('放手後狀態沒變(手勢沒接上)');
     if (busy === -1) problems.push('overlay 容器不見了');
     else if (busy === 0) problems.push('拖曳中沒有任何視覺回饋');
+    // 案例自帶的針對性斷言(在 Node 端跑,不用序列化進頁面)。
+    const specific = d.check?.(before, after);
+    if (specific) problems.push(specific);
     dragResults.push({ name: d.name, busy, problems });
   }
 

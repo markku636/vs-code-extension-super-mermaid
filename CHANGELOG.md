@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.19.0 — drag a message across lifelines
+
+Dragging a message could change *when* it happens but never *who it is between* — on the one diagram
+type whose whole point is who talks to whom. Changing that meant editing the source by hand.
+
+- **New**: drag a message sideways to move it across lifelines. Where you grab it decides what moves:
+  the tail re-points the sender, the arrow head re-points the recipient, and the middle carries the
+  whole message to another pair of lanes with its span intact. A rubber band and an outline on the
+  target participant show the result before you let go.
+- A drop that would leave a message talking to itself, or push either end past the edge of the
+  diagram, keeps the last valid pair. Reordering and re-targeting in one drag are one undo.
+- `verify:ui` gained a cross-lane case that asserts the recipient specifically changed, not merely
+  that the source text differs — an implementation that only moved messages up and down would pass
+  the weaker check. Confirmed to fail on the previous engine.
+
 ## 0.18.0 — sequence messages can be selected, deleted, and found
 
 Clicking a message on a sequence diagram did nothing visible, and Delete had nothing to act on:
