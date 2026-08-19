@@ -21,7 +21,7 @@ Every image in this README and in **[docs/DEMO.md](docs/DEMO.md)** was exported 
 
 ## ✏️ New: draw diagrams visually → get Mermaid
 
-Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **all twenty diagram types Mermaid has**:
+Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` ```mermaid ```` block (or run **Super Mermaid: Draw Diagram**) to open an **Excalidraw-style visual editor** — now covering **all twenty diagram types Mermaid has, plus ORID**:
 
 | | |
 | --- | --- |
@@ -31,7 +31,7 @@ Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` `
 | **Grid** | **block** · **packet** |
 | **Branch lanes** | **gitGraph** |
 | **Charts** | **quadrant** · **pie** · **xychart** |
-| **Form** | timeline |
+| **Form** | timeline · **ORID** |
 
 The toolbar offers **only the shapes the diagram type can actually serialize** — a class diagram gets 「類別」, a state diagram gets 狀態 / 起始 / 結束 / 選擇 / 分岔, a C4 diagram gets 人員 / 系統 / 資料庫 / 佇列. Drag to place shapes, drag from a node edge to connect (or to empty space to spawn a connected node), double-click to rename or edit cell content (ER attributes, class members, sequence messages, requirement fields), right-click for shape / colour / align / group / type-specific actions, build sequences from scratch, **reconnect edges**, toggle direction, auto-tidy, **edit the Mermaid source two-way** (套用 / Ctrl+Enter re-renders), **copy the diagram to the clipboard as an image**, and export SVG/PNG.
 
@@ -46,9 +46,47 @@ On many of the newer types, dragging *means* something rather than just tidying 
 - **sankey** — every link's width is its flow; double-click a link to type a new number.
 - **gitGraph** — a commit's parents are never written in the source, they come from the order of the commands. So drag a commit sideways to reorder history, or onto another lane to move it to that branch; the whole command stream is rebuilt from what you see.
 
-Start from a **template** on the empty canvas (all twenty types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). Anything the editor doesn't fully understand — an unusual gantt `dateFormat`, a nested `block:… end` — is passed through **verbatim** and marked read-only rather than half-rewritten.
+Start from a **template** on the empty canvas (all twenty-one types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). Anything the editor doesn't fully understand — an unusual gantt `dateFormat`, a nested `block:… end` — is passed through **verbatim** and marked read-only rather than half-rewritten.
 
 ![Draw diagrams visually](docs/images/draw-editor.png)
+
+## 🧭 New: ORID — a diagram type Mermaid doesn't have
+
+Retrospectives, incident reviews and workshop notes all have the same shape, and Mermaid has no
+diagram for it — so you end up rebuilding it by hand as four subgraphs with four colour rules, every
+single time. Super Mermaid adds **ORID** (the ICA *focused conversation* method) as a first-class
+diagram type:
+
+```
+orid
+    title Post-launch review
+    objective
+        Error rate 3.2%
+        p95 latency 850ms
+    reflective
+        The team feels anxious
+    interpretive
+        The monitoring gap is the root cause
+    decisional
+        Add alerting @mark 8/25
+```
+
+![ORID diagram](docs/images/demo-orid.png)
+
+Four fixed stages — **O**bjective (facts) → **R**eflective (feelings) → **I**nterpretive (meaning) →
+**D**ecisional (action) — render as a vertical funnel, one colour-coded band per stage, items laid
+out in rows inside it. They come out in canonical O→R→I→D order however you wrote them, and a stage
+you declared but left empty shows a dashed placeholder instead of collapsing to a sliver.
+
+It is a real diagram type here, not a snippet: the **✏ Edit** CodeLens opens a structured four-stage
+form (add / remove / reorder items, live preview) that writes clean ORID back to your file, and
+because it is transpiled to a flowchart just before rendering, **everything else already works on
+it** — both themes, dark mode, pan/zoom, find-in-diagram, PNG/SVG export, presentation mode, gallery,
+share links, `%% @tip` and `%% @check` (item ids are `O1`, `R2`, `I1`, `D3`…).
+
+> Write an item that itself starts with a stage keyword as `- objective is a vague word` — the `-`
+> forces it to stay an item. Single-letter abbreviations are not accepted on purpose: an item
+> starting `I feel…` would otherwise open an Interpretive stage and swallow the rest of the block.
 
 ## 📄 New: right-click → preview the whole Markdown document
 
@@ -64,6 +102,7 @@ Right-click any `.md` file (in the editor or the Explorer) → **Open Markdown P
 
 ## Why you'll like it
 
+- 🧭 **ORID diagrams** — the focused-conversation method (Objective → Reflective → Interpretive → Decisional) as a diagram type Mermaid doesn't have, with a structured four-stage editor. Perfect for retrospectives and incident reviews; every other feature (themes, export, search, tips, checks) applies to it unchanged.
 - 🎨 **Looks great out of the box** — Colorful is the default. Flowcharts, sequence, ER, class, state, Gantt, pie, mindmaps, and timelines all get a modern palette with rounded corners and soft shadows — and every subgraph / swimlane gets its own distinct tint and a colored title, so adjacent lanes are easy to tell apart — **without changing a single line of mermaid code**. Pie / Gantt / mindmap / timeline charts are repainted with a **vibrant, high-contrast palette** (white slice separators, contrast-aware labels) instead of mermaid's dim defaults, and **labels are weight-boosted in every theme** so text stays crisp even in thumbnails. Prefer another look? Switch to Sketch / Auto / Light / Dark / Neutral / Forest from the toolbar.
 - ✏️ **Sketch style** — a hand-drawn, Excalidraw-like whiteboard look in one click: mermaid's built-in `handDrawn` shapes paired with the bundled **Excalifont** handwriting font (SIL Open Font License 1.1). The font is embedded into PNG / SVG exports too, so the handwriting survives wherever the image goes.
 - 🖱️ **Draw it, don't type it** — the **✏ Draw** CodeLens opens an Excalidraw-style visual editor: drag nodes, hover-to-connect (or drag to empty space to spawn a connected node), double-click to rename, right-click to recolor / change shape / align / group into subgraphs. It writes clean Mermaid back to your file, and existing flowcharts open as draggable diagrams.
@@ -79,7 +118,7 @@ Right-click any `.md` file (in the editor or the Explorer) → **Open Markdown P
 - 📝 **Both sources, plus the built-in preview** — works with ```` ```mermaid ```` blocks in Markdown, standalone `.mmd` / `.mermaid` files, **and** the built-in Markdown preview (`Ctrl+Shift+V`) renders mermaid blocks with the same auto coloring.
 - 📄 **Full Markdown document preview** — beyond just the diagrams, render the **whole `.md` file** (headings, text, tables **and** auto-colored Mermaid) in a dedicated Super Mermaid preview. Right-click → **Open Markdown Preview to the Side** to split it beside the editor, or **Open Markdown Preview in New Window** to pop it onto a second monitor. It updates live as you type and follows your editor theme. **Find in document** with `Ctrl+F` (the highlights reach even the label text inside diagrams), cycle the **content width** (Auto / Full / Reading) when wide tables need room, and use the toolbar **Export** button to save the rendered document as a **PNG** image or a multi-page **PDF**. Exports are laid out for paper, not screenshotted: a white **Paper** page with high-contrast text and light diagrams (switch to **Match preview theme** in the Export menu for the dark look), captured at 3x so text stays sharp, with long code lines and wide tables wrapped into the page and PDF page breaks landing between lines instead of through them.
 - 🧠 **Editor smarts** — mermaid syntax highlighting, `%%` comment toggle with `Ctrl+/`, keyword completion, hover hints on node ids (label, shape, connections, `%% @tip` / `%% @check` notes), and red squiggles on syntax errors while the preview is open.
-- 📚 **Template library** — the `Super Mermaid: Insert Diagram Template` command offers 21 ready-made templates, plus `mmd-*` snippets.
+- 📚 **Template library** — the `Super Mermaid: Insert Diagram Template` command offers 23 ready-made templates, plus `mmd-*` snippets.
 - 🌐 **Every diagram type, fully offline** — flowchart, sequenceDiagram, erDiagram, classDiagram, gantt, pie, mindmap, timeline, journey, C4, architecture… The mermaid engine is bundled inside the extension, so rendering makes **no network call** and your code stays on your machine — the one exception being the share link above, which you build and send yourself.
 
 ## How to use

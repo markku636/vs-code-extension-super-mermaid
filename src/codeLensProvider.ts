@@ -1,6 +1,13 @@
 import * as vscode from 'vscode';
 import { extractMermaidBlocks, isSupportedDoc } from './mermaidExtract';
 
+/** 「Draw / Edit」CodeLens 的提示文字;key 為圖種首關鍵字(小寫),default 為畫布圖種。 */
+const EDIT_TOOLTIP: Record<string, string> = {
+  timeline: '以結構化表單編輯此時間軸（區段 / 時間點 / 事件，編輯後寫回）',
+  orid: '以結構化表單編輯此 ORID 焦點討論（四階段條列，編輯後寫回）',
+  default: '以 Excalidraw 式繪製編輯器開啟此圖（拖曳節點 / 連線，編輯後寫回）',
+};
+
 /**
  * 在每個 mermaid 區段的起始行上方顯示「Edit Diagram」與「Open in New Window」
  * 兩個並列 CodeLens。前者開啟預覽並定位到該張圖；後者額外把預覽彈出到獨立視窗。
@@ -42,9 +49,9 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
         }),
       ];
       // 繪製編輯器支援的圖種才顯示編輯入口(避免在尚未支援的圖種誤開覆寫)。
-      // 畫布圖種 → 「Draw」(拖拉繪製);timeline 等資料圖表 → 「Edit」(結構化表單)。
+      // 畫布圖種 → 「Draw」(拖拉繪製);timeline / orid 等資料圖表 → 「Edit」(結構化表單)。
       const kw = (block.title ?? '').toLowerCase();
-      const isForm = kw === 'timeline';
+      const isForm = kw === 'timeline' || kw === 'orid';
       if (
         kw === 'flowchart' ||
         kw === 'graph' ||
@@ -60,9 +67,7 @@ export class MermaidCodeLensProvider implements vscode.CodeLensProvider {
         lenses.push(
           new vscode.CodeLens(range, {
             title: isForm ? '$(edit) Edit' : '$(edit) Draw',
-            tooltip: isForm
-              ? '以結構化表單編輯此時間軸（區段 / 時間點 / 事件，編輯後寫回）'
-              : '以 Excalidraw 式繪製編輯器開啟此流程圖（拖曳節點 / 連線，編輯後寫回）',
+            tooltip: EDIT_TOOLTIP[kw] ?? EDIT_TOOLTIP.default,
             command: 'superMermaid.editDiagramVisually',
             arguments: [doc.uri, index],
           }),

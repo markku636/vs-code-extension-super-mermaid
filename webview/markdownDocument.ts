@@ -6,6 +6,7 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import mermaid from 'mermaid';
+import { transpileOrid } from 'react-super-mermaid/orid';
 import { boostLegibility, colorizeDiagram, ensureLegibilityStyles } from './colorize';
 
 interface VsCodeApi {
@@ -184,7 +185,7 @@ async function renderMermaidInto(root: ParentNode, opts: { dark?: boolean } = {}
     }
     const id = `md-doc-mmd-${++seq}`;
     try {
-      const { svg } = await mermaid.render(id, source);
+      const { svg } = await mermaid.render(id, transpileOrid(source));
       const container = makeBlock(svg, dataLine);
       const svgEl = container.querySelector('svg');
       if (svgEl) {

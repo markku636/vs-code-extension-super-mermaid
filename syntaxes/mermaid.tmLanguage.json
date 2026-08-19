@@ -2694,6 +2694,58 @@
           "end": "(^|\\G)(?=\\s*[`:~]{3,}\\s*$)"
         },
         {
+          "comment": "ORID Focused Conversation",
+          "begin": "^\\s*(orid)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.control.mermaid"
+            }
+          },
+          "patterns": [
+            {
+              "match": "\\%%.*",
+              "name": "comment"
+            },
+            {
+              "comment": "chart title",
+              "match": "(?i)^\\s*(title)\\s+(.*)$",
+              "captures": {
+                "1": {
+                  "name": "keyword.control.mermaid"
+                },
+                "2": {
+                  "name": "string"
+                }
+              }
+            },
+            {
+              "comment": "stage keyword + optional custom heading",
+              "match": "(?i)^\\s*(objective|reflective|interpretive|decisional)\\b\\s*(.*)$",
+              "captures": {
+                "1": {
+                  "name": "keyword.control.mermaid"
+                },
+                "2": {
+                  "name": "entity.name.section.mermaid"
+                }
+              }
+            },
+            {
+              "comment": "bulleted item (forces item interpretation)",
+              "match": "^\\s*([-*•])\\s*(.*)$",
+              "captures": {
+                "1": {
+                  "name": "punctuation.definition.list.begin.mermaid"
+                },
+                "2": {
+                  "name": "string"
+                }
+              }
+            }
+          ],
+          "end": "(^|\\G)(?=\\s*[`:~]{3,}\\s*$)"
+        },
+        {
           "comment": "Pie Chart",
           "begin": "^\\s*(pie)",
           "beginCaptures": {

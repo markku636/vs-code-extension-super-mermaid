@@ -185,11 +185,12 @@ function rebuildShapeButtons(caps: DiagramCapabilities | null): void {
 }
 
 /** 依圖種顯示/隱藏建立控制項:sequence 用右鍵新增參與者/訊息(隱藏外形與連線);
- *  只有 flowchart/state/class/er 有流程方向;timeline 走表單,隱藏所有畫布工具。 */
+ *  只有 flowchart/state/class/er 有流程方向;timeline / orid 走表單,隱藏所有畫布工具。 */
 function applyTypeUI(type: string): void {
   const seq = type === 'sequence';
-  const timeline = type === 'timeline';
-  const canvas = !timeline; // 畫布工具(選取/平移/縮放/整理/手繪)只在畫布圖種顯示
+  // 資料圖表(timeline / orid)由 form 子編輯器接管,整條畫布工具列都沒有意義。
+  const formMode = type === 'timeline' || type === 'orid';
+  const canvas = !formMode; // 畫布工具(選取/平移/縮放/整理/手繪)只在畫布圖種顯示
   const hasDir = canvas && ['flowchart', 'graph', 'state', 'class', 'er', 'requirement'].includes(type);
   // 需求圖的連線意義由「關係種類」決定(右鍵切換),沒有線型 / 箭頭可調。
   const req = type === 'requirement';
@@ -198,20 +199,20 @@ function applyTypeUI(type: string): void {
   const show = (el: Element | null, on: boolean): void => {
     if (el) (el as HTMLElement).style.display = on ? '' : 'none';
   };
-  // 連線樣式(線型 / 箭頭):依目前圖種能力顯示;sequence 走右鍵、timeline 無畫布。
+  // 連線樣式(線型 / 箭頭):依目前圖種能力顯示;sequence 走右鍵、資料圖表無畫布。
   const caps = handle?.getCapabilities() ?? null;
-  // 建立工具:sequence 與 timeline 都不用外形/連線(timeline 用左側表單)。
-  rebuildShapeButtons(!seq && !timeline ? caps : null);
-  show(byId('shape-group'), !seq && !timeline);
+  // 建立工具:sequence 與資料圖表都不用外形/連線(資料圖表用左側表單)。
+  rebuildShapeButtons(!seq && !formMode ? caps : null);
+  show(byId('shape-group'), !seq && !formMode);
   // 有沒有連線這回事由 adapter 能力決定(而不是在這裡列圖種名單)。
   const hasEdges = caps?.supportsEdges !== false;
-  show(document.querySelector('[data-tool="edge-create"]'), !seq && !timeline && hasEdges);
+  show(document.querySelector('[data-tool="edge-create"]'), !seq && !formMode && hasEdges);
   show(document.querySelector('[data-tool="select"]'), canvas);
   show(document.querySelector('[data-tool="pan"]'), canvas);
-  show(document.querySelector('.tlabel'), !seq && !timeline);
+  show(document.querySelector('.tlabel'), !seq && !formMode);
   show(byId('dir-select'), hasDir);
   // 「更多外形」下拉:只有真的還有其他外形時才出現(class / er 只有一種,出現只會是顆空殼)。
-  show(byId('shape-select'), !seq && !timeline && Boolean(byId<HTMLSelectElement>('shape-select')?.dataset.hasMore));
+  show(byId('shape-select'), !seq && !formMode && Boolean(byId<HTMLSelectElement>('shape-select')?.dataset.hasMore));
 
   const lineKinds = caps?.lineKinds ?? [];
   const arrowHeads = caps?.arrowHeads ?? [];
@@ -232,7 +233,7 @@ function applyTypeUI(type: string): void {
   show(byId('btn-bidir'), edgeOk && arrowHeads.includes('arrow' as ArrowHead) && (type === 'flowchart' || type === 'graph'));
   if (handle) syncEdgeControls(handle.getEdgeStyleDefault());
 
-  // 純畫布操作(選取刪除 / 縮放 / 符合視窗 / 整理 / 手繪 / 快捷鍵說明):timeline 無畫布,一律隱藏。
+  // 純畫布操作(選取刪除 / 縮放 / 符合視窗 / 整理 / 手繪 / 快捷鍵說明):資料圖表無畫布,一律隱藏。
   for (const id of ['btn-delete', 'btn-zoom-out', 'zoom-level', 'btn-zoom-in', 'btn-fit', 'btn-look', 'btn-help']) {
     show(byId(id), canvas);
   }

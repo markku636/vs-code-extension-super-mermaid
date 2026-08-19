@@ -5,6 +5,16 @@
 // Works on the live preview DOM, the built-in markdown preview DOM, and the
 // detached export DOM.
 
+// ORID's semantic palette lives in the library so the transpiler's classDef and
+// this repaint can never drift apart. `react-super-mermaid/orid` is the tiny
+// (~10 KB) subpath entry — importing it does not drag in React or the editor.
+import {
+  ORID_EMPTY_CLASS,
+  ORID_PALETTE,
+  oridItemClass,
+  oridStageClass,
+} from 'react-super-mermaid/orid';
+
 export interface ColorizeOptions {
   dark?: boolean;
 }
@@ -207,6 +217,13 @@ function styleEdges(svg: Element, dark: boolean): void {
     'path.messageLine1',
   ].join(', ');
   for (const edge of Array.from(svg.querySelectorAll<SVGElement>(edgeSelectors))) {
+    // `~~~` invisible links are layout scaffolding (ORID lays its item rows out
+    // with them) — recolouring them would draw lines the author never asked for.
+    if (edge.classList.contains('edge-thickness-invisible')) {
+      edge.style.stroke = 'none';
+      edge.style.strokeWidth = '0';
+      continue;
+    }
     edge.style.stroke = edgeColor;
     edge.style.strokeWidth = '1.7px';
     edge.style.strokeLinecap = 'round';
@@ -344,6 +361,95 @@ export function colorizeDiagram(root: ParentNode, opts: ColorizeOptions = {}): v
     styleMindmap(svg);
   } else if (kind === 'journey') {
     styleJourney(svg);
+  }
+
+  // ORID transpiles to a flowchart, so it never shows up in the dispatch above —
+  // detect it by the class names the transpiler stamps on nodes/clusters instead.
+  // Must run last: it overrides the generic rotating palette with ORID's semantic one.
+  styleOrid(svg, dark);
+}
+
+/**
+ * ORID's colours carry meaning (blue = facts, orange = feelings, purple =
+ * interpretation, green = action), so every item in a stage must share its
+ * stage's colour — the generic pass would hand them whatever came next in the
+ * rotation. Keyed off class names, not DOM order, because mermaid emits
+ * clusters in layout order rather than source order.
+ *
+ * Values come from the shared palette in react-super-mermaid/orid, and are
+ * written with `!important` because the transpiler's classDef becomes an
+ * `!important` stylesheet rule that a plain inline style cannot beat.
+ */
+function styleOrid(svg: Element, dark: boolean): void {
+  const set = (el: ElementCSSInlineStyle, prop: string, value: string): void =>
+    el.style.setProperty(prop, value, 'important');
+  const paintText = (group: Element, color: string): void => {
+    for (const el of Array.from(group.querySelectorAll<SVGTextElement>('text, tspan'))) {
+      set(el, 'fill', color);
+    }
+    for (const el of Array.from(group.querySelectorAll<HTMLElement>('.nodeLabel, span, p'))) {
+      set(el, 'color', color);
+    }
+  };
+  const paint = (group: Element, fill: string, stroke: string, radius: number): void => {
+    for (const shape of Array.from(
+      group.querySelectorAll<SVGElement>(':scope > rect, :scope > polygon, :scope > path'),
+    )) {
+      set(shape, 'fill', fill);
+      set(shape, 'stroke', stroke);
+      set(shape, 'stroke-width', '1.5px');
+      shape.style.removeProperty('stroke-dasharray');
+      roundRect(shape, radius);
+    }
+  };
+
+  let hit = false;
+  const itemText = dark ? '#E2E8F0' : NODE_TEXT;
+  for (const key of Object.keys(ORID_PALETTE) as (keyof typeof ORID_PALETTE)[]) {
+    const entry = ORID_PALETTE[key];
+    for (const node of Array.from(svg.querySelectorAll<SVGGElement>(`g.node.${oridItemClass(key)}`))) {
+      hit = true;
+      paint(node, dark ? entry.itemFillDark : entry.itemFill, entry.itemStroke, 8);
+      paintText(node, itemText);
+    }
+    for (const cluster of Array.from(
+      svg.querySelectorAll<SVGGElement>(`g.cluster.${oridStageClass(key)}`),
+    )) {
+      hit = true;
+      paint(cluster, dark ? entry.stageFillDark : entry.stageFill, entry.stageStroke, 10);
+      const label = cluster.querySelector(':scope > .cluster-label');
+      if (!label) {
+        continue;
+      }
+      paintText(label, entry.stageStroke);
+      for (const el of Array.from(
+        label.querySelectorAll<SVGTextElement | HTMLElement>('text, tspan, .nodeLabel, span, p'),
+      )) {
+        set(el, 'font-weight', '700');
+      }
+      for (const lr of Array.from(label.querySelectorAll<SVGElement>('rect'))) {
+        set(lr, 'fill', 'transparent');
+      }
+    }
+  }
+  if (!hit) {
+    return;
+  }
+
+  // Placeholder box for a stage the author left empty: dashed and muted, so it
+  // reads as "not filled in yet" rather than as a real item.
+  const muted = dark ? '#64748B' : '#94A3B8';
+  for (const node of Array.from(svg.querySelectorAll<SVGGElement>(`g.node.${ORID_EMPTY_CLASS}`))) {
+    for (const shape of Array.from(
+      node.querySelectorAll<SVGElement>(':scope > rect, :scope > polygon, :scope > path'),
+    )) {
+      set(shape, 'fill', 'transparent');
+      set(shape, 'stroke', muted);
+      set(shape, 'stroke-width', '1px');
+      set(shape, 'stroke-dasharray', '4 4');
+      shape.removeAttribute('filter');
+    }
+    paintText(node, muted);
   }
 }
 

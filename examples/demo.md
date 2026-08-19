@@ -220,3 +220,26 @@ timeline
         Q1 : 推出行動版
         Q2 : 企業版發布 : 通過 ISO 27001
 ```
+
+## ORID 焦點討論 ORID
+
+> mermaid 原生沒有這個圖種 —— Super Mermaid 在送進 mermaid 前把它轉成等價的 flowchart，
+> 所以主題、匯出、搜尋、`%% @tip` / `%% @check` 全部照用。
+
+```mermaid
+orid
+    title 上線後回顧會議
+    objective
+        上線後錯誤率 3.2%
+        平均延遲 850ms
+        客訴 12 件
+    reflective
+        團隊感到焦慮
+        使用者抱怨變多
+    interpretive
+        監控缺口是根因
+        告警門檻從沒被檢討過
+    decisional
+        補上錯誤率告警 @mark 8/25
+        加壓力測試進 CI @amy 9/1
+```

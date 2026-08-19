@@ -373,6 +373,45 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
     }
     auth_service - satisfies -> \${1:login_req}$0`,
   },
+  {
+    id: 'orid-retro',
+    label: 'ORID - Focused Conversation',
+    description: 'ORID 焦點討論法:客觀事實 → 感受反應 → 意義詮釋 → 決定行動',
+    diagramType: 'orid',
+    category: 'Other',
+    prefix: 'mmd-orid',
+    body: `orid
+    title \${1:上線後回顧會議}
+    objective
+        \${2:上線後錯誤率 3.2%}
+        平均延遲 850ms
+    reflective
+        \${3:團隊感到焦慮}
+        使用者抱怨變多
+    interpretive
+        \${4:監控缺口是根因}
+    decisional
+        \${5:補上告警 @owner 8/25}
+        加壓力測試 @owner 9/1$0`,
+  },
+  {
+    id: 'orid-blank',
+    label: 'ORID - Blank Four Stages',
+    description: 'ORID 空白骨架:四段標題齊備,內容待填(適合會議現場邊談邊記)',
+    diagramType: 'orid',
+    category: 'Other',
+    prefix: 'mmd-orid-blank',
+    body: `orid
+    title \${1:討論主題}
+    objective
+        \${2:看到 / 聽到什麼?只寫可查證的事實}
+    reflective
+        \${3:當下的感覺、直覺反應}
+    interpretive
+        \${4:這代表什麼?根因與洞察}
+    decisional
+        \${5:接下來做什麼?誰負責、何時完成}$0`,
+  },
 ];
 
 /** Strip snippet tab-stop markers, returning plain mermaid source. */

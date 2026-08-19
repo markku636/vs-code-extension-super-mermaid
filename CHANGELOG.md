@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.20.0 — ORID, a diagram type Mermaid doesn't have
+
+Every retrospective and incident review has the same shape, and Mermaid has no diagram for it — so
+you rebuild it by hand as four subgraphs with four colour rules, every single time. ORID (the ICA
+*focused conversation* method) is now a diagram type here, not a snippet.
+
+- **New**: `orid` blocks — `title`, then `objective` / `reflective` / `interpretive` / `decisional`
+  stage lines, then one indented line per item. They render as a vertical funnel: one colour-coded
+  band per stage (blue facts → orange feelings → purple meaning → green action), items laid out in
+  rows inside it, always in canonical O→R→I→D order however you wrote them. A stage you declared but
+  left empty shows a dashed placeholder rather than collapsing to a sliver.
+- **New**: the **✏ Edit** CodeLens on an `orid` block opens a structured four-stage form (add /
+  remove / reorder items, per-stage prompts, live preview) that writes clean ORID back to the file.
+- Because ORID is transpiled to a flowchart just before rendering, **everything else already works on
+  it**: both themes, dark mode, live preview, find-in-diagram, gallery, presentation mode, PNG/SVG
+  export, the built-in Markdown preview, the full-document preview and its PNG/PDF export, plus
+  `%% @tip` and `%% @check` (item ids are `O1`, `R2`, `I1`, `D3`…).
+- Editor smarts: `orid` in the diagram-type completion list, stage-keyword completions with prompts,
+  syntax highlighting, error squiggles, and hovering a stage keyword explains what belongs in it.
+- **New templates**: *ORID - Focused Conversation* and *ORID - Blank Four Stages* in
+  `Super Mermaid: Insert Diagram Template`, plus `mmd-orid` / `mmd-orid-blank` snippets (23 total).
+- Write an item that itself begins with a stage keyword as `- objective is a vague word`; the `-`
+  keeps it an item. Single-letter abbreviations are deliberately not accepted — an item starting
+  `I feel…` would otherwise open an Interpretive stage and swallow the rest of the block.
+- **Fix (all diagram types)**: `~~~` invisible links were repainted as visible slate lines by the
+  Colorful post-process. They now stay invisible.
+
 ## 0.19.0 — drag a message across lifelines
 
 Dragging a message could change *when* it happens but never *who it is between* — on the one diagram

@@ -1,0 +1,22 @@
+%% ORID 焦點討論法 —— Super Mermaid 自訂圖種(mermaid 原生沒有)。
+%% 四段固定順序:客觀事實 → 感受反應 → 意義詮釋 → 決定行動。
+%% 項目寫成縮排的一行;若項目本身以階段關鍵字開頭,前面加 "-" 強制當成項目。
+orid
+    title 上線後回顧會議
+    objective
+        上線後錯誤率 3.2%
+        平均延遲 850ms
+        客訴 12 件
+        P1 事件 1 起
+    reflective
+        團隊感到焦慮
+        使用者抱怨變多
+    interpretive
+        監控缺口是根因
+        - decisional 這個詞當時沒有人定義清楚
+    decisional
+        補上錯誤率告警 @mark 8/25
+        加壓力測試進 CI @amy 9/1
+
+%% @tip O1 取自 APM 的 5xx / 總請求,只算部署後 30 分鐘
+%% @tip D1 門檻沿用 SLO:錯誤率 > 1% 持續 5 分鐘

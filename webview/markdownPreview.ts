@@ -3,6 +3,7 @@
 // (rendered by markdown-it as <pre><code class="language-mermaid">) and
 // replaces them with rendered SVG.
 import mermaid from 'mermaid';
+import { transpileOrid } from 'react-super-mermaid/orid';
 import { boostLegibility, colorizeDiagram, ensureLegibilityStyles } from './colorize';
 
 let seq = 0;
@@ -52,7 +53,7 @@ async function renderAll(): Promise<void> {
       }
       const id = `md-mmd-${++seq}`;
       try {
-        const { svg } = await mermaid.render(id, source);
+        const { svg } = await mermaid.render(id, transpileOrid(source));
         const container = document.createElement('div');
         container.className = 'mermaid-preview-block';
         container.innerHTML = svg;

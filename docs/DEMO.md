@@ -102,6 +102,13 @@ flowchart LR
 
 ![時間軸](images/demo-timeline.png)
 
+### ORID 焦點討論（mermaid 沒有的圖種）
+
+![ORID](images/demo-orid.png)
+
+四段固定順序：客觀事實 → 感受反應 → 意義詮釋 → 決定行動。渲染前轉成等價 flowchart，
+所以配色、匯出、搜尋全部與其他圖種同一條管線。
+
 ### 架構圖（獨立 .mmd 檔）
 
 獨立的 `.mmd` / `.mermaid` 檔同樣支援——這張來自 [examples/architecture.mmd](../examples/architecture.mmd)。

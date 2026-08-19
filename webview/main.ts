@@ -1,5 +1,6 @@
 import mermaid from 'mermaid';
 import svgPanZoom from 'svg-pan-zoom';
+import { transpileOrid } from 'react-super-mermaid/orid';
 import { boostLegibility, colorizeDiagram, enhanceContrast, ensureLegibilityStyles } from './colorize';
 import { attachNodeTips, parseTipDirectives, type TipContent, type TipEntry } from './nodeTip';
 
@@ -395,7 +396,7 @@ async function render(opts: { keepView?: boolean } = {}): Promise<void> {
   const id = `mmd-${seq}`;
   let svgText: string;
   try {
-    svgText = (await mermaid.render(id, block.source)).svg;
+    svgText = (await mermaid.render(id, transpileOrid(block.source))).svg;
   } catch (err) {
     // mermaid leaves a temp error node in the DOM when render throws
     document.getElementById('d' + id)?.remove();
@@ -543,7 +544,7 @@ async function renderGallery(): Promise<void> {
     }
     const id = `mmd-g-${gen}-${i}`;
     try {
-      const { svg } = await mermaid.render(id, snapshot[i].source);
+      const { svg } = await mermaid.render(id, transpileOrid(snapshot[i].source));
       if (gen !== galleryGen || !galleryMode) {
         return;
       }
@@ -982,7 +983,7 @@ async function renderPristineSvg(
       htmlLabels: false,
       flowchart: { ...(config.flowchart ?? {}), htmlLabels: false },
     });
-    return { svg: (await mermaid.render(id, source)).svg };
+    return { svg: (await mermaid.render(id, transpileOrid(source))).svg };
   } catch (err) {
     document.getElementById('d' + id)?.remove();
     const message = err instanceof Error ? err.message : String(err);
@@ -1305,7 +1306,7 @@ async function validateBlocks(msg: UpdateMessage): Promise<void> {
   const errors: { index: number; message: string; line: number | null }[] = [];
   for (let i = 0; i < msg.blocks.length; i++) {
     try {
-      await mermaid.parse(msg.blocks[i].source);
+      await mermaid.parse(transpileOrid(msg.blocks[i].source));
     } catch (err) {
       const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
       errors.push({ index: i, message, line: errorLine(err) });

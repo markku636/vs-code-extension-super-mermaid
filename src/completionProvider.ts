@@ -30,6 +30,9 @@ const DIAGRAM_TYPES = [
   'packet-beta',
   'kanban',
   'architecture-beta',
+  // Super Mermaid's own diagram type: ORID focused conversation. Not a mermaid
+  // keyword — it is transpiled to a flowchart just before rendering.
+  'orid',
 ];
 
 const SETS: Record<string, KeywordSet> = {
@@ -153,6 +156,18 @@ const SETS: Record<string, KeywordSet> = {
       ['rounded node', '(${1:rounded})'],
       ['square node', '[${1:square}]'],
       ['circle node', '((${1:circle}))'],
+    ],
+  },
+  orid: {
+    keywords: ['title', 'objective', 'reflective', 'interpretive', 'decisional'],
+    operators: [],
+    snippets: [
+      ['title', 'title ${1:討論主題}'],
+      ['objective — 客觀事實', 'objective\n\t${1:看到 / 聽到的事實,可查證}'],
+      ['reflective — 感受反應', 'reflective\n\t${1:當下的感覺與直覺}'],
+      ['interpretive — 意義詮釋', 'interpretive\n\t${1:這代表什麼 / 根因}'],
+      ['decisional — 決定行動', 'decisional\n\t${1:下一步做什麼、誰負責}'],
+      ['item (force as item)', '- ${1:項目文字}'],
     ],
   },
 };

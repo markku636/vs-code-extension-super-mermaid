@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { extractMermaidBlocks, isMermaidFileDoc, MermaidBlock } from './mermaidExtract';
 import { parseTipDirectives } from '../webview/nodeTip';
+import { isOridSource, oridStageByKeyword } from 'react-super-mermaid/orid';
 
 /**
  * Hover hints for mermaid sources: hovering a node id shows its label, shape,
@@ -185,6 +186,15 @@ export class MermaidHoverProvider implements vscode.HoverProvider {
       return undefined;
     }
     const word = doc.getText(wordRange);
+
+    // ORID stage keywords come first: they are the one thing people actually need
+    // explained while writing one ("what belongs in Reflective, again?"), and the
+    // node-id logic below would just bail on them.
+    const oridHover = this.oridStageHover(doc, block, position, word, wordRange);
+    if (oridHover) {
+      return oridHover;
+    }
+
     // Id-shaped words only: WORD_RE also matches arrow fragments ("--x", "->>").
     if (!/^[A-Za-z_][\w-]*$/.test(word) || KEYWORDS.has(word.toLowerCase()) || /^\d+$/.test(word)) {
       return undefined;
@@ -226,6 +236,38 @@ export class MermaidHoverProvider implements vscode.HoverProvider {
         md.appendMarkdown(`  \n${check.desc}`);
       }
     }
+    return new vscode.Hover(md, wordRange);
+  }
+
+  /**
+   * `objective` / `reflective` / `interpretive` / `decisional` at the head of a
+   * line inside an ORID block → explain what that stage is for. Requires the
+   * word to start the line, so an item that merely mentions "decisional" does
+   * not get a facilitation lecture attached to it.
+   */
+  private oridStageHover(
+    doc: vscode.TextDocument,
+    block: MermaidBlock,
+    position: vscode.Position,
+    word: string,
+    wordRange: vscode.Range,
+  ): vscode.Hover | undefined {
+    if (!isOridSource(block.source)) {
+      return undefined;
+    }
+    const line = doc.lineAt(position.line).text;
+    if (line.trimStart().indexOf(word) !== 0) {
+      return undefined;
+    }
+    const spec = oridStageByKeyword(word);
+    if (!spec) {
+      return undefined;
+    }
+    const md = new vscode.MarkdownString();
+    md.appendMarkdown(`**${spec.ordinal} ${spec.zh} · ${spec.en}**  \n${spec.hint}`);
+    md.appendMarkdown(
+      '\n\n---\n\n項目寫在下一行並縮排。若項目本身以階段關鍵字開頭,前面加 `-` 強制當成項目。',
+    );
     return new vscode.Hover(md, wordRange);
   }
 }

@@ -299,7 +299,10 @@ try {
         const text = h.toMermaid();
         let parseError = null;
         try {
-          await window.__mermaid.parse(text);
+          // ORID 不是 mermaid 圖種,要驗的是「轉譯後的 flowchart 解析得動」——
+          // 直接把 orid 原始碼餵進去一定失敗,那不是回歸,是問錯問題。
+          // 非 ORID 原始碼 transpileOrid 原樣直通,其他圖種行為不變。
+          await window.__mermaid.parse(window.__editor.transpileOrid(text));
         } catch (err) {
           parseError = String(err && err.message ? err.message : err).split(/\r?\n/)[0];
         }
@@ -344,7 +347,10 @@ try {
         const text = h.toMermaid();
         let parseError = null;
         try {
-          await window.__mermaid.parse(text);
+          // ORID 不是 mermaid 圖種,要驗的是「轉譯後的 flowchart 解析得動」——
+          // 直接把 orid 原始碼餵進去一定失敗,那不是回歸,是問錯問題。
+          // 非 ORID 原始碼 transpileOrid 原樣直通,其他圖種行為不變。
+          await window.__mermaid.parse(window.__editor.transpileOrid(text));
         } catch (err) {
           parseError = String(err && err.message ? err.message : err).split(/\r?\n/)[0];
         }
