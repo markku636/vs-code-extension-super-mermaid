@@ -1,8 +1,14 @@
 import mermaid from 'mermaid';
 import svgPanZoom from 'svg-pan-zoom';
-import { stripHtmlFormattingTags, transpileOrid } from 'react-super-mermaid/orid';
+import { transpileOrid } from 'react-super-mermaid/orid';
 import { boostLegibility, colorizeDiagram, enhanceContrast, ensureLegibilityStyles } from './colorize';
+import { initI18nFromDocument, t } from './i18n';
+import { stripHtmlFormattingTags } from './stripHtmlTags';
 import { attachNodeTips, parseTipDirectives, type TipContent, type TipEntry } from './nodeTip';
+
+// Must run before any string is rendered: picks the dictionary matching the
+// display language the host stamped on <body data-locale="…">.
+initI18nFromDocument();
 
 type PanZoomInstance = ReturnType<typeof svgPanZoom>;
 
@@ -343,7 +349,7 @@ function showToast(text: string): void {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
 }
 
-function showError(err: unknown, titleText = 'Mermaid syntax error'): void {
+function showError(err: unknown, titleText = t('Mermaid syntax error')): void {
   const message = err instanceof Error ? err.message : String(err);
   errorEl.replaceChildren();
   const title = document.createElement('div');
@@ -525,7 +531,7 @@ async function renderGallery(): Promise<void> {
     titleBar.appendChild(lineTag);
     const body = document.createElement('div');
     body.className = 'gallery-card-body';
-    body.innerHTML = '<span class="gallery-card-pending">Rendering…</span>';
+    body.innerHTML = `<span class="gallery-card-pending">${t('Rendering…')}</span>`;
     card.append(titleBar, body);
     card.addEventListener('click', () => {
       exitGallery();
@@ -1148,7 +1154,7 @@ async function exportDiagram(format: 'svg' | RasterFormat): Promise<void> {
     return;
   }
   if (cannotRasterize(prepared)) {
-    showToast('This diagram type cannot be rasterized — exported SVG instead');
+    showToast(t('This diagram type cannot be rasterized — exported SVG instead'));
     vscodeApi.postMessage({
       type: 'export',
       format: 'svg',
@@ -1159,7 +1165,7 @@ async function exportDiagram(format: 'svg' | RasterFormat): Promise<void> {
   }
   try {
     if (format === 'jpg' && transparentBg) {
-      showToast('JPEG has no transparency — background kept');
+      showToast(t('JPEG has no transparency — background kept'));
     }
     const canvas = await rasterize(prepared, pngScale, {
       mime: RASTER_MIME[format],
@@ -1187,7 +1193,7 @@ async function copyImage(): Promise<void> {
   }
   if (cannotRasterize(prepared)) {
     // Canvas would taint on foreignObject labels — share the SVG markup instead.
-    showToast('This diagram type cannot be rasterized — copied SVG markup instead');
+    showToast(t('This diagram type cannot be rasterized — copied SVG markup instead'));
     vscodeApi.postMessage({
       type: 'copyText',
       text: '<?xml version="1.0" encoding="UTF-8"?>\n' + prepared.serialized,
@@ -1210,7 +1216,7 @@ async function copyImage(): Promise<void> {
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed.'))), 'image/png');
     });
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-    showToast(`Image copied (${pngScale}x)`);
+    showToast(t('Image copied ({0}x)', pngScale));
   } catch {
     // Webview clipboards can be fussy — let the extension host go through the OS.
     vscodeApi.postMessage({ type: 'copyImageFallback', data: rasterDataUrl(canvas, 'png') });
@@ -1247,7 +1253,7 @@ function runExportAll(): void {
       if (exportAllCancelled) {
         break;
       }
-      showToast(`Exporting ${i + 1}/${snapshot.length}…`);
+      showToast(t('Exporting {0}/{1}…', i + 1, snapshot.length));
       const { prepared, error } = await prepareExportSvgFor(snapshot[i].source, { silent: true });
       if (!prepared) {
         vscodeApi.postMessage({
@@ -1438,13 +1444,15 @@ lockBtn.addEventListener('click', () => {
   closeMenus();
   locked = !locked;
   lockBtn.classList.toggle('active', locked);
-  const label = locked ? 'Unlock — follow active editor' : 'Lock to current file';
+  const label = locked
+    ? t('Unlock — follow active editor')
+    : t('Lock to current file');
   lockBtn.title = label;
   const labelEl = document.getElementById('lock-label');
   if (labelEl) {
     labelEl.textContent = label;
   }
-  showToast(locked ? 'Locked to current file' : 'Following the active editor');
+  showToast(locked ? t('Locked to current file') : t('Following the active editor'));
   vscodeApi.postMessage({ type: 'setLocked', locked });
 });
 /**

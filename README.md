@@ -1,9 +1,101 @@
 # Super Mermaid
 
+**English** · [Русский](README.ru.md)
+
 [![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/mark-ku.super-mermaid?label=Marketplace&color=2EA043)](https://marketplace.visualstudio.com/items?itemName=mark-ku.super-mermaid)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/mark-ku.super-mermaid?color=0078D4)](https://marketplace.visualstudio.com/items?itemName=mark-ku.super-mermaid)
 [![Rating](https://img.shields.io/visual-studio-marketplace/r/mark-ku.super-mermaid)](https://marketplace.visualstudio.com/items?itemName=mark-ku.super-mermaid&ssr=false#review-details)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+## Кратко по-русски
+
+**Super Mermaid** — расширение VS Code для диаграмм [Mermaid](https://mermaid.js.org/): живой предпросмотр рядом с кодом, готовая яркая тема без единой настройки, экспорт в PNG/SVG и визуальный редактор «нарисуй мышью — получи Mermaid» для всех типов диаграмм (плюс собственный тип ORID). Движок mermaid встроен в расширение, поэтому отрисовка работает полностью офлайн.
+
+Эта сборка — форк с русской локализацией: команды, панели, подсказки и уведомления переведены и следуют настройке **Display Language** самого VS Code. Подробности — в [README.ru.md](README.ru.md).
+
+### Как подключить к VS Code
+
+Форк не публикуется в Marketplace, поэтому расширение собирается локально и ставится из `.vsix`.
+
+1. Установите [Node.js 18+](https://nodejs.org/) и убедитесь, что в PATH есть команда `code` (в VS Code: `Ctrl+Shift+P` → **Shell Command: Install 'code' command in PATH**).
+2. Склонируйте репозиторий и поставьте зависимости:
+
+   ```bash
+   git clone https://github.com/TkachenkoPI/vs-code-extension-D.git
+   cd vs-code-extension-D
+   npm install
+   ```
+
+3. Соберите и установите расширение одной командой (PowerShell, Windows):
+
+   ```powershell
+   .\pack.ps1
+   ```
+
+   Скрипт делает сборку, собирает `super-mermaid-<версия>.vsix` и ставит его через `code --install-extension`. Ключ `-PackageOnly` — только собрать `.vsix`, без установки; `-Bump` — заодно поднять patch-версию.
+
+   Без PowerShell: `npm run build && npm run package`, затем `code --install-extension super-mermaid-<версия>.vsix`. Тот же `.vsix` можно поставить руками: панель расширений (`Ctrl+Shift+X`) → «…» → **Install from VSIX…**.
+
+   Если расширение той же версии уже стоит, VS Code пропустит установку — добавьте `--force` (`code --install-extension super-mermaid-<версия>.vsix --force`) либо соберите с `-Bump`, чтобы версия поднялась.
+
+4. Выполните `Ctrl+Shift+P` → **Developer: Reload Window**, чтобы новая версия подхватилась.
+5. Откройте файл `.md` с блоком ```` ```mermaid ```` либо файл `.mmd` / `.mermaid` и нажмите значок предпросмотра в правом верхнем углу редактора. Настраивать больше нечего.
+
+Русский интерфейс включится, если язык самого VS Code — русский: `Ctrl+Shift+P` → **Configure Display Language** → `ru`.
+
+### Как открыть вкладку с редактированием диаграммы
+
+Визуальный редактор («нарисуй мышью — получи Mermaid») открывается из **CodeLens** — строки серых ссылок,
+которую расширение рисует прямо над каждым блоком диаграммы.
+
+1. Откройте файл `.md` с блоком ```` ```mermaid ```` либо файл `.mmd` / `.mermaid`.
+2. Над первой строкой блока (там, где написано `flowchart TD`, `sequenceDiagram` и т. п.) появится строка:
+   **Редактировать диаграмму** · **Открыть в отдельном окне** · **✏ Нарисовать**.
+3. Щёлкните **✏ Нарисовать** — редактор откроется отдельной вкладкой справа от кода. Всё, что вы двигаете,
+   переименовываете и соединяете, тут же пишется обратно в исходный блок; внутри редактора работает и
+   обратная правка — вкладка **Mermaid** с исходником, кнопка **Применить** или `Ctrl+Enter`.
+   Клавиша `?` показывает шпаргалку по горячим клавишам.
+4. Для `timeline` и `ORID` вместо холста открывается структурированная форма, и ссылка называется **✏ Изменить**.
+5. **Редактировать диаграмму** — это не редактор, а предпросмотр с фокусом на этой диаграмме
+   (то же самое даёт `Ctrl+Shift+P` → **Super Mermaid: открыть предпросмотр сбоку**).
+
+Если строки CodeLens не видно:
+
+- включите CodeLens в настройках VS Code — `Ctrl+,` → найдите `editor.codeLens` → галочка (или `"editor.codeLens": true` в `settings.json`);
+- проверьте, что блок открыт именно как `mermaid` (```` ```mermaid ````), а файл распознан как Markdown или Mermaid;
+- ссылка **✏ Нарисовать** появляется только у типов, которые редактор умеет разбирать: `flowchart` / `graph`,
+  `stateDiagram`, `erDiagram`, `classDiagram`, `mindmap`, `sequenceDiagram`, а также `timeline` и `ORID`.
+  У остальных типов есть предпросмотр, но нет кнопки редактирования — так сделано намеренно, чтобы
+  не перезаписать диаграмму, которую редактор не понимает.
+
+### Установка через Claude Code
+
+Если под рукой есть Claude Code, установку можно поручить ему — скопируйте этот запрос целиком:
+
+```text
+Установи в мой VS Code расширение Super Mermaid из репозитория
+https://github.com/TkachenkoPI/vs-code-extension-D.git
+
+Шаги:
+1. Проверь, что есть node -v (18+), npm -v и code --version. Чего нет — скажи мне, не ставь сам.
+2. Если репозиторий ещё не склонирован — склонируй его в мою рабочую папку и перейди в неё.
+3. npm install
+4. Собери и установи расширение: .\pack.ps1  (PowerShell, Windows).
+   Если PowerShell недоступен: npm run build && npm run package,
+   затем code --install-extension super-mermaid-<версия>.vsix
+5. Проверь, что расширение встало: code --list-extensions --show-versions
+6. Скажи мне выполнить Ctrl+Shift+P → Developer: Reload Window и напиши,
+   какой файл открыть для проверки.
+
+Ничего не публикуй и не коммить — только локальная сборка и установка.
+Если npm install изменит package-lock.json — откати эту правку.
+```
+
+Claude спросит подтверждение на `npm install`, `.\pack.ps1` и `code --install-extension` — это ожидаемо,
+команды меняют состояние машины. Сборка занимает пару минут; готовый `.vsix` останется в корне репозитория,
+им же можно поставить расширение на другую машину без пересборки.
+
+---
 
 > **Mermaid diagrams that look good the moment you open them.** No theming, no config — every diagram comes out colored, rounded, and softly shadowed, ready to drop straight into slides, docs, or a PR. It updates live as you type, exports razor-sharp PNG/SVG, and runs **100% offline**.
 
@@ -44,7 +136,7 @@ Don't want to hand-write Mermaid? Click the **✏ Draw** CodeLens above a ```` `
 | **Charts** | **quadrant** · **pie** · **xychart** |
 | **Form** | timeline · **ORID** |
 
-The toolbar offers **only the shapes the diagram type can actually serialize** — a class diagram gets 「類別」, a state diagram gets 狀態 / 起始 / 結束 / 選擇 / 分岔, a C4 diagram gets 人員 / 系統 / 資料庫 / 佇列. Drag to place shapes, drag from a node edge to connect (or to empty space to spawn a connected node), double-click to rename or edit cell content (ER attributes, class members, sequence messages, requirement fields), right-click for shape / colour / align / group / type-specific actions, build sequences from scratch, **reconnect edges**, toggle direction, auto-tidy, **edit the Mermaid source two-way** (套用 / Ctrl+Enter re-renders), **copy the diagram to the clipboard as an image**, and export SVG/PNG.
+The toolbar offers **only the shapes the diagram type can actually serialize** — a class diagram gets *class*, a state diagram gets *state / start / end / choice / fork*, a C4 diagram gets *person / system / database / queue*. Drag to place shapes, drag from a node edge to connect (or to empty space to spawn a connected node), double-click to rename or edit cell content (ER attributes, class members, sequence messages, requirement fields), right-click for shape / colour / align / group / type-specific actions, build sequences from scratch, **reconnect edges**, toggle direction, auto-tidy, **edit the Mermaid source two-way** (Apply / Ctrl+Enter re-renders), **copy the diagram to the clipboard as an image**, and export SVG/PNG.
 
 On many of the newer types, dragging *means* something rather than just tidying the layout:
 
@@ -59,6 +151,8 @@ On many of the newer types, dragging *means* something rather than just tidying 
 
 Start from a **template** on the empty canvas (all twenty-one types are one click away) and press **`?`** for the keyboard-shortcut overlay. The editor's colours match the live preview exactly — including `classDef`/`style`/`linkStyle` colours, generics, abstract/static members, ER crow's-foot and markdown labels — and everything writes straight back to your file as clean Mermaid (round-trip stable). Anything the editor doesn't fully understand — an unusual gantt `dateFormat`, a nested `block:… end` — is passed through **verbatim** and marked read-only rather than half-rewritten.
 
+
+The canvas shortcuts (`Delete`, `?`, `Ctrl+Z` / `Ctrl+Y`, `Ctrl+A` / `Ctrl+D` / `Ctrl+G`, the arrow-key nudges, `V` / `N` / `E`) work whenever the drawing panel is the active tab — they are contributed as ordinary VS Code keybindings, so **File → Preferences → Keyboard Shortcuts** can rebind them: search for `superMermaid.editorKey` and edit the `args` of the entry you want. `Tab` and `Esc` are left to VS Code and act on the canvas once it has the focus.
 ![Draw diagrams visually](docs/images/draw-editor.png)
 
 ## 🧭 New: ORID — a diagram type Mermaid doesn't have
@@ -104,6 +198,16 @@ share links, `%% @tip` and `%% @check` (item ids are `O1`, `R2`, `I1`, `D3`…).
 Right-click any `.md` file (in the editor or the Explorer) → **Open Markdown Preview to the Side** — and the **entire document** renders as one scrollable page: headings, tables, highlighted code, and every ```` ```mermaid ```` block auto-colored. Pick **Open Markdown Preview in New Window** instead to pop it onto a second monitor. Scroll sync, a clickable **Outline**, **find in document** (`Ctrl+F` — highlights reach even the text inside diagrams), reading themes, zoom, three content-width modes, and **PNG / PDF export** are all built in.
 
 ![Full Markdown document preview](docs/images/markdown-preview.png)
+
+## Languages
+
+The UI follows VS Code's **Display Language**: English by default, Russian or Traditional Chinese when VS Code itself runs in one of those (`Ctrl+Shift+P` → **Configure Display Language**). Commands, panels, tooltips and notifications are all covered. 繁體中文 is the language this extension was originally written in, so where the upstream project had a string, its original wording is what you get back — including the help overlay and context menu the drawing library renders itself. Simplified Chinese has no bundle; a `zh-cn` VS Code gets English.
+
+You can also pick the language for this extension alone, without restarting VS Code or changing its display language: the 🌐 dropdown at the right of the drawing editor's toolbar (**Auto / English / Русский / 繁體中文**), or the `superMermaid.language` setting. It applies immediately to the drawing editor, both previews, the CodeLens titles and the status bar. Command titles in the palette and the settings page itself are owned by VS Code and keep following its display language.
+
+One exception: the `mmd-*` **snippets**. `contributes.snippets` takes a single fixed path with no locale switch, so the shipped snippet file is generated in one language — Russian in this build (`npm run gen:snippets` with `SNIPPET_LOCALE=en` regenerates the English set). The **Insert Diagram Template** command is not affected: it goes through `vscode.l10n` and follows the editor's language at runtime.
+
+Cyrillic works in both looks, the hand-drawn **Sketch** one included — the bundled Excalifont carries a full Cyrillic set, so Russian text is not silently replaced by a fallback font, in exported PNG / SVG either.
 
 ## Install
 

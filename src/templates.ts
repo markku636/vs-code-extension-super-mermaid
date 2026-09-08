@@ -4,12 +4,14 @@
 // Bodies use VS Code SNIPPET syntax: tab stops ${n:placeholder}, final $0,
 // literal "$" must be escaped as "\\$".
 
+import { RU_BODIES } from './templatesRu';
+
 export type TemplateCategory = 'Core' | 'Charts' | 'Planning' | 'Architecture' | 'Other';
 
 export interface MermaidTemplate {
   id: string;
   label: string;
-  /** zh-TW, shown in the QuickPick description column. */
+  /** English source text; shown in the QuickPick description column, translated at runtime. */
   description: string;
   diagramType: string;
   category: TemplateCategory;
@@ -23,7 +25,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'flowchart-basic',
     label: 'Flowchart - Basic',
-    description: '基本流程圖:開始、判斷分支、結束',
+    description: 'Basic flowchart: start, decision branch, end',
     diagramType: 'flowchart',
     category: 'Core',
     prefix: 'mmd-flow',
@@ -37,7 +39,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'flowchart-subgraph',
     label: 'Flowchart - Subgraphs',
-    description: '含子圖的流程圖:前後端分區與跨區連線',
+    description: 'Flowchart with subgraphs: client / server zones and links across them',
     diagramType: 'flowchart',
     category: 'Core',
     prefix: 'mmd-flow-sub',
@@ -54,7 +56,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'sequence-alt',
     label: 'Sequence - autonumber + alt',
-    description: '循序圖:autonumber 編號與 alt 條件分支',
+    description: 'Sequence diagram: autonumber and an alt conditional branch',
     diagramType: 'sequenceDiagram',
     category: 'Core',
     prefix: 'mmd-seq',
@@ -75,7 +77,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'class-basic',
     label: 'Class - Inheritance',
-    description: '類別圖:繼承關係、欄位與方法',
+    description: 'Class diagram: inheritance, fields and methods',
     diagramType: 'classDiagram',
     category: 'Core',
     prefix: 'mmd-class',
@@ -97,7 +99,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'state-v2',
     label: 'State - Transitions',
-    description: '狀態圖 v2:狀態轉移與起訖點',
+    description: 'State diagram v2: transitions with start and end points',
     diagramType: 'stateDiagram-v2',
     category: 'Core',
     prefix: 'mmd-state',
@@ -111,7 +113,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'er-basic',
     label: 'ER - Database',
-    description: '實體關聯圖:主鍵與一對多關係',
+    description: 'ER diagram: primary keys and a one-to-many relationship',
     diagramType: 'erDiagram',
     category: 'Core',
     prefix: 'mmd-er',
@@ -133,7 +135,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'pie-basic',
     label: 'Pie Chart',
-    description: '圓餅圖:各項占比',
+    description: 'Pie chart: share of each item',
     diagramType: 'pie',
     category: 'Charts',
     prefix: 'mmd-pie',
@@ -146,7 +148,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'quadrant',
     label: 'Quadrant Chart',
-    description: '象限圖:四象限定位',
+    description: 'Quadrant chart: positioning across four quadrants',
     diagramType: 'quadrantChart',
     category: 'Charts',
     prefix: 'mmd-quad',
@@ -165,7 +167,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'xychart',
     label: 'XY Chart (beta)',
-    description: 'XY 圖(beta):長條加折線',
+    description: 'XY chart (beta): bars plus a line',
     diagramType: 'xychart-beta',
     category: 'Charts',
     prefix: 'mmd-xy',
@@ -179,7 +181,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'sankey',
     label: 'Sankey (beta)',
-    description: '桑基圖(beta):流量分配(CSV 三欄)',
+    description: 'Sankey (beta): flow distribution (three CSV columns)',
     diagramType: 'sankey-beta',
     category: 'Charts',
     prefix: 'mmd-sankey',
@@ -194,7 +196,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'gantt-basic',
     label: 'Gantt',
-    description: '甘特圖:分區與相依任務',
+    description: 'Gantt: sections and dependent tasks',
     diagramType: 'gantt',
     category: 'Planning',
     prefix: 'mmd-gantt',
@@ -211,7 +213,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'timeline',
     label: 'Timeline',
-    description: '時間軸:依年代分段事件',
+    description: 'Timeline: events grouped into periods',
     diagramType: 'timeline',
     category: 'Planning',
     prefix: 'mmd-timeline',
@@ -229,7 +231,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'journey',
     label: 'User Journey',
-    description: '使用者旅程圖:任務與滿意度評分',
+    description: 'User journey: tasks with satisfaction scores',
     diagramType: 'journey',
     category: 'Planning',
     prefix: 'mmd-journey',
@@ -247,7 +249,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'kanban',
     label: 'Kanban',
-    description: '看板:欄位與工作項',
+    description: 'Kanban: columns and work items',
     diagramType: 'kanban',
     category: 'Planning',
     prefix: 'mmd-kanban',
@@ -263,7 +265,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'mindmap',
     label: 'Mindmap',
-    description: '心智圖:中心主題與分支',
+    description: 'Mindmap: a central topic and its branches',
     diagramType: 'mindmap',
     category: 'Planning',
     prefix: 'mmd-mind',
@@ -283,7 +285,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'c4-context',
     label: 'C4 - System Context',
-    description: 'C4 系統情境圖:人員、系統與邊界',
+    description: 'C4 system context: people, systems and boundaries',
     diagramType: 'C4Context',
     category: 'Architecture',
     prefix: 'mmd-c4',
@@ -298,7 +300,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'architecture',
     label: 'Architecture (beta)',
-    description: '架構圖(beta):群組、服務與連線',
+    description: 'Architecture (beta): groups, services and links',
     diagramType: 'architecture-beta',
     category: 'Architecture',
     prefix: 'mmd-arch',
@@ -313,7 +315,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'block',
     label: 'Block (beta)',
-    description: '區塊圖(beta):欄位配置與箭頭',
+    description: 'Block (beta): column layout and arrows',
     diagramType: 'block-beta',
     category: 'Architecture',
     prefix: 'mmd-block',
@@ -326,7 +328,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'packet',
     label: 'Packet (beta)',
-    description: '封包圖(beta):位元欄位配置',
+    description: 'Packet (beta): bit-field layout',
     diagramType: 'packet-beta',
     category: 'Architecture',
     prefix: 'mmd-packet',
@@ -339,7 +341,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'gitgraph',
     label: 'Git Graph',
-    description: 'Git 分支圖:branch / merge / tag',
+    description: 'Git graph: branch / merge / tag',
     diagramType: 'gitGraph',
     category: 'Architecture',
     prefix: 'mmd-git',
@@ -357,7 +359,7 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'requirement',
     label: 'Requirement',
-    description: '需求圖:需求、元素與 satisfies 關係',
+    description: 'Requirement diagram: requirements, elements and satisfies relations',
     diagramType: 'requirementDiagram',
     category: 'Other',
     prefix: 'mmd-req',
@@ -376,41 +378,41 @@ export const TEMPLATES: readonly MermaidTemplate[] = [
   {
     id: 'orid-retro',
     label: 'ORID - Focused Conversation',
-    description: 'ORID 焦點討論法:客觀事實 → 感受反應 → 意義詮釋 → 決定行動',
+    description: 'ORID focused conversation: objective → reflective → interpretive → decisional',
     diagramType: 'orid',
     category: 'Other',
     prefix: 'mmd-orid',
     body: `orid
-    title \${1:上線後回顧會議}
+    title \${1:Post-release retrospective}
     objective
-        \${2:上線後錯誤率 3.2%}
-        平均延遲 850ms
+        \${2:Error rate after release: 3.2%}
+        Average latency 850ms
     reflective
-        \${3:團隊感到焦慮}
-        使用者抱怨變多
+        \${3:The team feels anxious}
+        More complaints from users
     interpretive
-        \${4:監控缺口是根因}
+        \${4:The monitoring gap is the root cause}
     decisional
-        \${5:補上告警 @owner 8/25}
-        加壓力測試 @owner 9/1$0`,
+        \${5:Add alerting @owner 8/25}
+        Add load tests @owner 9/1$0`,
   },
   {
     id: 'orid-blank',
     label: 'ORID - Blank Four Stages',
-    description: 'ORID 空白骨架:四段標題齊備,內容待填(適合會議現場邊談邊記)',
+    description: 'ORID blank skeleton: all four stage headings, content left to fill in during the meeting',
     diagramType: 'orid',
     category: 'Other',
     prefix: 'mmd-orid-blank',
     body: `orid
-    title \${1:討論主題}
+    title \${1:Discussion topic}
     objective
-        \${2:看到 / 聽到什麼?只寫可查證的事實}
+        \${2:What did you see / hear? Verifiable facts only}
     reflective
-        \${3:當下的感覺、直覺反應}
+        \${3:Feelings and gut reactions in the moment}
     interpretive
-        \${4:這代表什麼?根因與洞察}
+        \${4:What does this mean? Root causes and insights}
     decisional
-        \${5:接下來做什麼?誰負責、何時完成}$0`,
+        \${5:What happens next? Who owns it and by when}$0`,
   },
 ];
 
@@ -421,6 +423,17 @@ export function plainSource(template: MermaidTemplate): string {
     .replace(/\$\{\d+\|([^|,}]+)[^}]*\}/g, '$1')
     .replace(/\$\d+/g, '')
     .replace(/\\\$/g, '$');
+}
+
+/**
+ * The template body for a VS Code display language. Falls back to the English
+ * body whenever a locale has no translated variant.
+ */
+export function localizedBody(template: MermaidTemplate, locale: string): string {
+  if (locale.toLowerCase().startsWith('ru')) {
+    return RU_BODIES[template.id] ?? template.body;
+  }
+  return template.body;
 }
 
 /** Wrap a snippet body in a ```mermaid fence (markdown insertion). */

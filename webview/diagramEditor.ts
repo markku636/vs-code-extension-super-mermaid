@@ -32,6 +32,11 @@ import {
   type NodeShape,
   type Tool,
 } from 'react-super-mermaid/editor';
+import { initI18nFromDocument, t, tLib } from './i18n';
+
+// Must run before any string is rendered: picks the dictionary matching the
+// display language the host stamped on <body data-locale="…">.
+initI18nFromDocument();
 
 registerFlowchartAdapter();
 registerStateAdapter();
@@ -82,19 +87,231 @@ function byId<T extends HTMLElement = HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
 }
 
+/**
+ * Translate the pieces react-super-mermaid renders on its own.
+ *
+ * Its keyboard-help overlay and right-click menu are hard-coded zh-TW with no
+ * hook to supply other strings, so the editor rewrites their text once the
+ * library has appended them to the canvas host (see watchLibDom below).
+ */
+const LIB_TEXT_SELECTOR = '.rsm-ctx-item, .rsm-help-title, .rsm-help-grid > kbd, .rsm-help-grid > span';
+
+function localizeLibDom(root: HTMLElement): void {
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>(LIB_TEXT_SELECTOR))) {
+    const translated = tLib(el.textContent ?? '');
+    if (translated !== el.textContent) el.textContent = translated;
+  }
+  // 外形列的說明只出現在 tooltip,textContent 是字形本身,不能動。
+  for (const btn of Array.from(root.querySelectorAll<HTMLElement>('.rsm-ctx-shapes button[title]'))) {
+    const translated = tLib(btn.title);
+    if (translated !== btn.title) btn.title = translated;
+  }
+}
+
+/**
+ * Keep the right-click menu alive long enough for the click to land.
+ *
+ * react-super-mermaid closes the menu from a `pointerdown` listener on
+ * `document`, and that fires before the item's own `click`: the item is out of
+ * the DOM by the time the click would be dispatched, so no menu command ever
+ * ran. Holding the pointerdown inside the menu back from `document` leaves the
+ * closing to the item handler, which calls the library's own close first.
+ */
+function keepMenuUntilClick(menu: HTMLElement): void {
+  menu.addEventListener('pointerdown', (e) => e.stopPropagation());
+}
+
+/** 選單 / 說明是使用時才建立的,所以用 observer 在它們掛上畫布的當下就翻好。 */
+function watchLibDom(host: HTMLElement): void {
+  const observer = new MutationObserver((records) => {
+    for (const rec of records) {
+      for (const added of Array.from(rec.addedNodes)) {
+        if (!(added instanceof HTMLElement)) continue;
+        localizeLibDom(added);
+        if (added.classList.contains('rsm-ctx')) keepMenuUntilClick(added);
+        for (const menu of Array.from(added.querySelectorAll<HTMLElement>('.rsm-ctx'))) {
+          keepMenuUntilClick(menu);
+        }
+      }
+    }
+  });
+  observer.observe(host, { childList: true, subtree: true });
+}
+
+/** Fields where a keystroke belongs to the field, not to the canvas. */
+function isTypingTarget(el: HTMLElement): boolean {
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+}
+
+/**
+ * Route the canvas shortcuts to the canvas whatever holds the focus.
+ *
+ * The library binds its keydown handler to the canvas host and never focuses
+ * it, so on a freshly opened panel the focus is still on <body> and every
+ * shortcut — Delete, ?, Ctrl+Z, the arrow nudges — is dead until the drawing is
+ * clicked. Worse, each toolbar click parks the focus on a button and kills them
+ * again. So the webview replays the event on the host unless the focus is
+ * already inside the canvas or in a field that must keep its own keys.
+ * `preventDefault` is mirrored back, otherwise Ctrl+A / Ctrl+D would also run
+ * the browser's own action.
+ *
+ * On `window` in the capture phase, and deliberately without a
+ * `defaultPrevented` bail: inside a VS Code webview the page shares the keydown
+ * with the workbench's own keybinding dispatch, and a shortcut that VS Code has
+ * already claimed must still reach the canvas. What this cannot fix is a
+ * keystroke that never arrives — VS Code hands keys to whatever *it* considers
+ * focused, so the panel needs one click (or to be the active tab) first.
+ */
+function forwardHotkeys(host: HTMLElement): void {
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      seenInPage.set(strokeSig(e.key, e.ctrlKey || e.metaKey, e.shiftKey), Date.now());
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (target && (host.contains(target) || isTypingTarget(target))) return;
+      const replay = new KeyboardEvent('keydown', {
+        key: e.key,
+        code: e.code,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey,
+        repeat: e.repeat,
+        bubbles: false,
+        cancelable: true,
+      });
+      if (!host.dispatchEvent(replay)) e.preventDefault();
+    },
+    true,
+  );
+}
+
+/** A shortcut as the host sends it (mirrors `contributes.keybindings`' args). */
+interface Stroke {
+  key: string;
+  ctrl?: boolean;
+  shift?: boolean;
+}
+
+function strokeSig(key: string, ctrl: boolean, shift: boolean): string {
+  return `${ctrl ? 'c' : ''}${shift ? 's' : ''}${key.toLowerCase()}`;
+}
+
+/**
+ * When each shortcut last arrived as a real keystroke in this page.
+ *
+ * The host route below fires for the *same* physical keypress, just later (page
+ * keydown → VS Code keybinding → command → postMessage), so a stroke recorded
+ * here means the canvas already had its chance — including the case where the
+ * chance was "a textarea has the focus, so the canvas must stay out of it".
+ */
+const seenInPage = new Map<string, number>();
+const HOST_KEY_GRACE_MS = 400;
+
+/**
+ * Run a shortcut that came from a VS Code keybinding.
+ *
+ * Keys only reach a webview when VS Code considers the webview focused, and a
+ * panel can be the active tab with the focus still parked in the workbench — so
+ * a page-only listener can never be the whole answer. The panel therefore also
+ * contributes real keybindings scoped to `activeWebviewPanelId`, and each one
+ * lands here to be replayed on the canvas host, which keeps the library's own
+ * handler as the single implementation of every shortcut.
+ */
+function applyHostKey(host: HTMLElement, stroke: Stroke): void {
+  const sig = strokeSig(stroke.key, Boolean(stroke.ctrl), Boolean(stroke.shift));
+  const seen = seenInPage.get(sig) ?? 0;
+  if (Date.now() - seen < HOST_KEY_GRACE_MS) return; // the page already handled it
+  host.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: stroke.key,
+      ctrlKey: Boolean(stroke.ctrl),
+      shiftKey: Boolean(stroke.shift),
+      bubbles: false,
+      cancelable: true,
+    }),
+  );
+}
+
 // 箭頭端的友善名稱(下拉選單用)。flowchart 用前 5 種;三角 / 菱形 / 鳥足為 class/er 圖種。
 const ARROW_LABEL: Record<string, string> = {
-  none: '⎯ 無箭頭',
-  arrow: '▸ 箭頭',
-  open: '⇁ 開放',
-  dot: '● 圓點',
-  cross: '✕ 交叉',
-  triangle: '▷ 三角(繼承)',
-  diamond: '◇ 空心菱(聚合)',
-  diamondFilled: '◆ 實心菱(組合)',
-  crowFootOne: '⊣ 一',
-  crowFootMany: '⪛ 多',
+  none: t('⎯ no arrow'),
+  arrow: t('▸ arrow'),
+  open: t('⇁ open'),
+  dot: t('● dot'),
+  cross: t('✕ cross'),
+  triangle: t('▷ triangle (inheritance)'),
+  diamond: t('◇ hollow diamond (aggregation)'),
+  diamondFilled: t('◆ filled diamond (composition)'),
+  crowFootOne: t('⊣ one'),
+  crowFootMany: t('⪛ many'),
 };
+
+/**
+ * Node-shape captions.
+ *
+ * react-super-mermaid's own shapeMeta().label is zh-TW only, so the editor
+ * keeps its own table; an unknown shape falls back to the library's label so a
+ * newly added shape still shows something rather than its id.
+ */
+const SHAPE_LABEL: Record<string, string> = {
+  // flowchart
+  rectangle: 'rectangle',
+  rounded: 'rounded',
+  stadium: 'stadium',
+  subroutine: 'subroutine',
+  cylinder: 'database',
+  circle: 'circle',
+  doubleCircle: 'double circle',
+  diamond: 'diamond',
+  hexagon: 'hexagon',
+  odd: 'flag',
+  trapezoid: 'trapezoid',
+  trapezoidAlt: 'trapezoid (inverted)',
+  parallelogram: 'parallelogram',
+  parallelogramAlt: 'parallelogram (left)',
+  ellipse: 'ellipse',
+  // state
+  state: 'state',
+  stateStart: 'start',
+  stateEnd: 'end',
+  fork: 'fork / join',
+  choice: 'choice',
+  // class / er / sequence
+  classBox: 'class',
+  entity: 'entity',
+  actor: 'actor',
+  participant: 'participant',
+  note: 'note',
+  // requirement
+  requirementBox: 'requirement',
+  elementBox: 'element',
+  // quadrant / xychart
+  point: 'data point',
+  xyPoint: 'data point',
+  // C4
+  c4Person: 'person',
+  c4Box: 'system',
+  c4Db: 'database',
+  c4Queue: 'queue',
+  // kanban / sankey / journey / gantt / pie / architecture / packet / git
+  kanbanCard: 'card',
+  sankeyNode: 'node',
+  journeyTask: 'task',
+  ganttBar: 'task',
+  pieSlice: 'slice',
+  archNode: 'service',
+  packetField: 'field',
+  gitCommit: 'commit',
+  passthrough: 'kept as-is',
+};
+
+/** Translated caption for a node shape. */
+function shapeLabel(shape: string, fallback: string): string {
+  const source = SHAPE_LABEL[shape];
+  return source ? t(source) : fallback;
+}
 
 /** 依目前圖種能力重建箭頭下拉的選項(保留現值)。 */
 function rebuildArrowOptions(sel: HTMLSelectElement, heads: readonly string[]): void {
@@ -157,13 +374,14 @@ function rebuildShapeButtons(caps: DiagramCapabilities | null): void {
     group.textContent = '';
     for (const shape of quick) {
       const m = shapeMeta(shape);
+      const label = shapeLabel(shape, m.label);
       const btn = document.createElement('button');
       btn.className = 'tbtn shape-btn';
       btn.setAttribute('data-shape', shape);
-      btn.title = `新增${m.label}節點`;
+      btn.title = t('Add a {0} node', label);
       // 圖示是 core 產的常數 SVG(無使用者輸入);字形縮圖在多數系統字型下畫不出來。
       btn.innerHTML = shapeIconMarkup(shape);
-      btn.appendChild(document.createTextNode(m.label));
+      btn.appendChild(document.createTextNode(label));
       group.appendChild(btn);
     }
   }
@@ -171,13 +389,13 @@ function rebuildShapeButtons(caps: DiagramCapabilities | null): void {
     sel.textContent = '';
     const head = document.createElement('option');
     head.value = '';
-    head.textContent = '＋ 更多外形…';
+    head.textContent = t('＋ more shapes…');
     sel.appendChild(head);
     for (const shape of more) {
       const m = shapeMeta(shape);
       const opt = document.createElement('option');
       opt.value = shape;
-      opt.textContent = `${m.glyph} ${m.label}`;
+      opt.textContent = `${m.glyph} ${shapeLabel(shape, m.label)}`;
       sel.appendChild(opt);
     }
     sel.dataset.hasMore = more.length ? '1' : '';
@@ -334,15 +552,15 @@ function wireToolbar(h: DiagramEditorHandle): void {
     void h
       .copyPngToClipboard()
       .then(() => {
-        copyBtn.textContent = '✓ 已複製';
+        copyBtn.textContent = t('✓ copied');
         setTimeout(() => {
-          copyBtn.textContent = '⧉ 複製';
+          copyBtn.textContent = t('⧉ copy');
         }, 1400);
       })
       .catch(() => {
-        copyBtn.textContent = '✗ 不支援';
+        copyBtn.textContent = t('✗ unsupported');
         setTimeout(() => {
-          copyBtn.textContent = '⧉ 複製';
+          copyBtn.textContent = t('⧉ copy');
         }, 1400);
       });
   });
@@ -412,6 +630,7 @@ window.addEventListener('message', (event) => {
     dark?: boolean;
     blocks?: Array<{ index: number; label: string }>;
     activeIndex?: number;
+    stroke?: Stroke;
   };
   if (msg.type === 'load') {
     populateDiagramSelect(msg.blocks, msg.activeIndex);
@@ -423,6 +642,8 @@ window.addEventListener('message', (event) => {
         fontUrl: fontUri,
         look: 'clean',
       });
+      watchLibDom(app);
+      forwardHotkeys(app);
       handle.on('mermaidchange', (text) => {
         updateSourcePanel(text as string); // 即時更新原始碼面板(載入期間也更新)
         if (suppressWriteBack) return;
@@ -449,7 +670,19 @@ window.addEventListener('message', (event) => {
       });
   } else if (msg.type === 'theme') {
     handle?.setDark(Boolean(msg.dark));
+  } else if (msg.type === 'key' && msg.stroke) {
+    // 工具列與畫布之外的焦點:快捷鍵由 host 的 keybinding 送進來(見 applyHostKey)。
+    applyHostKey(app, msg.stroke);
   }
+});
+
+// 介面語言下拉:工具列字串由 host 產生,所以只把選擇送回去,由 host 寫設定並重建整份 HTML。
+// 刻意不放在 wireToolbar 裡 —— 那要等圖載入成功才會執行,而語言在圖壞掉時更需要能切。
+byId<HTMLSelectElement>('lang-select')?.addEventListener('change', (e) => {
+  vscodeApi.postMessage({
+    type: 'setLanguage',
+    language: (e.target as HTMLSelectElement).value,
+  });
 });
 
 vscodeApi.postMessage({ type: 'ready' });

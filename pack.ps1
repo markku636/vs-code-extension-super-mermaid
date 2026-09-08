@@ -49,7 +49,8 @@ if ($PackageOnly) {
 }
 else {
     Write-Host '[pack] 安裝到 VS Code...' -ForegroundColor Cyan
-    code --install-extension $vsix
+    # --force:版號沒變時 code CLI 會判定「已安裝」而跳過,重裝就無聲失效。
+    code --install-extension $vsix --force
     if ($LASTEXITCODE -ne 0) { throw 'code --install-extension 失敗' }
     Write-Host '[pack] 完成!請在 VS Code 執行 Developer: Reload Window 讓新版生效。' -ForegroundColor Green
 }

@@ -1,5 +1,137 @@
 # Changelog
 
+## Unreleased — the drawing editor's right-click menu and shortcuts work again
+
+Two dead inputs in the drawing editor, both from `react-super-mermaid` and both invisible to any
+test that drives the editor through its API rather than through a real mouse and keyboard.
+
+- **Fix**: picking anything from a right-click menu did nothing. The library closes the menu from a
+  `pointerdown` listener on `document`, which runs *before* the item's own `click` — the item is out
+  of the DOM by the time the click would be dispatched, so no menu command ever ran. The webview now
+  keeps a pointerdown inside the menu from reaching `document`; closing is left to the item handler,
+  which calls the library's own close first.
+- **Fix**: keyboard shortcuts (Delete, `?`, Ctrl+Z, the arrow nudges, V / N / E) were dead until the
+  canvas itself was clicked, and every toolbar click killed them again — the library binds its
+  `keydown` to the canvas host and nothing ever focuses it, so on a freshly opened panel the focus is
+  still on `<body>` and afterwards it sits on whichever toolbar button was pressed last. The webview
+  now replays the event on the canvas host unless the focus is already inside the canvas or in a
+  field that must keep its own keys (input / textarea / select / contenteditable, so the source panel
+  and the inline label editors are untouched). It listens on `window` in the capture phase and does
+  not skip events whose default is already prevented: inside a VS Code webview the page shares the
+  keydown with the workbench's own keybinding dispatch, and a shortcut VS Code has claimed must still
+  reach the canvas. What no webview code can fix is a keystroke that never arrives — VS Code hands
+  keys to whatever *it* considers focused, so the panel still needs one click (or to be the active
+  tab) before it hears anything at all.
+- **New**: the canvas shortcuts are contributed as real VS Code keybindings too, scoped to the panel
+  (`when: activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus &&
+  !listFocus`) and forwarded into the webview by `superMermaid.editorKey`. This is the part a page
+  listener cannot cover: a keystroke only reaches a webview while VS Code considers the webview
+  focused, so with the panel as the active tab but the focus parked in the workbench, nothing arrived
+  at all. Delete / Backspace, `?`, Ctrl+Z / Y / Shift+Z, Ctrl+A / D / G / C / V, the arrow nudges
+  (plain and with Shift) and V / N / E now work whenever the panel is the active tab. Tab and Escape
+  are deliberately left to VS Code and keep working the moment the canvas has the focus.
+- **New**: the webview drops a forwarded stroke it has already seen as a real keystroke within
+  400 ms, so the two routes never both fire — no double undo, no node duplicated twice, and nothing
+  stolen from a textarea inside the panel.
+- **New**: `npm run verify:ui` case *右鍵選單指令 + 工具列焦點快捷鍵*, driven with a real mouse and
+  keyboard — right-clicks a node and clicks the menu's last item; selects a node, clicks a toolbar
+  button and presses Delete and `?`; posts a stroke the way the host does with no keystroke at all;
+  and presses Ctrl+D for real before echoing the same stroke from the host, which must not duplicate
+  twice. Every symptom above fails this case without its fix.
+
+## Unreleased — Traditional Chinese is back
+
+This fork's upstream is a zh-TW project, and the Russian localization replaced its Chinese UI
+strings with English source strings without putting the Chinese back as a bundle. A zh-TW user of
+the upstream extension therefore lost their language. Now it is a full bundle again, and one of the
+choices in the toolbar's language picker.
+
+- **New**: `l10n/bundle.l10n.zh-tw.json` (all 268 host strings), `package.nls.zh-tw.json` for the
+  manifest, and a zh-TW dictionary in `webview/i18n.ts`. Wherever the pre-i18n code had a Chinese
+  string, that exact wording is restored — toolbar tooltips, arrow names, template descriptions, the
+  copy-button states.
+- **New**: the strings the drawing library renders itself (help overlay, context menu, shape
+  captions) are not re-translated. `LIB_ZH_EN` already maps the library's zh-TW to English, so the
+  zh-TW dictionary is that table read backwards: `{...libZhTw(), ...ZH_TW_OWN}`. One table, and the
+  menu reads exactly as upstream prints it. The toolbar's shape captions were aligned to the same
+  words (方框, 圓角, 六角…) so both places name a shape the same way.
+- **Change**: `npm run check:l10n` now checks **every** `l10n/bundle.l10n.*.json`, not just the
+  Russian one, and checks the webview dictionaries too — each language must carry the same keys as
+  the reference dictionary, with `LIB_ZH_EN`'s English values counting as coverage.
+- Simplified Chinese is deliberately absent: `zh-cn` falls back to English rather than being shown
+  Traditional forms. Template *bodies* stay English for zh-TW — upstream's bodies were English too;
+  only Russian has translated bodies (`src/templatesRu.ts`).
+
+## Unreleased — pick the interface language in the toolbar
+
+The extension spoke whatever language VS Code's **Display Language** was set to, and nothing else.
+That is the wrong granularity for a diagram tool: people run an English VS Code and still want the
+drawing editor in Russian (and the other way round), and switching VS Code's display language means
+a restart of the whole editor.
+
+- **New**: a 🌐 dropdown at the right of the drawing editor's toolbar — **Auto / English / Русский /
+  繁體中文** — backed by the `superMermaid.language` setting (`auto` = follow VS Code, the default). Changing
+  it takes effect at once: the drawing editor, the diagram preview and the Markdown preview rebuild
+  their HTML (the toolbar strings are host-generated, so a rebuild is the only way), and the CodeLens
+  titles and status bar re-render.
+- **New**: `src/uiLocale.ts` — a `t()` that is call-compatible with `vscode.l10n.t` and delegates to
+  it verbatim on `auto`. With an override it looks the string up in the same `l10n/bundle.l10n.ru.json`
+  (imported, so it ends up inside `dist/extension.js`), including the keyed `message/comment` form
+  used for plurals; `en` returns the source string, which is the English original. Every
+  `vscode.l10n.t` call in `src/` goes through it now, and `npm run check:l10n` still sees them.
+- **Fixed**: the drawing editor's keyboard-help overlay (`?`) and its right-click menus stayed in
+  zh-TW whatever the language was. Those strings are hard-coded inside react-super-mermaid with no
+  hook to replace them, so the webview now translates their DOM as the library appends it: a zh-TW →
+  English map in `webview/i18n.ts` feeds the existing dictionary, which means a locale without a
+  translation lands on English instead of Chinese. Covers all 68 strings of the help overlay and of
+  every context menu (canvas, node, edge, sequence, gitgraph, kanban / journey, requirement),
+  including the shape-strip and colour-swatch tooltips.
+- Not covered, by construction: command titles, menu entries and the settings page itself come from
+  `package.nls.*.json`, which VS Code resolves from its own display language before the extension
+  runs. Both READMEs say so.
+
+## Unreleased — a clean clone builds again
+
+`webview/main.ts` imported `stripHtmlFormattingTags` from `react-super-mermaid/orid`, which only
+exists in the library's unpublished 0.28.1 — npm still serves 0.28.0, so `npm install` + `npm run
+build` failed on `tsc` for anyone without the library's sources checked out next door.
+
+- **Fix**: the helper now lives in `webview/stripHtmlTags.ts`. Same behaviour (inline formatting
+  tags dropped from the export render, `<br>` and label text kept), no dependency on an unpublished
+  version — clone, `npm install`, `.\pack.ps1` works unattended. Revert to the library import once
+  0.28.1 is on npm.
+- **Fix**: `pack.ps1` installs with `code --install-extension --force`; without it the CLI treats an
+  unchanged version number as "already installed" and silently skips the reinstall.
+
+## Unreleased — Russian localization
+
+The UI was a mix of English and Traditional Chinese, and neither followed the editor's display
+language. Everything user-facing now goes through a translation layer with English as the source
+language and a Russian bundle alongside it, so the extension speaks Russian in a Russian VS Code and
+English everywhere else.
+
+- **New**: `package.nls.json` / `package.nls.ru.json` for the manifest (command titles, settings
+  descriptions), `l10n/bundle.l10n.ru.json` + `vscode.l10n.t()` for the extension host, and
+  `webview/i18n.ts` for strings that live inside a webview (the host stamps the display language on
+  `<body data-locale>`). `npm run check:l10n` reports missing and unused keys.
+- **New**: Russian variants of all 23 diagram templates (`src/templatesRu.ts`). Mermaid's grammar
+  rejects non-ASCII in a few positions, so `requirement` names, `sankey` nodes and git branch names
+  stay Latin, and `xychart` axis labels / `architecture` `[labels]` are quoted. Every Russian body is
+  covered by `npm run verify:roundtrip` alongside the English one.
+- **Change**: the drawing editor's toolbar, arrow names and shape captions are no longer
+  Traditional Chinese only. The captions are the extension's own table now — the library's
+  `shapeMeta().label` is zh-TW with no translation hook.
+- **Change**: `snippets/*.json` is generated in Russian. `contributes.snippets` takes one fixed path
+  with no locale switch, so the shipped snippets can only be one language; `SNIPPET_LOCALE=en npm run
+  gen:snippets` regenerates the English set. The **Insert Diagram Template** command is unaffected —
+  it follows the editor's language at runtime.
+- **Fix**: outline anchors in the full-document Markdown preview dropped every Cyrillic character
+  (the slug filter was `\w` plus a CJK range, and `\w` is ASCII-only), so Russian headings all
+  collapsed to the same `section` id. It now keeps any Unicode letter or digit.
+- Cyrillic in the hand-drawn **Sketch** look was checked, not assumed: the bundled Excalifont's cmap
+  covers the full Russian alphabet, so no font fallback is needed.
+- **Docs**: `README.ru.md`, linked from the English README.
+
 ## 0.20.1 — `<b>` was showing up in exported PNGs
 
 The live preview renders labels with `htmlLabels` on, so inline HTML like `<b>` and `<i>` becomes

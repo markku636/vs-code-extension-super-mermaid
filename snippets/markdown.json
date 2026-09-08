@@ -1,162 +1,165 @@
 {
-  "Mermaid Flowchart - Basic": {
+  "Mermaid Блок-схема — простая": {
     "prefix": "mmd-flow",
-    "description": "基本流程圖:開始、判斷分支、結束",
+    "description": "Простая блок-схема: начало, ветвление, конец",
     "body": [
       "```mermaid",
       "flowchart TD",
-      "    A([${1:Start}]) --> B{${2:Is it valid?}}",
-      "    B -- Yes --> C[${3:Process data}]",
-      "    B -- No --> D[${4:Show error}]",
-      "    C --> E([End])",
+      "    A([${1:Начало}]) --> B{${2:Данные корректны?}}",
+      "    B -- Да --> C[${3:Обработать данные}]",
+      "    B -- Нет --> D[${4:Показать ошибку}]",
+      "    C --> E([Конец])",
       "    D --> E$0",
       "```"
     ]
   },
-  "Mermaid Flowchart - Subgraphs": {
+  "Mermaid Блок-схема — с подграфами": {
     "prefix": "mmd-flow-sub",
-    "description": "含子圖的流程圖:前後端分區與跨區連線",
+    "description": "Блок-схема с подграфами: зоны клиента и сервера и связи между ними",
     "body": [
       "```mermaid",
       "flowchart LR",
-      "    subgraph Client",
-      "        A[Browser] --> B[${1:SPA}]",
+      "    subgraph client [Клиент]",
+      "        A[Браузер] --> B[${1:SPA}]",
       "    end",
-      "    subgraph Server",
-      "        C[API Gateway] --> D[${2:Service}]",
-      "        D --> E[(Database)]",
+      "    subgraph server [Сервер]",
+      "        C[API-шлюз] --> D[${2:Сервис}]",
+      "        D --> E[(База данных)]",
       "    end",
       "    B -->|HTTPS| C$0",
       "```"
     ]
   },
-  "Mermaid Sequence - autonumber + alt": {
+  "Mermaid Последовательность — autonumber и alt": {
     "prefix": "mmd-seq",
-    "description": "循序圖:autonumber 編號與 alt 條件分支",
+    "description": "Диаграмма последовательности: autonumber и условная ветвь alt",
     "body": [
       "```mermaid",
       "sequenceDiagram",
       "    autonumber",
-      "    actor U as ${1:User}",
-      "    participant S as ${2:Server}",
-      "    participant DB as Database",
-      "    U->>S: Login request",
-      "    S->>DB: Query user",
-      "    DB-->>S: User record",
-      "    alt credentials valid",
-      "        S-->>U: 200 OK + token",
-      "    else invalid",
+      "    actor U as ${1:Пользователь}",
+      "    participant S as ${2:Сервер}",
+      "    participant DB as База данных",
+      "    U->>S: Запрос на вход",
+      "    S->>DB: Найти пользователя",
+      "    DB-->>S: Запись пользователя",
+      "    alt данные верны",
+      "        S-->>U: 200 OK и токен",
+      "    else данные неверны",
       "        S-->>U: 401 Unauthorized",
       "    end$0",
       "```"
     ]
   },
-  "Mermaid Class - Inheritance": {
+  "Mermaid Классы — наследование": {
     "prefix": "mmd-class",
-    "description": "類別圖:繼承關係、欄位與方法",
+    "description": "Диаграмма классов: наследование, поля и методы",
     "body": [
       "```mermaid",
       "classDiagram",
-      "    class ${1:Animal} {",
-      "        +String name",
-      "        +int age",
-      "        +makeSound() void",
+      "    class ${1:Животное} {",
+      "        +String имя",
+      "        +int возраст",
+      "        +издатьЗвук() void",
       "    }",
-      "    class ${2:Dog} {",
-      "        +fetch() void",
+      "    class ${2:Собака} {",
+      "        +принести() void",
       "    }",
-      "    class Cat {",
-      "        -bool indoor",
+      "    class Кошка {",
+      "        -bool домашняя",
       "    }",
-      "    ${1:Animal} <|-- ${2:Dog}",
-      "    ${1:Animal} <|-- Cat$0",
+      "    ${1:Животное} <|-- ${2:Собака}",
+      "    ${1:Животное} <|-- Кошка$0",
       "```"
     ]
   },
-  "Mermaid State - Transitions": {
+  "Mermaid Состояния — переходы": {
     "prefix": "mmd-state",
-    "description": "狀態圖 v2:狀態轉移與起訖點",
+    "description": "Диаграмма состояний v2: переходы с начальной и конечной точками",
     "body": [
       "```mermaid",
       "stateDiagram-v2",
       "    [*] --> Idle",
-      "    Idle --> ${1:Running} : start",
-      "    ${1:Running} --> Paused : pause",
-      "    Paused --> ${1:Running} : resume",
-      "    ${1:Running} --> [*] : stop$0",
+      "    Idle : Простой",
+      "    ${1:Running} : Работает",
+      "    Paused : Пауза",
+      "    Idle --> ${1:Running} : старт",
+      "    ${1:Running} --> Paused : пауза",
+      "    Paused --> ${1:Running} : продолжить",
+      "    ${1:Running} --> [*] : стоп$0",
       "```"
     ]
   },
-  "Mermaid ER - Database": {
+  "Mermaid ER — база данных": {
     "prefix": "mmd-er",
-    "description": "實體關聯圖:主鍵與一對多關係",
+    "description": "ER-диаграмма: первичные ключи и связь «один ко многим»",
     "body": [
       "```mermaid",
       "erDiagram",
-      "    ${1:CUSTOMER} ||--o{ ${2:ORDER} : places",
-      "    ${2:ORDER} ||--|{ ORDER_ITEM : contains",
-      "    PRODUCT ||--o{ ORDER_ITEM : \"ordered in\"",
-      "    ${1:CUSTOMER} {",
+      "    ${1:КЛИЕНТ} ||--o{ ${2:ЗАКАЗ} : \"оформляет\"",
+      "    ${2:ЗАКАЗ} ||--|{ ПОЗИЦИЯ_ЗАКАЗА : \"содержит\"",
+      "    ТОВАР ||--o{ ПОЗИЦИЯ_ЗАКАЗА : \"входит в\"",
+      "    ${1:КЛИЕНТ} {",
       "        int id PK",
-      "        string name",
+      "        string имя",
       "        string email",
       "    }",
-      "    ${2:ORDER} {",
+      "    ${2:ЗАКАЗ} {",
       "        int id PK",
-      "        date created_at",
+      "        date создан",
       "    }$0",
       "```"
     ]
   },
-  "Mermaid Pie Chart": {
+  "Mermaid Круговая диаграмма": {
     "prefix": "mmd-pie",
-    "description": "圓餅圖:各項占比",
+    "description": "Круговая диаграмма: доля каждого элемента",
     "body": [
       "```mermaid",
-      "pie title ${1:Browser Share}",
+      "pie title ${1:Доли браузеров}",
       "    \"Chrome\" : 62",
       "    \"Safari\" : 20",
       "    \"Edge\" : 10",
-      "    \"Other\" : 8$0",
+      "    \"Прочие\" : 8$0",
       "```"
     ]
   },
-  "Mermaid Quadrant Chart": {
+  "Mermaid Диаграмма квадрантов": {
     "prefix": "mmd-quad",
-    "description": "象限圖:四象限定位",
+    "description": "Диаграмма квадрантов: размещение по четырём квадрантам",
     "body": [
       "```mermaid",
       "quadrantChart",
-      "    title ${1:Reach and engagement}",
-      "    x-axis Low Reach --> High Reach",
-      "    y-axis Low Engagement --> High Engagement",
-      "    quadrant-1 Expand",
-      "    quadrant-2 Promote",
-      "    quadrant-3 Re-evaluate",
-      "    quadrant-4 Improve",
-      "    Campaign A: [0.3, 0.6]",
-      "    Campaign B: [0.45, 0.23]",
-      "    Campaign C: [0.78, 0.34]$0",
+      "    title ${1:Охват и вовлечённость}",
+      "    x-axis Низкий охват --> Высокий охват",
+      "    y-axis Низкая вовлечённость --> Высокая вовлечённость",
+      "    quadrant-1 Расширять",
+      "    quadrant-2 Продвигать",
+      "    quadrant-3 Пересмотреть",
+      "    quadrant-4 Улучшать",
+      "    Кампания А: [0.3, 0.6]",
+      "    Кампания Б: [0.45, 0.23]",
+      "    Кампания В: [0.78, 0.34]$0",
       "```"
     ]
   },
-  "Mermaid XY Chart (beta)": {
+  "Mermaid XY-график (beta)": {
     "prefix": "mmd-xy",
-    "description": "XY 圖(beta):長條加折線",
+    "description": "XY-график (beta): столбцы и линия",
     "body": [
       "```mermaid",
       "xychart-beta",
-      "    title \"${1:Sales Revenue}\"",
-      "    x-axis [Jan, Feb, Mar, Apr, May, Jun]",
-      "    y-axis \"Revenue (k)\" 0 --> 100",
+      "    title \"${1:Выручка от продаж}\"",
+      "    x-axis [\"Янв\", \"Фев\", \"Мар\", \"Апр\", \"Май\", \"Июн\"]",
+      "    y-axis \"Выручка, тыс.\" 0 --> 100",
       "    bar [25, 48, 38, 60, 72, 85]",
       "    line [20, 40, 45, 55, 70, 90]$0",
       "```"
     ]
   },
-  "Mermaid Sankey (beta)": {
+  "Mermaid Диаграмма Сэнки (beta)": {
     "prefix": "mmd-sankey",
-    "description": "桑基圖(beta):流量分配(CSV 三欄)",
+    "description": "Диаграмма Сэнки (beta): распределение потоков (три столбца CSV)",
     "body": [
       "```mermaid",
       "sankey-beta",
@@ -168,176 +171,176 @@
       "```"
     ]
   },
-  "Mermaid Gantt": {
+  "Mermaid Диаграмма Ганта": {
     "prefix": "mmd-gantt",
-    "description": "甘特圖:分區與相依任務",
+    "description": "Диаграмма Ганта: разделы и зависимые задачи",
     "body": [
       "```mermaid",
       "gantt",
-      "    title ${1:Project Plan}",
+      "    title ${1:План проекта}",
       "    dateFormat YYYY-MM-DD",
-      "    section Design",
-      "        Requirements :done, a1, ${2:2026-06-01}, 5d",
-      "        Mockups      :active, a2, after a1, 7d",
-      "    section Build",
-      "        Implementation :b1, after a2, 14d",
-      "        Testing        :b2, after b1, 7d$0",
+      "    section Проектирование",
+      "        Требования :done, a1, ${2:2026-06-01}, 5d",
+      "        Макеты     :active, a2, after a1, 7d",
+      "    section Разработка",
+      "        Реализация :b1, after a2, 14d",
+      "        Тестирование :b2, after b1, 7d$0",
       "```"
     ]
   },
-  "Mermaid Timeline": {
+  "Mermaid Хронология": {
     "prefix": "mmd-timeline",
-    "description": "時間軸:依年代分段事件",
+    "description": "Хронология: события, сгруппированные по периодам",
     "body": [
       "```mermaid",
       "timeline",
-      "    title ${1:Product History}",
+      "    title ${1:История продукта}",
       "    section 2024",
-      "        Q3 : Prototype",
-      "        Q4 : Private beta",
+      "        3 кв. : Прототип",
+      "        4 кв. : Закрытая бета",
       "    section 2025",
-      "        Q1 : Public launch",
-      "        Q3 : Mobile app",
+      "        1 кв. : Публичный запуск",
+      "        3 кв. : Мобильное приложение",
       "    section 2026",
-      "        Q1 : Enterprise tier$0",
+      "        1 кв. : Корпоративный тариф$0",
       "```"
     ]
   },
-  "Mermaid User Journey": {
+  "Mermaid Путь пользователя": {
     "prefix": "mmd-journey",
-    "description": "使用者旅程圖:任務與滿意度評分",
+    "description": "Путь пользователя: задачи с оценками удовлетворённости",
     "body": [
       "```mermaid",
       "journey",
-      "    title ${1:Checkout experience}",
-      "    section Browse",
-      "        Search products: 5: Customer",
-      "        Compare options: 3: Customer",
-      "    section Purchase",
-      "        Add to cart: 4: Customer",
-      "        Pay: 2: Customer, Support",
-      "    section After",
-      "        Track delivery: 4: Customer$0",
+      "    title ${1:Оформление заказа}",
+      "    section Выбор",
+      "        Поиск товаров: 5: Покупатель",
+      "        Сравнение вариантов: 3: Покупатель",
+      "    section Покупка",
+      "        Добавить в корзину: 4: Покупатель",
+      "        Оплата: 2: Покупатель, Поддержка",
+      "    section После покупки",
+      "        Отслеживание доставки: 4: Покупатель$0",
       "```"
     ]
   },
-  "Mermaid Kanban": {
+  "Mermaid Канбан": {
     "prefix": "mmd-kanban",
-    "description": "看板:欄位與工作項",
+    "description": "Канбан: столбцы и задачи",
     "body": [
       "```mermaid",
       "kanban",
-      "    Todo",
-      "        [${1:Design login page}]",
-      "        [Write API spec]",
-      "    In progress",
-      "        [Implement auth]",
-      "    Done",
-      "        [Project setup]$0",
+      "    Надо сделать",
+      "        [${1:Нарисовать страницу входа}]",
+      "        [Описать API]",
+      "    В работе",
+      "        [Реализовать авторизацию]",
+      "    Готово",
+      "        [Развернуть проект]$0",
       "```"
     ]
   },
-  "Mermaid Mindmap": {
+  "Mermaid Карта мыслей": {
     "prefix": "mmd-mind",
-    "description": "心智圖:中心主題與分支",
+    "description": "Карта мыслей: центральная тема и ветви",
     "body": [
       "```mermaid",
       "mindmap",
-      "  root((${1:Project}))",
-      "    Goals",
-      "      Launch MVP",
-      "      Grow users",
-      "    Risks",
-      "      Scope creep",
-      "      Timeline",
-      "    Team",
-      "      Backend",
-      "      Frontend$0",
+      "  root((${1:Проект}))",
+      "    Цели",
+      "      Выпустить MVP",
+      "      Нарастить аудиторию",
+      "    Риски",
+      "      Расползание объёма",
+      "      Сроки",
+      "    Команда",
+      "      Бэкенд",
+      "      Фронтенд$0",
       "```"
     ]
   },
-  "Mermaid C4 - System Context": {
+  "Mermaid C4 — системный контекст": {
     "prefix": "mmd-c4",
-    "description": "C4 系統情境圖:人員、系統與邊界",
+    "description": "Системный контекст C4: люди, системы и границы",
     "body": [
       "```mermaid",
       "C4Context",
-      "    title ${1:System Context}",
-      "    Person(user, \"User\", \"A customer of the platform\")",
-      "    System(app, \"${2:Web App}\", \"Provides the core features\")",
-      "    System_Ext(mail, \"Mail Service\", \"Sends notifications\")",
-      "    Rel(user, app, \"Uses\")",
-      "    Rel(app, mail, \"Sends email via\")$0",
+      "    title ${1:Системный контекст}",
+      "    Person(user, \"Пользователь\", \"Клиент платформы\")",
+      "    System(app, \"${2:Веб-приложение}\", \"Основные возможности\")",
+      "    System_Ext(mail, \"Почтовый сервис\", \"Отправляет уведомления\")",
+      "    Rel(user, app, \"Использует\")",
+      "    Rel(app, mail, \"Отправляет письма через\")$0",
       "```"
     ]
   },
-  "Mermaid Architecture (beta)": {
+  "Mermaid Архитектура (beta)": {
     "prefix": "mmd-arch",
-    "description": "架構圖(beta):群組、服務與連線",
+    "description": "Архитектура (beta): группы, сервисы и связи",
     "body": [
       "```mermaid",
       "architecture-beta",
-      "    group cloud(cloud)[${1:Cloud}]",
-      "    service api(server)[API] in cloud",
-      "    service db(database)[Database] in cloud",
-      "    service disk(disk)[Storage] in cloud",
+      "    group cloud(cloud)[\"${1:Облако}\"]",
+      "    service api(server)[\"API\"] in cloud",
+      "    service db(database)[\"База данных\"] in cloud",
+      "    service disk(disk)[\"Хранилище\"] in cloud",
       "    api:R --> L:db",
       "    db:R --> L:disk$0",
       "```"
     ]
   },
-  "Mermaid Block (beta)": {
+  "Mermaid Блоки (beta)": {
     "prefix": "mmd-block",
-    "description": "區塊圖(beta):欄位配置與箭頭",
+    "description": "Блоки (beta): раскладка по столбцам и стрелки",
     "body": [
       "```mermaid",
       "block-beta",
       "    columns 3",
-      "    Frontend blockArrowId<[\"API\"]>(right) Backend",
+      "    front[\"Фронтенд\"] blockArrowId<[\"API\"]>(right) back[\"Бэкенд\"]",
       "    space down1<[\" \"]>(down) space",
-      "    Cache[\"${1:Cache}\"] space DB[(\"Database\")]$0",
+      "    cache[\"${1:Кэш}\"] space db[(\"База данных\")]$0",
       "```"
     ]
   },
-  "Mermaid Packet (beta)": {
+  "Mermaid Пакет (beta)": {
     "prefix": "mmd-packet",
-    "description": "封包圖(beta):位元欄位配置",
+    "description": "Пакет (beta): раскладка битовых полей",
     "body": [
       "```mermaid",
       "packet-beta",
-      "    0-15: \"Source Port\"",
-      "    16-31: \"Destination Port\"",
-      "    32-63: \"Sequence Number\"",
-      "    64-95: \"Acknowledgment Number\"$0",
+      "    0-15: \"Порт источника\"",
+      "    16-31: \"Порт получателя\"",
+      "    32-63: \"Номер последовательности\"",
+      "    64-95: \"Номер подтверждения\"$0",
       "```"
     ]
   },
-  "Mermaid Git Graph": {
+  "Mermaid Граф Git": {
     "prefix": "mmd-git",
-    "description": "Git 分支圖:branch / merge / tag",
+    "description": "Граф Git: branch, merge, tag",
     "body": [
       "```mermaid",
       "gitGraph",
-      "    commit id: \"init\"",
+      "    commit id: \"старт\"",
       "    branch ${1:feature}",
       "    checkout ${1:feature}",
-      "    commit id: \"work\"",
-      "    commit id: \"more work\"",
+      "    commit id: \"работа\"",
+      "    commit id: \"ещё работа\"",
       "    checkout main",
       "    merge ${1:feature} tag: \"v1.0\"",
-      "    commit id: \"hotfix\"$0",
+      "    commit id: \"хотфикс\"$0",
       "```"
     ]
   },
-  "Mermaid Requirement": {
+  "Mermaid Требования": {
     "prefix": "mmd-req",
-    "description": "需求圖:需求、元素與 satisfies 關係",
+    "description": "Диаграмма требований: требования, элементы и связи satisfies",
     "body": [
       "```mermaid",
       "requirementDiagram",
       "    requirement ${1:login_req} {",
       "        id: 1",
-      "        text: Users must be able to log in.",
+      "        text: \"Пользователь должен иметь возможность войти.\"",
       "        risk: medium",
       "        verifymethod: test",
       "    }",
@@ -348,42 +351,42 @@
       "```"
     ]
   },
-  "Mermaid ORID - Focused Conversation": {
+  "Mermaid ORID — фокусированное обсуждение": {
     "prefix": "mmd-orid",
-    "description": "ORID 焦點討論法:客觀事實 → 感受反應 → 意義詮釋 → 決定行動",
+    "description": "Фокусированное обсуждение по ORID: факты → реакции → смысл → решения",
     "body": [
       "```mermaid",
       "orid",
-      "    title ${1:上線後回顧會議}",
+      "    title ${1:Разбор после релиза}",
       "    objective",
-      "        ${2:上線後錯誤率 3.2%}",
-      "        平均延遲 850ms",
+      "        ${2:Доля ошибок после релиза 3,2%}",
+      "        Средняя задержка 850 мс",
       "    reflective",
-      "        ${3:團隊感到焦慮}",
-      "        使用者抱怨變多",
+      "        ${3:Команда напряжена}",
+      "        Жалоб от пользователей стало больше",
       "    interpretive",
-      "        ${4:監控缺口是根因}",
+      "        ${4:Корневая причина — пробел в мониторинге}",
       "    decisional",
-      "        ${5:補上告警 @owner 8/25}",
-      "        加壓力測試 @owner 9/1$0",
+      "        ${5:Добавить алерты @owner 25.08}",
+      "        Добавить нагрузочные тесты @owner 01.09$0",
       "```"
     ]
   },
-  "Mermaid ORID - Blank Four Stages": {
+  "Mermaid ORID — пустые четыре этапа": {
     "prefix": "mmd-orid-blank",
-    "description": "ORID 空白骨架:四段標題齊備,內容待填(適合會議現場邊談邊記)",
+    "description": "Пустой каркас ORID: все четыре заголовка этапов, содержимое заполняется по ходу встречи",
     "body": [
       "```mermaid",
       "orid",
-      "    title ${1:討論主題}",
+      "    title ${1:Тема обсуждения}",
       "    objective",
-      "        ${2:看到 / 聽到什麼?只寫可查證的事實}",
+      "        ${2:Что увидели и услышали? Только проверяемые факты}",
       "    reflective",
-      "        ${3:當下的感覺、直覺反應}",
+      "        ${3:Что почувствовали, первая реакция}",
       "    interpretive",
-      "        ${4:這代表什麼?根因與洞察}",
+      "        ${4:Что это значит? Корневые причины и выводы}",
       "    decisional",
-      "        ${5:接下來做什麼?誰負責、何時完成}$0",
+      "        ${5:Что делаем дальше? Кто отвечает и к какому сроку}$0",
       "```"
     ]
   }

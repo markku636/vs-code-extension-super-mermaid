@@ -1,0 +1,23 @@
+{
+  "extension.displayName": "Super Mermaid",
+  "extension.description": "開箱即用的漂亮 Mermaid 圖:自動上色的即時預覽,可平移縮放,還能一鍵匯出高解析度 PNG / SVG(最高 4x、透明背景、整份文件批次匯出)。",
+
+  "command.category": "Super Mermaid",
+  "command.openToSide.title": "Super Mermaid: 在側邊開啟預覽",
+  "command.editDiagram.title": "編輯圖表",
+  "command.editDiagramInNewWindow.title": "在新視窗開啟圖表",
+  "command.insertTemplate.title": "Super Mermaid: 插入圖表範本",
+  "command.openMarkdownPreview.title": "Super Mermaid: 在側邊開啟 Markdown 預覽",
+  "command.openMarkdownPreviewInNewWindow.title": "Super Mermaid: 在新視窗開啟 Markdown 預覽",
+  "command.editorKey.title": "把快捷鍵送到繪製畫布",
+
+  "configuration.title": "Super Mermaid",
+  "configuration.language.description": "Super Mermaid 自身介面的語言(繪製編輯器工具列、預覽、訊息)。`auto` 表示跟隨 VS Code 的顯示語言。命令名稱與這個設定頁本身一律跟隨 VS Code。",
+  "configuration.language.auto": "跟隨 VS Code 的顯示語言",
+  "configuration.language.en": "英文 (English)",
+  "configuration.language.ru": "俄文 (Русский)",
+  "configuration.language.zh-tw": "繁體中文",
+  "configuration.previewLocation.description": "Mermaid 預覽開在哪裡。`beside` 會在編輯器旁邊分割開啟(與內建的 Markdown 預覽相同);`newWindow` 則彈出成獨立的浮動視窗。",
+  "configuration.previewLocation.newWindow": "在獨立浮動視窗開啟預覽",
+  "configuration.previewLocation.beside": "在編輯器旁邊開啟預覽(分割檢視)"
+}

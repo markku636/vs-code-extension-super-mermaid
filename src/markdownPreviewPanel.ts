@@ -3,6 +3,7 @@ import MarkdownIt from 'markdown-it';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { t, uiLanguage } from './uiLocale';
 
 type ExportFormat = 'png' | 'pdf';
 
@@ -18,10 +19,12 @@ type WebviewMessage =
   | { type: 'exportError'; message: string }
   | { type: 'persist'; theme: string; zoom: number; width: string };
 
-const EXPORT_FILTERS: Record<ExportFormat, Record<string, string[]>> = {
-  png: { 'PNG Image': ['png'] },
-  pdf: { 'PDF Document': ['pdf'] },
-};
+/** Save-dialog file-type filters. Built per call so the label follows the UI language. */
+function exportFilters(format: ExportFormat): Record<string, string[]> {
+  return format === 'png'
+    ? { [t('PNG Image')]: ['png'] }
+    : { [t('PDF Document')]: ['pdf'] };
+}
 
 /**
  * webview 端把畫面轉成 base64(PNG 為 data URL、PDF 為 data URL);剝掉 data: 前綴後解碼成位元組。
@@ -297,7 +300,9 @@ export class MarkdownPreviewPanel {
         await this.saveExport(msg);
         break;
       case 'exportError':
-        void vscode.window.showErrorMessage(`Super Mermaid: export failed — ${msg.message}`);
+        void vscode.window.showErrorMessage(
+          t('Super Mermaid: export failed — {0}', msg.message),
+        );
         break;
       case 'previewScrolled':
         this.revealEditorLine(msg.line, false);
@@ -368,20 +373,22 @@ export class MarkdownPreviewPanel {
         : (vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir());
     const uri = await vscode.window.showSaveDialog({
       defaultUri: vscode.Uri.file(path.join(dir, msg.suggestedName)),
-      filters: EXPORT_FILTERS[msg.format],
+      filters: exportFilters(msg.format),
     });
     if (!uri) {
       return;
     }
     await vscode.workspace.fs.writeFile(uri, decodeExportData(msg.data));
+    const openLabel = t('Open');
+    const revealLabel = t('Reveal in Explorer');
     const choice = await vscode.window.showInformationMessage(
-      `Super Mermaid: exported ${path.basename(uri.fsPath)}`,
-      'Open',
-      'Reveal in Explorer',
+      t('Super Mermaid: exported {0}', path.basename(uri.fsPath)),
+      openLabel,
+      revealLabel,
     );
-    if (choice === 'Open') {
+    if (choice === openLabel) {
       await vscode.env.openExternal(uri);
-    } else if (choice === 'Reveal in Explorer') {
+    } else if (choice === revealLabel) {
       await vscode.commands.executeCommand('revealFileInOS', uri);
     }
   }
@@ -429,6 +436,12 @@ export class MarkdownPreviewPanel {
     this.postViewState();
   }
 
+  /** 介面語言改變:HTML 內的字串由 host 產生,整份重建(webview ready 後會自行補上內容)。 */
+  public refreshLocale(): void {
+    this.panel.webview.html = this.getHtml();
+    this.updateTitle();
+  }
+
   public isPoppedOut(): boolean {
     return this.poppedOut;
   }
@@ -455,7 +468,7 @@ export class MarkdownPreviewPanel {
   }
 
   private updateTitle(): void {
-    this.panel.title = `Preview ${path.basename(this.doc.fileName)}`;
+    this.panel.title = t('Preview {0}', path.basename(this.doc.fileName));
   }
 
   private dispose(): void {
@@ -483,69 +496,70 @@ export class MarkdownPreviewPanel {
     const legacyWide = this.state.get<boolean>(LEGACY_WIDE_KEY, false);
     const rawWidth = this.state.get<string>(WIDTH_KEY, legacyWide ? 'full' : 'auto');
     const savedWidth = WIDTH_MODES.includes(rawWidth) ? rawWidth : 'auto';
-    const widthLabel = savedWidth === 'full' ? 'Full' : savedWidth === 'reading' ? 'Reading' : 'Auto';
+    const widthLabel =
+      savedWidth === 'full' ? t('Full') : savedWidth === 'reading' ? t('Reading') : t('Auto');
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${uiLanguage()}">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} https: data: blob:; font-src ${webview.cspSource} data:; connect-src ${webview.cspSource}; frame-src 'self' data: blob:;" />
   <link rel="stylesheet" href="${styleUri}" />
-  <title>Markdown Preview</title>
+  <title>${t('Markdown Preview')}</title>
 </head>
-<body data-initial-theme="${savedTheme}" data-initial-zoom="${savedZoom}" data-initial-width="${savedWidth}">
+<body data-locale="${uiLanguage()}" data-initial-theme="${savedTheme}" data-initial-zoom="${savedZoom}" data-initial-width="${savedWidth}">
   <div id="md-toolbar">
     <span id="md-filename"></span>
     <span class="md-spacer"></span>
-    <label id="md-theme-label" for="md-theme">Theme</label>
-    <select id="md-theme" title="Preview theme">
-      <option value="editor">Follow VS Code</option>
-      <option value="daylight">Light</option>
-      <option value="velvet">Dark Purple</option>
-      <option value="jade">Dark Green</option>
-      <option value="orchid">Dark Pink</option>
-      <option value="amber">Dark Yellow</option>
-      <option value="ember">Dark Red</option>
-      <option value="abyss">Dark Black</option>
+    <label id="md-theme-label" for="md-theme">${t('Theme')}</label>
+    <select id="md-theme" title="${t('Preview theme')}">
+      <option value="editor">${t('Follow VS Code')}</option>
+      <option value="daylight">${t('Light')}</option>
+      <option value="velvet">${t('Dark Purple')}</option>
+      <option value="jade">${t('Dark Green')}</option>
+      <option value="orchid">${t('Dark Pink')}</option>
+      <option value="amber">${t('Dark Yellow')}</option>
+      <option value="ember">${t('Dark Red')}</option>
+      <option value="abyss">${t('Dark Black')}</option>
     </select>
-    <button id="md-toc-toggle" title="Toggle outline (o)" aria-pressed="false">Outline</button>
-    <button id="md-find-btn" title="Find in document (Ctrl+F)" aria-pressed="false">Find</button>
-    <button id="md-width" title="Content width — Auto fits the window, Full = 100%, Reading = 920px. Click or press w to cycle.">${widthLabel}</button>
-    <button id="md-lock" title="Lock to current file" aria-pressed="false">Lock</button>
-    <button id="md-refresh" title="Re-render (the preview also updates as you type)">Refresh</button>
+    <button id="md-toc-toggle" title="${t('Toggle outline (o)')}" aria-pressed="false">${t('Outline')}</button>
+    <button id="md-find-btn" title="${t('Find in document (Ctrl+F)')}" aria-pressed="false">${t('Find')}</button>
+    <button id="md-width" title="${t('Content width — Auto fits the window, Full = 100%, Reading = 920px. Click or press w to cycle.')}">${widthLabel}</button>
+    <button id="md-lock" title="${t('Lock to current file')}" aria-pressed="false">${t('Lock')}</button>
+    <button id="md-refresh" title="${t('Re-render (the preview also updates as you type)')}">${t('Refresh')}</button>
     <div id="md-export-wrap">
-      <button id="md-export" title="Export the document as PNG or PDF" aria-haspopup="true" aria-expanded="false">Export &#9662;</button>
+      <button id="md-export" title="${t('Export the document as PNG or PDF')}" aria-haspopup="true" aria-expanded="false">${t('Export')} &#9662;</button>
       <div id="md-export-menu" hidden>
-        <button class="md-export-item" data-format="png">Export PNG</button>
-        <button class="md-export-item" data-format="pdf">Export PDF</button>
+        <button class="md-export-item" data-format="png">${t('Export PNG')}</button>
+        <button class="md-export-item" data-format="pdf">${t('Export PDF')}</button>
         <div class="md-export-sep"></div>
-        <div class="md-export-label">Appearance</div>
-        <button class="md-export-item md-export-look" data-look="paper" role="menuitemradio" aria-checked="true" title="White page, high-contrast text and light diagrams — best for printing and sharing">Paper (light)</button>
-        <button class="md-export-item md-export-look" data-look="screen" role="menuitemradio" aria-checked="false" title="Keep the colors currently shown in the preview">Match preview theme</button>
+        <div class="md-export-label">${t('Appearance')}</div>
+        <button class="md-export-item md-export-look" data-look="paper" role="menuitemradio" aria-checked="true" title="${t('White page, high-contrast text and light diagrams — best for printing and sharing')}">${t('Paper (light)')}</button>
+        <button class="md-export-item md-export-look" data-look="screen" role="menuitemradio" aria-checked="false" title="${t('Keep the colors currently shown in the preview')}">${t('Match preview theme')}</button>
       </div>
     </div>
-    <button id="md-exit" title="Back to editor (Esc)" hidden>&#10005;</button>
+    <button id="md-exit" title="${t('Back to editor (Esc)')}" hidden>&#10005;</button>
   </div>
   <div id="md-find" hidden>
-    <input id="md-find-input" type="text" placeholder="Find in document" aria-label="Find in document" spellcheck="false" />
+    <input id="md-find-input" type="text" placeholder="${t('Find in document')}" aria-label="${t('Find in document')}" spellcheck="false" />
     <span id="md-find-count" aria-live="polite"></span>
-    <button id="md-find-prev" title="Previous match (Shift+Enter)">&#8593;</button>
-    <button id="md-find-next" title="Next match (Enter)">&#8595;</button>
-    <button id="md-find-close" title="Close (Esc)">&#10005;</button>
+    <button id="md-find-prev" title="${t('Previous match (Shift+Enter)')}">&#8593;</button>
+    <button id="md-find-next" title="${t('Next match (Enter)')}">&#8595;</button>
+    <button id="md-find-close" title="${t('Close (Esc)')}">&#10005;</button>
   </div>
   <div id="md-layout">
     <aside id="md-toc" hidden></aside>
     <div id="md-content" class="markdown-body"></div>
   </div>
-  <div id="md-zoom" title="Ctrl + mouse wheel to zoom">
-    <button id="md-zoom-out" title="Zoom out (Ctrl -)">&#8722;</button>
-    <span id="md-zoom-level" title="Reset to 100% (Ctrl 0)">100%</span>
-    <button id="md-zoom-in" title="Zoom in (Ctrl +)">+</button>
+  <div id="md-zoom" title="${t('Ctrl + mouse wheel to zoom')}">
+    <button id="md-zoom-out" title="${t('Zoom out (Ctrl -)')}">&#8722;</button>
+    <span id="md-zoom-level" title="${t('Reset to 100% (Ctrl 0)')}">100%</span>
+    <button id="md-zoom-in" title="${t('Zoom in (Ctrl +)')}">+</button>
   </div>
   <div id="md-context-menu" hidden>
-    <button id="md-ctx-goto">Go to source line</button>
-    <button id="md-ctx-copy" hidden>Copy</button>
+    <button id="md-ctx-goto">${t('Go to source line')}</button>
+    <button id="md-ctx-copy" hidden>${t('Copy')}</button>
   </div>
-  <div id="md-export-overlay" hidden><div class="md-export-spinner">Exporting…</div></div>
+  <div id="md-export-overlay" hidden><div class="md-export-spinner">${t('Exporting…')}</div></div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

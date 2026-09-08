@@ -162,12 +162,12 @@ const SETS: Record<string, KeywordSet> = {
     keywords: ['title', 'objective', 'reflective', 'interpretive', 'decisional'],
     operators: [],
     snippets: [
-      ['title', 'title ${1:討論主題}'],
-      ['objective — 客觀事實', 'objective\n\t${1:看到 / 聽到的事實,可查證}'],
-      ['reflective — 感受反應', 'reflective\n\t${1:當下的感覺與直覺}'],
-      ['interpretive — 意義詮釋', 'interpretive\n\t${1:這代表什麼 / 根因}'],
-      ['decisional — 決定行動', 'decisional\n\t${1:下一步做什麼、誰負責}'],
-      ['item (force as item)', '- ${1:項目文字}'],
+      ['title', 'title ${1:Discussion topic}'],
+      ['objective — the facts', 'objective\n\t${1:What you saw / heard, verifiable}'],
+      ['reflective — the reactions', 'reflective\n\t${1:Feelings and gut reactions}'],
+      ['interpretive — the meaning', 'interpretive\n\t${1:What this means / root cause}'],
+      ['decisional — the actions', 'decisional\n\t${1:Next step, and who owns it}'],
+      ['item (force as item)', '- ${1:Item text}'],
     ],
   },
 };

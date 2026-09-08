@@ -1,7 +1,7 @@
 {
   "name": "super-mermaid",
-  "displayName": "Super Mermaid",
-  "description": "Mermaid diagrams that look good out of the box — auto-colored live preview with pan/zoom, plus one-click hi-res PNG/SVG export (up to 4x, transparent background, batch Export All).",
+  "displayName": "%extension.displayName%",
+  "description": "%extension.description%",
   "version": "0.20.1",
   "publisher": "mark-ku",
   "license": "MIT",
@@ -18,6 +18,7 @@
   ],
   "icon": "media/logo.png",
   "main": "./dist/extension.js",
+  "l10n": "./l10n",
   "activationEvents": [
     "onLanguage:markdown",
     "onStartupFinished"
@@ -66,38 +67,260 @@
     "commands": [
       {
         "command": "superMermaid.openToSide",
-        "title": "Super Mermaid: Open Preview to the Side",
+        "title": "%command.openToSide.title%",
         "icon": "$(open-preview)"
       },
       {
         "command": "superMermaid.editDiagram",
-        "title": "Edit Diagram",
-        "category": "Super Mermaid"
+        "title": "%command.editDiagram.title%",
+        "category": "%command.category%"
       },
       {
         "command": "superMermaid.editDiagramInNewWindow",
-        "title": "Open Diagram in New Window",
-        "category": "Super Mermaid"
+        "title": "%command.editDiagramInNewWindow.title%",
+        "category": "%command.category%"
       },
       {
         "command": "superMermaid.insertTemplate",
-        "title": "Super Mermaid: Insert Diagram Template",
+        "title": "%command.insertTemplate.title%",
         "icon": "$(library)"
       },
       {
         "command": "superMermaid.openMarkdownPreview",
-        "title": "Super Mermaid: Open Markdown Preview to the Side",
+        "title": "%command.openMarkdownPreview.title%",
         "icon": "$(open-preview)"
       },
       {
         "command": "superMermaid.openMarkdownPreviewInNewWindow",
-        "title": "Super Mermaid: Open Markdown Preview in New Window",
+        "title": "%command.openMarkdownPreviewInNewWindow.title%",
         "icon": "$(multiple-windows)"
+      },
+      {
+        "command": "superMermaid.editorKey",
+        "title": "%command.editorKey.title%",
+        "category": "%command.category%"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "delete",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "Delete"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "backspace",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "Backspace"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "shift+/",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "?",
+          "shift": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+z",
+        "mac": "cmd+z",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "z",
+          "ctrl": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+y",
+        "mac": "cmd+y",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "y",
+          "ctrl": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+shift+z",
+        "mac": "cmd+shift+z",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "z",
+          "ctrl": true,
+          "shift": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+a",
+        "mac": "cmd+a",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "a",
+          "ctrl": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+d",
+        "mac": "cmd+d",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "d",
+          "ctrl": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+g",
+        "mac": "cmd+g",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "g",
+          "ctrl": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+c",
+        "mac": "cmd+c",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "c",
+          "ctrl": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "ctrl+v",
+        "mac": "cmd+v",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "v",
+          "ctrl": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "up",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowUp"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "shift+up",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowUp",
+          "shift": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "down",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowDown"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "shift+down",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowDown",
+          "shift": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "left",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowLeft"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "shift+left",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowLeft",
+          "shift": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "right",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowRight"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "shift+right",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "ArrowRight",
+          "shift": true
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "v",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "v"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "n",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "n"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
+      },
+      {
+        "key": "e",
+        "command": "superMermaid.editorKey",
+        "args": {
+          "key": "e"
+        },
+        "when": "activeWebviewPanelId == 'superMermaidEditor' && !inputFocus && !terminalFocus && !listFocus"
       }
     ],
     "configuration": {
-      "title": "Super Mermaid",
+      "title": "%configuration.title%",
       "properties": {
+        "superMermaid.language": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "en",
+            "ru",
+            "zh-tw"
+          ],
+          "enumDescriptions": [
+            "%configuration.language.auto%",
+            "%configuration.language.en%",
+            "%configuration.language.ru%",
+            "%configuration.language.zh-tw%"
+          ],
+          "default": "auto",
+          "markdownDescription": "%configuration.language.description%"
+        },
         "superMermaid.previewLocation": {
           "type": "string",
           "enum": [
@@ -105,11 +328,11 @@
             "beside"
           ],
           "enumDescriptions": [
-            "Open the preview in a separate floating window",
-            "Open the preview beside the editor (split view)"
+            "%configuration.previewLocation.newWindow%",
+            "%configuration.previewLocation.beside%"
           ],
           "default": "beside",
-          "markdownDescription": "Where to open the Mermaid preview. `beside` opens it as a split beside the editor (same as the built-in Markdown preview); `newWindow` pops it out into its own floating window."
+          "markdownDescription": "%configuration.previewLocation.description%"
         }
       }
     },
@@ -186,6 +409,10 @@
         },
         {
           "command": "superMermaid.insertTemplate"
+        },
+        {
+          "command": "superMermaid.editorKey",
+          "when": "false"
         }
       ]
     }
@@ -199,6 +426,7 @@
     "build": "tsc --noEmit && node scripts/genSnippets.mjs && node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "type:check": "tsc --noEmit",
+    "check:l10n": "node scripts/extractL10n.mjs",
     "sync:lib": "node scripts/syncLib.mjs --build",
     "verify:roundtrip": "node scripts/verifyRoundtrip.mjs",
     "verify:ui": "node scripts/verifyEditorUi.mjs"

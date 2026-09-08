@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
+import { t } from './uiLocale';
 import { MermaidCodeLensProvider } from './codeLensProvider';
 import { MermaidCompletionProvider } from './completionProvider';
 import { MermaidHoverProvider } from './hoverProvider';
 import { MermaidDiagnostics } from './diagnostics';
-import { EditorPanel } from './editorPanel';
+import { asKeyStroke, EditorPanel } from './editorPanel';
 import { registerInsertTemplateCommand } from './insertTemplate';
 import { isMarkdownDoc, MarkdownPreviewPanel } from './markdownPreviewPanel';
 import { extractMermaidBlocks, isSupportedDoc } from './mermaidExtract';
@@ -21,7 +22,7 @@ async function resolveMarkdownDoc(uri?: vscode.Uri): Promise<vscode.TextDocument
   }
   if (!doc || !isMarkdownDoc(doc)) {
     void vscode.window.showInformationMessage(
-      'Super Mermaid: open a Markdown (.md) file first to preview it.',
+      t('Super Mermaid: open a Markdown (.md) file first to preview it.'),
     );
     return undefined;
   }
@@ -94,7 +95,7 @@ export function activate(context: vscode.ExtensionContext): void {
         }
         if (!doc || !isSupportedDoc(doc)) {
           void vscode.window.showInformationMessage(
-            'Super Mermaid: 請先開啟 Markdown 或 Mermaid (.mmd) 檔案。',
+            t('Super Mermaid: open a Markdown or Mermaid (.mmd) file first.'),
           );
           return;
         }
@@ -117,14 +118,25 @@ export function activate(context: vscode.ExtensionContext): void {
         ];
         if (!DRAWABLE.includes(kw)) {
           void vscode.window.showInformationMessage(
-            `Mermaid 視覺編輯目前支援 flowchart / graph / stateDiagram / erDiagram / classDiagram / mindmap / sequenceDiagram / timeline / orid;此圖為「${block?.title ?? '未知'}」。` +
-              '其他圖種請改用「Edit Diagram」預覽。',
+            t(
+              'Visual editing currently supports flowchart / graph / stateDiagram / erDiagram / classDiagram / mindmap / sequenceDiagram / timeline / orid. This diagram is "{0}" — use "Edit Diagram" to preview the other types instead.',
+              block?.title ?? t('unknown'),
+            ),
           );
           return;
         }
         await EditorPanel.createOrShow(context, doc, blockIndex ?? 0);
       },
     ),
+    // Canvas shortcuts as real keybindings, scoped to the drawing panel.
+    // Inside a webview a keystroke only reaches the page while VS Code considers
+    // the webview focused — the panel can be the active tab with the focus still
+    // in the workbench — so every shortcut is contributed here as well and
+    // forwarded in. The webview ignores a stroke it already saw itself.
+    vscode.commands.registerCommand('superMermaid.editorKey', (args: unknown) => {
+      const stroke = asKeyStroke(args);
+      if (stroke) EditorPanel.current?.sendKey(stroke);
+    }),
     vscode.commands.registerCommand('superMermaid.openToSide', async (uri?: vscode.Uri) => {
       // Invoked from the explorer context menu with a file URI, or from the
       // editor title / context menu / command palette without arguments.
@@ -137,7 +149,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       if (!doc || !isSupportedDoc(doc)) {
         void vscode.window.showInformationMessage(
-          'Super Mermaid: open a Markdown or Mermaid (.mmd) file first.',
+          t('Super Mermaid: open a Markdown or Mermaid (.mmd) file first.'),
         );
         return;
       }
@@ -186,6 +198,18 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.workspace.onDidCloseTextDocument((doc) => {
       diagnostics.clear(doc.uri);
+    }),
+    // 介面語言(superMermaid.language)改變:面板的字串是開啟當下產生的,
+    // 全部重建一次,使用者才不用關掉再開。
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (!e.affectsConfiguration('superMermaid.language')) {
+        return;
+      }
+      codeLensProvider.refreshLocale();
+      statusBar.refreshLocale(vscode.window.activeTextEditor);
+      EditorPanel.current?.refreshLocale();
+      PreviewPanel.current?.refreshLocale();
+      MarkdownPreviewPanel.current?.refreshLocale();
     }),
   );
 }

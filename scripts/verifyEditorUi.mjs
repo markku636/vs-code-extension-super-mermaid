@@ -396,10 +396,11 @@ function checkNodeTextContrast() {
   return out;
 }
 
-/** 用同一份 EDITOR_BODY_HTML 組出頁面;acquireVsCodeApi 用假的頂替(webview 才有)。 */
+/** 用同一份 buildEditorBodyHtml 組出頁面;acquireVsCodeApi 用假的頂替(webview 才有)。
+ *  語言:走預設(英文原文),不需要 vscode.l10n。 */
 async function buildPage() {
   mkdirSync(WORK, { recursive: true });
-  // src/editorPanelHtml.ts 是純字串常數,直接 bundle 成一個回傳字串的模組。
+  // src/editorPanelHtml.ts 不依賴 vscode,直接 bundle 成一個回傳字串的模組。
   await build({
     entryPoints: [join(ROOT, 'src', 'editorPanelHtml.ts')],
     bundle: true,
@@ -408,15 +409,16 @@ async function buildPage() {
     outfile: join(WORK, 'body.mjs'),
     logLevel: 'warning',
   });
-  const { EDITOR_BODY_HTML } = await import(`file:///${join(WORK, 'body.mjs').replace(/\\/g, '/')}`);
+  const { buildEditorBodyHtml } = await import(`file:///${join(WORK, 'body.mjs').replace(/\\/g, '/')}`);
+  const bodyHtml = buildEditorBodyHtml();
   writeFileSync(
     join(WORK, 'index.html'),
-    `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
+    `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <link rel="stylesheet" href="/media/editor.css">
 <style>html,body{margin:0;height:100%}${DARK ? "body{background:#1e1e1e}" : ""}</style></head>
-<body data-font-uri="/media/Excalifont.woff2">
+<body data-locale="en" data-font-uri="/media/Excalifont.woff2">
 <script>window.acquireVsCodeApi = () => ({ postMessage: (m) => { (window.__posted ||= []).push(m); } });</script>
-${EDITOR_BODY_HTML}
+${bodyHtml}
 <script src="/dist/diagramEditor.js"></script>
 </body></html>`,
   );
@@ -569,6 +571,105 @@ try {
     if (selBoxes <= 0) problems.push('點到訊息後沒有選取框(感覺不到被選取)');
     if (left !== at.count - 1) problems.push(`Delete 沒刪掉(${at.count} → ${left})`);
     dragResults.push({ name: 'sequence 點選 + Delete', busy: selBoxes, problems });
+  }
+
+  // ── 右鍵選單 + 焦點不在畫布上的快捷鍵 ──
+  // 兩者都壞過一輪,而且都只在「真的用滑鼠 / 鍵盤操作」時才看得出來:
+  //   * 選單指令:lib 在 document 的 pointerdown 就把選單移除,click 因此永遠派不到項目上。
+  //   * 快捷鍵:lib 把 keydown 綁在畫布 host 上,誰都沒有把焦點給它 —— 剛開面板時焦點在
+  //     <body>,而且點過任何工具列按鈕之後焦點就停在那顆按鈕上,快捷鍵整組失效。
+  {
+    // 節點多備幾個:這個案例會連刪三次(選單、快捷鍵、host 送進來的),刪光了就沒東西可測。
+    const source =
+      'flowchart TD\n  A[開始] --> B{判斷}\n  B --> C[處理]\n  C --> D[驗證]\n  D --> E[結束]\n';
+    await page.goto(`http://127.0.0.1:${port}/.verify-ui/index.html`, { waitUntil: 'load' });
+    await page.evaluate(({ src, dark }) => window.postMessage({ type: 'load', source: src, dark }, '*'), {
+      src: source,
+      dark: DARK,
+    });
+    await page.waitForFunction(() => document.querySelectorAll('#app [data-node-id]').length > 0, { timeout: 20000 });
+    await new Promise((ok) => setTimeout(ok, 700));
+
+    const nodeCount = () => page.evaluate(() => document.querySelectorAll('#app [data-node-id]').length);
+    const nodeCenter = () =>
+      page.evaluate(() => {
+        const r = document.querySelector('#app [data-node-id]').getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      });
+    const problems = [];
+
+    // 1) 右鍵選單最後一項是「刪除」,按下去要真的刪掉。
+    const before = await nodeCount();
+    const rightAt = await nodeCenter();
+    await page.mouse.click(rightAt.x, rightAt.y, { button: 'right' });
+    await new Promise((ok) => setTimeout(ok, 250));
+    const item = await page.evaluate(() => {
+      const items = [...document.querySelectorAll('#app .rsm-ctx .rsm-ctx-item')];
+      if (!items.length) return null;
+      const r = items[items.length - 1].getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2, label: items[items.length - 1].textContent };
+    });
+    if (!item) {
+      problems.push('右鍵沒有跳出選單');
+    } else {
+      await page.mouse.click(item.x, item.y);
+      await new Promise((ok) => setTimeout(ok, 400));
+      const left = await nodeCount();
+      if (left !== before - 1) problems.push(`選單的「${item.label}」按了沒反應(${before} → ${left})`);
+    }
+
+    // 2) 選好節點後去點工具列(焦點離開畫布),Delete 與 ? 仍然要作用在畫布上。
+    const pickAt = await nodeCenter();
+    await page.mouse.click(pickAt.x, pickAt.y);
+    await new Promise((ok) => setTimeout(ok, 200));
+    await page.click('#btn-source'); // 這顆不會移動畫布,只開原始碼面板
+    await new Promise((ok) => setTimeout(ok, 200));
+    const beforeKey = await nodeCount();
+    await page.keyboard.press('Delete');
+    await new Promise((ok) => setTimeout(ok, 400));
+    const afterKey = await nodeCount();
+    if (afterKey !== beforeKey - 1) problems.push(`焦點在工具列時 Delete 失效(${beforeKey} → ${afterKey})`);
+    await page.keyboard.press('?');
+    await new Promise((ok) => setTimeout(ok, 300));
+    const help = await page.evaluate(() => Boolean(document.querySelector('#app .rsm-help-overlay')));
+    if (!help) problems.push('焦點在工具列時 ? 叫不出快捷鍵說明');
+
+    // 3) host 的 keybinding 路線:webview 完全沒收到按鍵,只收到 postMessage 也要作用。
+    //    (VS Code 只在它認為 webview 有焦點時才把按鍵送進頁面;面板是作用中分頁、焦點卻在
+    //     工作台時,這條路線是唯一能到畫布的路。)
+    // 說明浮層還蓋在畫布上,先收掉 —— 不然接下來的點擊都會落在浮層上。
+    await page.keyboard.press('Escape');
+    await new Promise((ok) => setTimeout(ok, 250));
+    if (await page.evaluate(() => Boolean(document.querySelector('#app .rsm-help-overlay')))) {
+      problems.push('Escape 關不掉快捷鍵說明浮層');
+    }
+
+    const pick2 = await nodeCenter();
+    await page.mouse.click(pick2.x, pick2.y);
+    await new Promise((ok) => setTimeout(ok, 500)); // 過掉去重的寬限期
+    const beforeHost = await nodeCount();
+    await page.evaluate(() => window.postMessage({ type: 'key', stroke: { key: 'Delete' } }, '*'));
+    await new Promise((ok) => setTimeout(ok, 400));
+    const afterHost = await nodeCount();
+    if (afterHost !== beforeHost - 1) problems.push(`host 送進來的 Delete 沒作用(${beforeHost} → ${afterHost})`);
+
+    // 4) 同一次按鍵不能做兩遍:頁面自己收到過的按鍵,host 再送同一顆就要被丟掉。
+    const pick3 = await nodeCenter();
+    await page.mouse.click(pick3.x, pick3.y);
+    await new Promise((ok) => setTimeout(ok, 500));
+    const beforeDup = await nodeCount();
+    await page.keyboard.down('Control');
+    await page.keyboard.press('KeyD');
+    await page.keyboard.up('Control');
+    await new Promise((ok) => setTimeout(ok, 300));
+    const afterDup = await nodeCount();
+    await page.evaluate(() => window.postMessage({ type: 'key', stroke: { key: 'd', ctrl: true } }, '*'));
+    await new Promise((ok) => setTimeout(ok, 400));
+    const afterEcho = await nodeCount();
+    if (afterDup !== beforeDup + 1) problems.push(`Ctrl+D 沒複製(${beforeDup} → ${afterDup})`);
+    else if (afterEcho !== afterDup) problems.push(`同一顆 Ctrl+D 做了兩遍(${afterDup} → ${afterEcho})`);
+
+    dragResults.push({ name: '右鍵選單指令 + 工具列焦點快捷鍵', busy: 1, problems });
   }
 } finally {
   await browser.close();

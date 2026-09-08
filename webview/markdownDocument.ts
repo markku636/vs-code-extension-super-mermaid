@@ -8,6 +8,11 @@ import { jsPDF } from 'jspdf';
 import mermaid from 'mermaid';
 import { transpileOrid } from 'react-super-mermaid/orid';
 import { boostLegibility, colorizeDiagram, ensureLegibilityStyles } from './colorize';
+import { initI18nFromDocument, t } from './i18n';
+
+// Must run before any string is rendered: picks the dictionary matching the
+// display language the host stamped on <body data-locale="…">.
+initI18nFromDocument();
 
 interface VsCodeApi {
   postMessage(msg: unknown): void;
@@ -102,7 +107,11 @@ let currentTheme: string =
 /** 內容寬度模式:auto=依視窗寬度自動切換 / full=真.全寬 / reading=920px 閱讀欄。 */
 type WidthMode = 'auto' | 'full' | 'reading';
 const WIDTH_MODES: WidthMode[] = ['auto', 'full', 'reading'];
-const WIDTH_LABELS: Record<WidthMode, string> = { auto: 'Auto', full: 'Full', reading: 'Reading' };
+const WIDTH_LABELS: Record<WidthMode, string> = {
+  auto: t('Auto'),
+  full: t('Full'),
+  reading: t('Reading'),
+};
 function asWidthMode(v: unknown): WidthMode {
   return v === 'full' || v === 'reading' ? v : 'auto';
 }
@@ -380,7 +389,7 @@ function slug(text: string): string {
     text
       .toLowerCase()
       .trim()
-      .replace(/[^\w一-鿿\- ]/g, '')
+      .replace(/[^\p{L}\p{N}_\- ]/gu, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-') || 'section'
   );
@@ -390,13 +399,13 @@ function buildToc(): void {
   const headings = Array.from(content.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6'));
   tocHeadings = [];
   if (!headings.length) {
-    tocAside.innerHTML = '<div class="md-toc-title">Outline</div><div class="md-toc-empty">No headings</div>';
+    tocAside.innerHTML = `<div class="md-toc-title">${escapeHtml(t('Outline'))}</div><div class="md-toc-empty">${escapeHtml(t('No headings'))}</div>`;
     return;
   }
   const used = new Set<string>();
   const levels = headings.map((h) => parseInt(h.tagName[1], 10));
   const minLevel = Math.min(...levels);
-  const rows: string[] = ['<div class="md-toc-title">Outline</div>'];
+  const rows: string[] = [`<div class="md-toc-title">${escapeHtml(t('Outline'))}</div>`];
   headings.forEach((h, n) => {
     let id = h.id || slug(h.textContent ?? '');
     let unique = id;
@@ -501,8 +510,9 @@ function applyWidth(): void {
   }
   widthBtn.textContent = WIDTH_LABELS[widthMode];
   widthBtn.title =
-    `Content width: ${WIDTH_LABELS[widthMode]} — click / press w to cycle ` +
-    '(Auto fits the window, Full = 100%, Reading = 920px)';
+    t('Content width: {0} — click / press w to cycle', WIDTH_LABELS[widthMode]) +
+    ' ' +
+    t('(Auto fits the window, Full = 100%, Reading = 920px)');
   widthBtn.classList.toggle('active', widthMode !== 'auto'); // 非預設(手動覆寫)時點亮。
   persistState(true); // 離散變更,立即回寫(免 <400ms 關閉預覽遺失)。
 }
@@ -849,7 +859,7 @@ function canvasToPdf(
   const slice = document.createElement('canvas');
   const ctx = slice.getContext('2d');
   if (!ctx) {
-    throw new Error('Canvas 2D context unavailable.');
+    throw new Error(t('Canvas 2D context unavailable.'));
   }
   starts.forEach((startY, i) => {
     const endY = i + 1 < starts.length ? starts[i + 1] : totalH;
@@ -1016,7 +1026,7 @@ function updateFindCount(): void {
     return;
   }
   const total = findMatches.length;
-  findCount.textContent = total ? `${findCurrent + 1}/${total}` : 'No results';
+  findCount.textContent = total ? `${findCurrent + 1}/${total}` : t('No results');
   findCount.classList.toggle('no-match', total === 0);
 }
 

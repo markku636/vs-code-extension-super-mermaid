@@ -334,7 +334,7 @@ try {
   results.push(...drawn.map((r) => ({ group: 'draw', ...r })));
 
   // B. 來回:範本原文 → 場景 → 文字,必須仍可解析且不可變空。
-  const templates = readTemplates();
+  const templates = [...readTemplates(), ...readRuTemplates()];
   if (templates.length === 0) throw new Error('src/templates.ts 解析不到任何範本 —— 檢查 readTemplates 的比對式');
   const round = await page.evaluate(async (tpls) => {
     const out = [];
@@ -461,13 +461,35 @@ function readTemplates() {
   const re = /id:\s*'([^']+)'[\s\S]*?body:\s*`([\s\S]*?)`,\r?\n/g;
   let m;
   while ((m = re.exec(src))) {
-    const code = m[2]
-      .replace(/\\`/g, '`')
-      .replace(/\\\$\{\d+:([^}]*)\}/g, '$1') // ${1:預設值} → 預設值
-      .replace(/\\\$\{\d+\|([^|}]*)[^}]*\}/g, '$1') // ${1|a,b|} → a
-      .replace(/\\\$\{\d+\}/g, '')
-      .replace(/\$0/g, '');
-    out.push({ id: m[1], code });
+    out.push({ id: m[1], code: snippetToMermaid(m[2]) });
   }
   return out;
+}
+
+/**
+ * 同樣抓 src/templatesRu.ts 的俄文版 body。
+ *
+ * 俄文範本是「adapt to Russian」加的:mermaid 的文法對非 ASCII 在某些位置很挑
+ * (requirement 名稱、sankey 節點、architecture 的 [標籤]),所以俄文 body 也必須
+ * 跟英文 body 一樣走完整的 loadSource → toMermaid 來回檢查。
+ */
+function readRuTemplates() {
+  const src = readFileSync(join(ROOT, 'src', 'templatesRu.ts'), 'utf8');
+  const out = [];
+  const re = /^ {2}'?([A-Za-z0-9_-]+)'?:\s*`([\s\S]*?)`,$/gm;
+  let m;
+  while ((m = re.exec(src))) {
+    out.push({ id: `${m[1]} (ru)`, code: snippetToMermaid(m[2]) });
+  }
+  return out;
+}
+
+/** VS Code snippet body → 純 mermaid(還原佔位符、去掉 tab stop)。 */
+function snippetToMermaid(body) {
+  return body
+    .replace(/\\`/g, '`')
+    .replace(/\\\$\{\d+:([^}]*)\}/g, '$1') // ${1:預設值} → 預設值
+    .replace(/\\\$\{\d+\|([^|}]*)[^}]*\}/g, '$1') // ${1|a,b|} → a
+    .replace(/\\\$\{\d+\}/g, '')
+    .replace(/\$0/g, '');
 }

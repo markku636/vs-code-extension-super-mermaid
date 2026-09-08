@@ -2,20 +2,43 @@
 // 編輯後把序列化的 mermaid 透過 WorkspaceEdit 精準寫回該 fence(用 startLine/endLine)。
 
 import * as vscode from 'vscode';
-import { EDITOR_BODY_HTML } from './editorPanelHtml';
+import { configuredLanguage, setConfiguredLanguage, t, uiLanguage, UiLanguage } from './uiLocale';
+import { buildEditorBodyHtml } from './editorPanelHtml';
 import * as path from 'path';
 import * as os from 'os';
 import { extractMermaidBlocks, isMermaidFileDoc } from './mermaidExtract';
 
 type ExportFormat = 'svg' | 'png';
-const EXPORT_FILTERS: Record<ExportFormat, Record<string, string[]>> = {
-  svg: { 'SVG Image': ['svg'] },
-  png: { 'PNG Image': ['png'] },
-};
+/** Save-dialog file-type filters. Built per call so the label follows the UI language. */
+function exportFilters(format: ExportFormat): Record<string, string[]> {
+  return format === 'svg'
+    ? { [t('SVG Image')]: ['svg'] }
+    : { [t('PNG Image')]: ['png'] };
+}
 function decodeExportData(format: ExportFormat, data: string): Buffer {
   return format === 'svg'
     ? Buffer.from(data, 'utf8')
     : Buffer.from(data.replace(/^data:image\/[a-z.+-]+;base64,/, ''), 'base64');
+}
+
+/**
+ * One canvas shortcut, as `contributes.keybindings` spells it in `args`.
+ *
+ * `key` is the DOM `KeyboardEvent.key` the drawing library listens for
+ * ('Delete', 'ArrowUp', '?', 'z'), not VS Code's own key syntax.
+ */
+export interface KeyStroke {
+  key: string;
+  ctrl?: boolean;
+  shift?: boolean;
+}
+
+/** A keybinding's `args`, which reach a command handler as plain unknown JSON. */
+export function asKeyStroke(args: unknown): KeyStroke | undefined {
+  if (typeof args !== 'object' || args === null) return undefined;
+  const { key, ctrl, shift } = args as Record<string, unknown>;
+  if (typeof key !== 'string' || key === '') return undefined;
+  return { key, ctrl: ctrl === true, shift: shift === true };
 }
 
 type InMessage =
@@ -23,7 +46,8 @@ type InMessage =
   | { type: 'mermaidchange'; text: string }
   | { type: 'error'; message: string }
   | { type: 'export'; format: ExportFormat; data: string; suggestedName: string }
-  | { type: 'selectBlock'; index: number };
+  | { type: 'selectBlock'; index: number }
+  | { type: 'setLanguage'; language: UiLanguage };
 
 export class EditorPanel {
   public static current: EditorPanel | undefined;
@@ -47,14 +71,19 @@ export class EditorPanel {
       EditorPanel.current.rebind(doc, blockIndex);
       return;
     }
-    const panel = vscode.window.createWebviewPanel(EditorPanel.viewType, 'Mermaid 繪製', column, {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      localResourceRoots: [
-        vscode.Uri.joinPath(context.extensionUri, 'dist'),
-        vscode.Uri.joinPath(context.extensionUri, 'media'),
-      ],
-    });
+    const panel = vscode.window.createWebviewPanel(
+      EditorPanel.viewType,
+      t('Mermaid Drawing'),
+      column,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [
+          vscode.Uri.joinPath(context.extensionUri, 'dist'),
+          vscode.Uri.joinPath(context.extensionUri, 'media'),
+        ],
+      },
+    );
     EditorPanel.current = new EditorPanel(context, panel, doc, blockIndex);
   }
 
@@ -100,11 +129,16 @@ export class EditorPanel {
     } else if (msg.type === 'mermaidchange') {
       this.scheduleWriteBack(msg.text);
     } else if (msg.type === 'error') {
-      void vscode.window.showWarningMessage(`Mermaid 繪製:${msg.message}`);
+      void vscode.window.showWarningMessage(
+        t('Mermaid Drawing: {0}', msg.message),
+      );
     } else if (msg.type === 'export') {
       void this.saveExport(msg);
     } else if (msg.type === 'selectBlock') {
       this.selectBlock(msg.index);
+    } else if (msg.type === 'setLanguage') {
+      // 寫設定即可:設定變更的監聽器會把所有面板用新語言重建(見 extension.ts)。
+      void setConfiguredLanguage(msg.language);
     }
   }
 
@@ -122,11 +156,13 @@ export class EditorPanel {
         : (vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir());
     const uri = await vscode.window.showSaveDialog({
       defaultUri: vscode.Uri.file(path.join(dir, msg.suggestedName)),
-      filters: EXPORT_FILTERS[msg.format],
+      filters: exportFilters(msg.format),
     });
     if (!uri) return;
     await vscode.workspace.fs.writeFile(uri, decodeExportData(msg.format, msg.data));
-    void vscode.window.showInformationMessage(`Mermaid 繪製:已匯出 ${path.basename(uri.fsPath)}`);
+    void vscode.window.showInformationMessage(
+      t('Mermaid Drawing: exported {0}', path.basename(uri.fsPath)),
+    );
   }
 
   /** 防抖寫回(避免一次拖曳產生過多文件編輯)。 */
@@ -135,9 +171,9 @@ export class EditorPanel {
     if (this.writeTimer) clearTimeout(this.writeTimer);
     this.writeTimer = setTimeout(() => {
       this.writeTimer = undefined;
-      const t = this.pendingText;
+      const text = this.pendingText;
       this.pendingText = undefined;
-      if (t != null) void this.writeBack(t);
+      if (text != null) void this.writeBack(text);
     }, 200);
   }
 
@@ -148,9 +184,9 @@ export class EditorPanel {
       clearTimeout(this.writeTimer);
       this.writeTimer = undefined;
     }
-    const t = this.pendingText;
+    const text = this.pendingText;
     this.pendingText = undefined;
-    if (t != null) void this.writeBack(t);
+    if (text != null) void this.writeBack(text);
   }
 
   private async writeBack(text: string): Promise<void> {
@@ -176,6 +212,28 @@ export class EditorPanel {
     }
   }
 
+  /**
+   * Hand a canvas shortcut to the webview.
+   *
+   * Keys only reach a webview while VS Code considers the webview focused, and
+   * the panel can be the active tab with the focus still parked in the
+   * workbench — so the canvas shortcuts are also contributed as real
+   * keybindings (`when: activeWebviewPanelId == superMermaidEditor`) and come
+   * through here. The webview drops a stroke it already saw as a keystroke, so
+   * the two routes never both fire.
+   */
+  public sendKey(stroke: KeyStroke): void {
+    void this.panel.webview.postMessage({ type: 'key', stroke });
+  }
+
+  /** 介面語言改變:工具列字串是 host 產生的,只能整份 HTML 重建
+   *  (webview 重新載入後會發 ready,屆時 postLoad 會把目前這張圖放回去)。 */
+  public refreshLocale(): void {
+    this.flushWriteBack();
+    this.panel.webview.html = this.getHtml();
+    this.updateTitle();
+  }
+
   /** 文件被「外部」修改時(非本面板寫回),重新載入到編輯器。 */
   onDocumentChanged(changed: vscode.TextDocument): void {
     if (changed.uri.toString() !== this.doc.uri.toString()) return;
@@ -185,8 +243,8 @@ export class EditorPanel {
   }
 
   private updateTitle(): void {
-    const name = this.doc.fileName.split(/[\\/]/).pop() ?? 'diagram';
-    this.panel.title = `Mermaid 繪製:${name}`;
+    const name = this.doc.fileName.split(/[\\/]/).pop() ?? t('diagram');
+    this.panel.title = t('Mermaid Drawing: {0}', name);
   }
 
   private getHtml(): string {
@@ -202,15 +260,15 @@ export class EditorPanel {
     );
     const nonce = getNonce();
     return `<!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="${uiLanguage()}">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} data: blob:; font-src ${webview.cspSource} data:; connect-src ${webview.cspSource};" />
   <link rel="stylesheet" href="${styleUri}" />
-  <title>Mermaid 繪製</title>
+  <title>${t('Mermaid Drawing')}</title>
 </head>
-<body data-font-uri="${fontUri}">
-${EDITOR_BODY_HTML}
+<body data-locale="${uiLanguage()}" data-font-uri="${fontUri}">
+${buildEditorBodyHtml(t, configuredLanguage())}
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
