@@ -8,6 +8,7 @@ import { registerInsertTemplateCommand } from './insertTemplate';
 import { isMarkdownDoc, MarkdownPreviewPanel } from './markdownPreviewPanel';
 import { extractMermaidBlocks, isSupportedDoc } from './mermaidExtract';
 import { PreviewPanel } from './previewPanel';
+import { registerSponsorCommand } from './sponsor';
 import { MermaidStatusBar } from './statusBar';
 
 /** 解析「整份 Markdown 預覽」指令的目標文件:explorer 帶 uri,其餘用作用中編輯器。 */
@@ -60,6 +61,7 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
     vscode.languages.registerHoverProvider(SUPPORTED_SELECTOR, new MermaidHoverProvider()),
     registerInsertTemplateCommand(context),
+    registerSponsorCommand(),
     vscode.commands.registerCommand(
       'superMermaid.editDiagram',
       async (uri: vscode.Uri, blockIndex: number) => {

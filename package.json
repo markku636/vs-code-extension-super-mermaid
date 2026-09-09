@@ -2,7 +2,7 @@
   "name": "super-mermaid",
   "displayName": "Super Mermaid",
   "description": "Mermaid diagrams that look good out of the box — auto-colored live preview with pan/zoom, plus one-click hi-res PNG/SVG export (up to 4x, transparent background, batch Export All).",
-  "version": "0.20.1",
+  "version": "0.21.0",
   "publisher": "mark-ku",
   "license": "MIT",
   "repository": {
@@ -10,6 +10,10 @@
     "url": "https://github.com/markku636/vs-code-extension-super-mermaid.git"
   },
   "private": true,
+  "sponsor": {
+    "url": "https://paypal.me/226network"
+  },
+  "l10n": "./l10n",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -93,6 +97,12 @@
         "command": "superMermaid.openMarkdownPreviewInNewWindow",
         "title": "Super Mermaid: Open Markdown Preview in New Window",
         "icon": "$(multiple-windows)"
+      },
+      {
+        "command": "superMermaid.sponsor",
+        "title": "%superMermaid.command.sponsor%",
+        "category": "Super Mermaid",
+        "icon": "$(heart)"
       }
     ],
     "configuration": {

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.21.0 — a way to say thanks, in your own language
+
+Super Mermaid is free and stays free. This release only adds a door for anyone who wants
+to say thanks — nothing behind it is gated, and nothing nags you to open it.
+
+- **New**: `Super Mermaid: Support the Developer (PayPal)` in the Command Palette — four
+  fixed amounts (US$5 / 10 / 15 / 25) plus *Other amount…*, each opening PayPal in your
+  browser. Fixed amounts rather than one "give what you like" link, because "what you like"
+  turns a yes/no question into "how much is not rude", and that one gets closed instead of answered.
+- The command title and the picker are **localized**: English, 繁體中文, 简体中文, 日本語, 한국어.
+  Titles go through `package.nls.*.json`, the runtime strings through `l10n/bundle.l10n.*.json`
+  and `vscode.l10n.t()` — VS Code picks the file matching your display language, and falls
+  back to English for anything a bundle does not carry.
+- A ♥ **Sponsor** button now appears on the Marketplace page and in the extension details
+  view, from `sponsor.url` in the manifest. That button only takes one URL, which is why the
+  amounts live in the command.
+
 ## 0.20.1 — `<b>` was showing up in exported PNGs
 
 The live preview renders labels with `htmlLabels` on, so inline HTML like `<b>` and `<i>` becomes

@@ -18,7 +18,7 @@ This tool is free and open source. If it saved you time, buy me a coffee so the 
 [![PayPal $15](https://img.shields.io/badge/PayPal-%2415-0070ba?logo=paypal&logoColor=white)](https://www.paypal.com/ncp/payment/A653DD46GEU4W)
 [![PayPal $25](https://img.shields.io/badge/PayPal-%2425-0070ba?logo=paypal&logoColor=white)](https://www.paypal.com/ncp/payment/Y5WPSXVGH3YS4)
 
-For any other amount, use [PayPal.Me](https://paypal.me/226network).
+For any other amount, use [PayPal.Me](https://paypal.me/226network). The same amounts are in the Command Palette under **Super Mermaid: Support the Developer (PayPal)** — localized in English, 繁體中文, 简体中文, 日本語 and 한국어 — and there is a ♥ Sponsor button on the Marketplace page.
 
 ## Same source, zero config — see the difference
 

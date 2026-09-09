@@ -10,6 +10,7 @@ scripts/**
 tsconfig.json
 **/*.map
 .gitignore
+.github/**
 outputs/**
 .claude/**
 .verify*/**
